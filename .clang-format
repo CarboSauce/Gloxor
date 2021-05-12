@@ -1,0 +1,30 @@
+BasedOnStyle: GNU
+BreakBeforeBraces: Allman
+IndentWidth: 3
+ColumnLimit: 0
+BinPackArguments: true
+BinPackParameters: false
+AlignAfterOpenBracket: Align
+AlignOperands: AlignAfterOperator
+BreakBeforeBinaryOperators: NonAssignment
+AlwaysBreakAfterReturnType: None
+AlwaysBreakAfterDefinitionReturnType: None
+AlignEscapedNewlines: Left
+AllowShortBlocksOnASingleLine: Always
+AllowShortIfStatementsOnASingleLine: Never
+BraceWrapping: 
+    AfterCaseLabel: true
+    AfterClass: true
+    AfterEnum: true
+    AfterFunction: true
+    AfterNamespace: true
+    AfterStruct: true
+FixNamespaceComments: true
+IndentCaseLabels: true
+IndentExternBlock: Indent
+IndentPPDirectives: BeforeHash
+NamespaceIndentation: All
+PointerAlignment: Left
+SpaceBeforeAssignmentOperators: true
+AllowAllArgumentsOnNextLine: false
+AlignTrailingComments: true

@@ -1,0 +1,5 @@
+if (OS_ARCH STREQUAL "x86_64")
+    add_subdirectory(x86)
+else()
+    message(FATAL_ERROR "Architecture not supported.")
+endif()

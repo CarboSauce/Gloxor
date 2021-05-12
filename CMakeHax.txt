@@ -1,0 +1,7 @@
+###########
+# This File contains all ugly variables that had to be set
+# thanks to cmake not supporting osdev that much
+# feel free to add other hack variables 
+###########
+set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
+set(CMAKE_SYSTEM_NAME "Generic")
