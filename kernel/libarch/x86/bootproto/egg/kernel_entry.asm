@@ -3,13 +3,14 @@
 section .start progbits alloc exec write align=1
 global _start 
 _start:
-    mov rsp, stack_end ;stakc grows top->down
+    mov rsp, stack_end ;stack grows top->down
+    mov rbp, rsp
     call kernel_main
     jmp $ 
 
 
-section .data
+section .bss
 stack_beg: 
-times 0x100000 db 0
+resb 0x100000 
 stack_end: 
 

@@ -1,4 +1,4 @@
-BasedOnStyle: GNU
+BasedOnStyle: LLVM
 BreakBeforeBraces: Allman
 IndentWidth: 3
 ColumnLimit: 0

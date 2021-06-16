@@ -6,12 +6,6 @@
 
 
 
-/* 
-    Once i feel comfortable Ill uncomment it
-*/
-//#define SMOL_NAIVE
-
-
 BEGIN_EXTERN_C
 
 SMOL_INLINE void* memcpy(void *__restrict__ dst, const void *__restrict__ src, size_t size) SMOL_NOEXCEPT(true)
@@ -21,17 +15,7 @@ SMOL_INLINE void* memcpy(void *__restrict__ dst, const void *__restrict__ src, s
 
 SMOL_INLINE void* memset(void* dst, int val, size_t size) SMOL_NOEXCEPT(true)
 {
-    #ifdef SMOL_NAIVE
-    auto mems = (uint8_t*)mem;
-    for(size_t i = 0; i < size; ++i)
-    {
-        mems[i] = val;
-    }
-    #else
-
     return __builtin_memset(dst, val, size);
-
-    #endif
 }
 
 SMOL_INLINE void* memmove(void *__restrict__ dst,const void *__restrict__ src, size_t size) SMOL_NOEXCEPT(true)

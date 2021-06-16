@@ -1,18 +1,20 @@
-#ifndef CARBOSLIB_UTILITIES_H_
-#define CARBOSLIB_UTILITIES_H_
+#pragma once
+#include "glox/types.hpp"
 
-#include <stdint.h>
+constexpr auto fxdPointFactor = 8;
+template<typename T,T bound>
+constexpr T fixed_lerp(T a, T b, T time)
+{
+    return a + ((time * fxdPointFactor) * (b - a) / bound) /fxdPointFactor;
+}
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  *  Implementation of djb2 hash 
- *  @link http://www.cse.yorku.ca/~oz/hash.html
  *  @param str String for which hash is to be computed, UB if string is null
+ *  @link http://www.cse.yorku.ca/~oz/hash.html 
  */
-uint32_t djb2_hash(const char *str)
+inline uint32_t djb2_hash(const char *str)
 {
     uint32_t _hash = 5381; /*magic prime number*/ 
     uint8_t _cached;
@@ -26,7 +28,7 @@ uint32_t djb2_hash(const char *str)
  * @link https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
  * @param str String for which hash is to be computed, UB if string is null
  */
-uint32_t fnv_hash(const char* str)
+inline uint32_t fnv_hash(const char* str)
 {
     uint32_t _hash = 0x811c9dc5; //magic prime
     uint8_t _c; 
@@ -36,10 +38,3 @@ uint32_t fnv_hash(const char* str)
     }
     return _hash;
 }
-
-#ifdef __cplusplus
-}
-#endif 
-
-
-#endif 
