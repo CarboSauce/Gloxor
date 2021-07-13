@@ -4,12 +4,14 @@
 
 set(OS_ARCH "x86_64" CACHE STRING "Architecture of OS to be compiled")
 set(PROTO_DISTRO "stivale" CACHE STRING "Bootloader protocol to be used")
-set(CMMN_FLAGS 
+list(APPEND CMMN_FLAGS 
 # Used to make linker be willing to put our code in high memory
 # alternatively we can use PIE and PIC magic
--mcmodel=kernel 
+-mcmodel=kernel
 # red zone is x86_64 abi thing, in kernel code it needs to be disabled because of interrupts
--mno-red-zone 
- -Wl,--no-dynamic-linker -ffreestanding -mgeneral-regs-only -mno-mmx -mno-sse -nostdlib)
-set(KERNEL_LINK_FLAGS -ffreestanding -nostdlib)
+-mno-red-zone
+-fno-exceptions -fno-rtti -ffreestanding -mgeneral-regs-only -mno-mmx -mno-sse -mno-sse2 -nostdlib)
+list(APPEND KERNEL_LINK_FLAGS -ffreestanding -nostdlib -fbuiltin)
 
+option(FORCE_DEBUG "Should asserts work even in release" ON)
+option(USE_LTO "Compile with LTO" ON)

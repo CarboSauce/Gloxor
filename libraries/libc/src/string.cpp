@@ -1,32 +1,34 @@
-#include <cstdint>
-#include <cstddef>
-
-#undef memcpy
-#undef memset
+#include <stddef.h>
+#include <stdint.h>
 
 extern "C"
 {
+	 void* memset(void* dst, int val, size_t size)
+	{
+		auto* mems = (uint8_t*)dst;
+		for (size_t i = 0; i < size; ++i)
+		{
+			mems[i] = val;
+		}
+		return dst;
+	}
 
-void* memset(void* dst, int val, size_t size) 
-{
-    auto* mems = (uint8_t*)dst;
-    for(size_t i = 0; i < size; ++i)
-    {
-        mems[i] = val;
-    }
-    return dst;
-}
+	 void* memcpy(void* dst, const void* src, size_t size)
+	{
+		auto* d = (uint8_t*)dst;
+		const auto* s = (const uint8_t*)src;
+		for (size_t i = 0; i < size; ++i)
+		{
+			d[i] = s[i];
+		}
+		return d;
+	}
 
-
-void* memcpy(void* dst, const void* src, size_t size)
-{
-    auto* d = (uint8_t*)dst;
-    const auto* s = (const uint8_t*)src;
-    for (size_t i = 0; i < size; ++i)
-    {
-        d[i] = s[i];
-    }
-    return d;
-}
-
+	 size_t strlen(const char* str)
+	{
+		size_t acm = 0;
+		for (; str[acm] != 0; ++acm)
+			;
+		return acm;
+	}
 }

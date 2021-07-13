@@ -13,18 +13,6 @@ _start:
     ; mov rdi, eggFrame
     ; call kernel_main
 
-.repeat:
-    mov al, 'F'
-    out 0xE9, al
-    mov al, 'U'
-    out 0xE9, al
-    mov al, 'C'
-    out 0xE9, al
-    mov al, 'K'
-    out 0xE9, al
-    mov al, 0xA
-    out 0xE9, al
-    jmp .repeat
 
 ; section .data
 ; stivale2_framebuffer_tag:
@@ -42,11 +30,3 @@ _start:
 ;     dq 0
 ;     dq stivale2_framebuffer_tag
     
-
-
-section .bss
-align 16
-stack_beg: 
-resb 0x100000 
-stack_end: 
-

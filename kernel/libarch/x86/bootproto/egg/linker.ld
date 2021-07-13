@@ -19,6 +19,16 @@ SECTIONS
         PROVIDE_HIDDEN(_ctor_array_end = . );
     }
 
+    .modul : 
+    {
+        PROVIDE_HIDDEN(_modulePreCpuBegin = .);
+        KEEP(*(.module.precpu*))
+        PROVIDE_HIDDEN(_moduleDriverCentralBegin = .);
+        KEEP(*(.module.central*))
+        KEEP(*(.module.driver*))
+        PROVIDE_HIDDEN(_moduleDriverEnd = .);
+    }
+
     .data : {
         *(.data*)
     }

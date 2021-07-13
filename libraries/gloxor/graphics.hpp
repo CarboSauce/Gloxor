@@ -1,5 +1,5 @@
 #pragma once 
-#include "glox/types.hpp"
+#include "gloxor/types.hpp"
 #include "glox/pair.hpp"
 #include "glox/utilalgs.hpp"
 
@@ -17,6 +17,8 @@ struct framebuffer
     size_t width;
     size_t height;
     rgb_t print_color;
+    size_t curX = 0;
+    size_t curY = 0;
     void writeCharAt(char,int,int, rgb_t fg, rgb_t bg);
     void writeString(const char*);
     void cls(rgb_t);
@@ -27,7 +29,7 @@ struct framebuffer
 
 
 template<typename iter,typename T>
-void drawRectangle(iter beg, size_t fbwidth,glox::vec2<T,T> pos, glox::vec2<T,T> size, T color)
+void drawRectangle(iter beg, size_t fbwidth,glox::vec2<T> pos, glox::vec2<T> size, T color)
 {
     for (auto i = beg+pos.y; i < beg+size.y*fbwidth; i+=fbwidth)
     {

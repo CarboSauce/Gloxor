@@ -1,4 +1,4 @@
-#include "glox/graphics.hpp"
+#include "gloxor/graphics.hpp"
 #include <cstdint>
 
 const extern uint8_t fontBitmap[];
@@ -49,8 +49,7 @@ namespace glox
       }
    }
 
-   static size_t curX = 0;
-   static size_t curY = 0;
+
 
    void framebuffer::writeString(const char* str)
    {

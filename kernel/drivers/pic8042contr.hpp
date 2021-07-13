@@ -1,5 +1,5 @@
 #pragma once
-#include "glox/types.hpp"
+#include "gloxor/types.hpp"
 
 #define PIC1 0x20            /* IO base address for master PIC */
 #define PIC2 0xA0            /* IO base address for slave PIC */
@@ -19,14 +19,20 @@
 #define ICW4_SFNM 0x10       /* Special fully nested (not) */
 #define PIC_EOI 0x20         /* End-of-interrupt ccommand code */
 
+
 namespace glox
 {
+   struct picContext
+   {
+      u8 masterMask;
+      u8 slaveMask;
+   };
    namespace pic
    {
+      void setMasterMask(u8 mask);
+      void setSlaveMask(u8 mask);
       void sendEoiMaster();
       void sendEoiSlave();
       void remap(u8 masterOffst, u8 slaveOffst);
-      void setMask(u8 irqLine);
-      void clearMask(u8 irqLine);
    } // namespace pic
 } // namespace glox

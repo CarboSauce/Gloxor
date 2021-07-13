@@ -58,7 +58,7 @@ inline statusFlags::eflags getStatusFlags()
 {
    statusFlags::eflags flags;
    __asm__ volatile("pushf;pop %0"
-                    : "=r"(flags)
+                    : "=rm"(flags)
                     :
                     : "memory");
    return flags;

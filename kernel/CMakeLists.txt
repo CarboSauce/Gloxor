@@ -1,25 +1,22 @@
 add_executable( kernel 
                 main.cpp
-                danger.cpp
 )
 
 add_subdirectory(libarch)
 add_subdirectory(drivers)
-
-
+add_subdirectory(system)
+add_subdirectory(gloxor)
 
 set_target_properties(kernel PROPERTIES 
                        SUFFIX .img
                        RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}
 )
 
-
-
 target_compile_options(kernel PRIVATE 
     $<$<COMPILE_LANGUAGE:ASM_NASM>:${CMMN_ASM_FLAGS}>
-    $<$<COMPILE_LANG_AND_ID:CXX,Clang,GNU,AppleClang>:$<BUILD_INTERFACE:-Wall;-Wextra;${CMMN_FLAGS}>>
+    ${GLOX_COMPILE_FLAGS}
+    ${WARNING_FLAGS}
 )
-
 
 target_include_directories(kernel PRIVATE 
     ${PROJECT_SOURCE_DIR}/kernel
@@ -30,8 +27,8 @@ target_link_options(kernel PRIVATE
     ${KERNEL_LINK_FLAGS}
 )
 
-target_link_libraries(kernel PRIVATE 
-    library_deps
+target_link_libraries(kernel PRIVATE
+libc libglox libgloxor
 )
 
 install(TARGETS kernel 

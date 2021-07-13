@@ -1,77 +1,125 @@
-#include "debug.hpp"
-#include "glox/algo.hpp"
-#include "glox/graphics.hpp"
-#include "glox/logger.hpp"
 #include "arch/cpu.hpp"
-#include "protos/egg.h"
-#include "string.h"
-#include <cstdint>
+#include "arch/irq.hpp"
 #include "glox/algo.hpp"
-#include "danger.hpp"
+#include "gloxor/graphics.hpp"
+#include "protos/egg.h"
+#include "system/danger.hpp"
+#include "system/logging.hpp"
+#include "string.h"
 
-using global_ctor_t = void (*)(void);
+using ctor_t = void (*)(void);
 using namespace arch;
 
-extern global_ctor_t _ctor_array_start[];
-extern global_ctor_t _ctor_array_end[];
+extern ctor_t _ctorArrayStart[];
+extern ctor_t _ctorArrayEnd[];
+extern ctor_t _modulePreCpuBegin[];
+extern ctor_t _moduleDriverCentralBegin[];
+extern ctor_t _moduleDriverEnd[];
 
-extern "C" void call_global_ctors()
+extern "C" void callCtorPointers(ctor_t* begin, ctor_t* end)
 {
-   print_debug("There are: ");
-   glox::log_integer(print_debug,(uint32_t)(_ctor_array_end-_ctor_array_start));
-   print_debug(" Ctors\n");
 
-   for (auto it = _ctor_array_start; it != _ctor_array_end; ++it)
-   {
-      (*it)();
-   }
+	gloxLog("There are: ", static_cast<glox::u32>(end - begin), " Ctors\n");
+	for (auto it = begin; it != end; ++it)
+	{
+		(*it)();
+	}
 }
 
-void gogole_test(egg_t*);
-
-extern "C" void kernel_main(egg_t* egg_frame)
+extern "C" void callPreCpuInits()
 {
-   initializeCpu();
-   call_global_ctors();
 
-   gogole_test(egg_frame);
+	gloxLogln ("Pre Cpu Init:");
+
+	callCtorPointers(_modulePreCpuBegin, _moduleDriverCentralBegin);
 }
 
+extern "C" void callDriverInits()
+{
+	gloxLogln ("Driver Init:");	
+	callCtorPointers(_moduleDriverCentralBegin, _moduleDriverEnd);
+	// We assume that Drivers havent enabled interrupts hopefully
+	gloxDebugLog("Starting Interrupts after driver initialization\n");
+	arch::startIrq();
+}
+
+extern "C" void callGlobalCtors()
+{
+	gloxLogln ("Global ctors :");
+	callCtorPointers(_ctorArrayStart, _ctorArrayEnd);
+}
+
+
+void gogole_test(eggHandle*);
+extern void sleep(u64 ticks, u64 ms);
+extern u64 getTicks();
 glox::framebuffer con;
+  
+extern "C" void kernel_main(eggHandle* eggFrame)
+{
+	gloxLogln("Really weird but: ", strlen("Pepega"));
+
+
+	callPreCpuInits();
+	initializeCpu();
+ 
+	callDriverInits();
+	callGlobalCtors();
+	gogole_test(eggFrame);
+	
+
+
+	// Invoking strlen doesnt work if strlen is a function defined as __builtin_strlen
+
+	u64 ticker = 0;
+	char buff[30];
+	while(1)
+	{
+		auto _tik = getTicks();
+		buff[glox::format(buff,ticker)+1] = '\0';
+		con.writeString(buff);
+		con.curX = 0;
+		con.curY = 0;
+		sleep(_tik,1000);
+		ticker+=1;
+	}
+}
+
 
 void logFrameBuffer()
 {
-   print_debug("\n\nFrame Buffer Begin: ");
-   glox::log_pointer(print_debug,con.fbBeg);
-   print_debug("\nFrame Buffer End:");
-      glox::log_pointer(print_debug,con.fbEnd);
-   print_debug("\nFrame Buffer Height");
-      glox::log_integer(print_debug,con.height);
-   print_debug("\nFrame Buffer Width");
-      glox::log_integer(print_debug,con.width);
-   print_debug("\nFrame Buffer Pitch");
-      glox::log_integer(print_debug,con.pitch);
-   print_debug("\n\n\n");
+	gloxLogln("Frame Buffer Begin: ", con.fbBeg);
+	gloxLogln("Frame Buffer End:", con.fbEnd);
+	gloxLogln("Frame Buffer Height", con.height);
+	gloxLogln("Frame Buffer Width", con.width);
+	gloxLogln("Frame Buffer Pitch", con.pitch);
 }
 
 // Super useless and unscientific tests, take with grain of salt
-void gogole_test(egg_t* egg_frame)
+void gogole_test(eggHandle* eggFrame)
 {
-   con = {
-       (glox::rgb_t*)egg_frame->fb.fb_start,
-       (glox::rgb_t*)egg_frame->fb.fb_end,
-       egg_frame->fb.pitch,
-       egg_frame->fb.width,
-       egg_frame->fb.height,
-       0xFFFFFF //white color
-   };
+	
+	con = {
 
-   logFrameBuffer();
+		(glox::rgb_t*)eggFrame->fb.fb_start,
+		(glox::rgb_t*)eggFrame->fb.fb_end,
+		eggFrame->fb.pitch,
+		eggFrame->fb.width,
+		eggFrame->fb.height,
+		0xFFFFFF //white color
+	};
+	con.cls(0x101010);
 
-   
-   glox::kernelPanic();
 
-   print_debug("RULES OF NATURE!\n");
-   while (1)
-      ;
+	logFrameBuffer();
+	gloxLogln("Memory map moment");
+	for (size_t i = 0; i < eggFrame->memMap.size; ++i)
+	{
+		gloxLogln("From ",(void*)eggFrame->memMap.base[i].base," to ",
+		 (void*)(eggFrame->memMap.base[i].base+eggFrame->memMap.base[i].length),
+		 " Value = ", eggFrame->memMap.base[i].type);
+		
+	}
+
+
 }

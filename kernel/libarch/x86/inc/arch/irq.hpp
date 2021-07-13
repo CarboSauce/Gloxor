@@ -1,22 +1,22 @@
 #pragma once
-#include <glox/types.hpp>
+#include <gloxor/types.hpp>
 
 namespace arch
 {
 
-   using irq_t = u64;
+   using irqT = u64;
 
-   inline irq_t saveIrq(void)
+   inline irqT saveIrq(void)
    {
-      irq_t flags;
+      irqT flags;
       asm volatile("pushf;pop %0"
-                   : "=r"(flags)
+                   : "=rm"(flags)
                    :
                    : "memory");
       return flags;
    }
 
-   inline void restoreIrq(irq_t flags)
+   inline void restoreIrq(irqT flags)
    {
       asm("push %0;popf"
           :

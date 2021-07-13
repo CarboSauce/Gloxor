@@ -1,0 +1,12 @@
+Lot of stuff needs to be done but primarly
+- Parse Stivale protocol
+- Logging to several output sources
+- Drivers
+	- Keyboard
+	- Mouse
+	- Disk
+	- ACPI
+	- Serial
+- Filesystem
+- Scheduling
+- Userspace
