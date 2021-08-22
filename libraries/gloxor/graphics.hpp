@@ -21,6 +21,7 @@ struct framebuffer
     size_t curY = 0;
     void writeCharAt(char,int,int, rgb_t fg, rgb_t bg);
     void writeString(const char*);
+    void writeString(const char*,size_t);
     void cls(rgb_t);
     void putPixel(int x, int y, rgb_t color);
 };

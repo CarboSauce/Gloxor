@@ -35,7 +35,6 @@ namespace glox
 				value /= 10;
 				buffer[i++] = '0' + digit;
 			} while (value > 0);
-
 			glox::reverse(buffer, buffer + i);
 			return i;
 		}

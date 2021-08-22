@@ -1,8 +1,7 @@
 #pragma once
-
 #include "glox/format.hpp"
 #include "glox/types.hpp"
-#include "details/string.hpp"
+#include "glox/string.hpp"
 
 namespace glox
 {
@@ -22,7 +21,7 @@ namespace glox
 	template <typename BStream, typename T>
 	inline BStream& operator,(BStream& out, const T& val)
 	{
-		write(out, format(out.buffer, val));
+		write(out, out.buffer, format(out.buffer, val));
 		return out;
 	}
 
@@ -30,7 +29,7 @@ namespace glox
 	template <typename BStream>                    \
 	constexpr BStream& operator,(BStream& out, x val) \
 	{                                              \
-		write(out, format(out.buffer, val));       \
+		write(out, out.buffer, format(out.buffer, val));       \
 		return out;                                \
 	}
 
@@ -38,7 +37,7 @@ namespace glox
 	template <typename BStream>                       \
 	constexpr BStream& operator,(BStream& out, x val) \
 	{                                                 \
-		write(out, format(out.buffer, (to)val));      \
+		write(out, out.buffer, format(out.buffer, (to)val));      \
 		return out;                                   \
 	}
 	// clang-format off
@@ -50,19 +49,23 @@ namespace glox
 		defineCommaCast(uint8_t,uintmax_t)      
 		defineCommaCast(int16_t,intmax_t)
 		defineCommaCast(int32_t,intmax_t)
+		defineCommaCast(bool,uintmax_t)
 
 		template<typename BStream> 
 		inline BStream& operator,(BStream& out,const void* val)
 		{
-			write(out, glox::format(out.buffer,val));
+			write(out, out.buffer, glox::format(out.buffer,val));
 			return out;
 		}
 
 
+		// Cost of IO will most likely outweight cost of double looping
+		// because of strlen, but potential compile time strlen 
+		// should be more worth it
 		template<typename BStream>
 		constexpr BStream& operator,(BStream& out, const char* str)
 		{
-			write(out,str);
+			write(out,str,glox::strlen(str));
 			return out;
 		}
 	// clang-format on

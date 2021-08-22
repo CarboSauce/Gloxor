@@ -7,11 +7,15 @@ set(PROTO_DISTRO "stivale" CACHE STRING "Bootloader protocol to be used")
 list(APPEND CMMN_FLAGS 
 # Used to make linker be willing to put our code in high memory
 # alternatively we can use PIE and PIC magic
--mcmodel=kernel
+# -mcmodel=kernel
+-fno-pic -fpie
 # red zone is x86_64 abi thing, in kernel code it needs to be disabled because of interrupts
 -mno-red-zone
+-fno-stack-protector
 -fno-exceptions -fno-rtti -ffreestanding -mgeneral-regs-only -mno-mmx -mno-sse -mno-sse2 -nostdlib)
-list(APPEND KERNEL_LINK_FLAGS -ffreestanding -nostdlib -fbuiltin)
+list(APPEND KERNEL_LINK_FLAGS -fno-pic -fpie -ffreestanding -nostdlib)
 
 option(FORCE_DEBUG "Should asserts work even in release" ON)
-option(USE_LTO "Compile with LTO" ON)
+option(USE_LTO "Compile with LTO" OFF)
+option(COMPILE_TESTS "Compile Tests" ON)
+

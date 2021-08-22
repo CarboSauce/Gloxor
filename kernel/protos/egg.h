@@ -2,14 +2,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define EGG_MEM_USABLE                 1
-#define EGG_MEM_RESERVED               2
-#define EGG_MEM_ACPI_RECLAIMABLE       3
-#define EGG_MEM_ACPI_NVS               4
-#define EGG_MEM_BAD_MEMORY             5
-#define EGG_MEM_FRAMEBUFFER            0x1002
-#define EGG_MEM_RECLAIMABLE            0x1000
-#define EGG_MEM_KERNEL_AND_MODULES     0x1001
+#define EGG_MEM_USABLE 1
+#define EGG_MEM_RESERVED 2
+#define EGG_MEM_ACPI_RECLAIMABLE 3
+#define EGG_MEM_ACPI_NVS 4
+#define EGG_MEM_BAD_MEMORY 5
+#define EGG_MEM_FRAMEBUFFER 0x1002
+#define EGG_MEM_RECLAIMABLE 0x1000
+#define EGG_MEM_KERNEL_AND_MODULES 0x1001
 
 struct eggFramebuffer
 {
@@ -17,9 +17,8 @@ struct eggFramebuffer
 	void* fb_end;
 	size_t pitch;
 	size_t height;
-	size_t width;  
+	size_t width;
 };
-
 
 struct eggMemoryMapEntry
 {
@@ -29,13 +28,31 @@ struct eggMemoryMapEntry
 	uint32_t unused;
 };
 
-struct eggMemoryMap 
+struct eggMemoryMap
 {
 	struct eggMemoryMapEntry* base;
 	uint64_t size;
 };
 
-struct eggHandle {
+struct eggKernelInfo
+{
+	void* start;
+	void* end;
+};
+
+struct eggHandle
+{
 	struct eggFramebuffer fb;
 	struct eggMemoryMap memMap;
+	struct eggKernelInfo kInfo;
 };
+
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+	extern struct eggHandle eggFrame;
+#ifdef __cplusplus
+}
+#endif

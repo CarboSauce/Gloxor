@@ -4,7 +4,6 @@
 #include "asm/gdt.hpp"
 #include "asm/idt.hpp"
 #include "system/logging.hpp"
-#include "string.h"
 /* 
 [[gnu::no_caller_saved_registers]] extern "C" void _gloxAsmLongJump(); */
 using namespace arch;
@@ -34,40 +33,53 @@ using namespace arch;
 [[gnu::interrupt]] static void DivZeroHandle(interrupt_frame_t* )
 {
 
-   gloxDebugLogln("You Fool Divided By Zero!\n");
+   gloxLogln("You Fool Divided By Zero!\n");
    while (1)
       ;
 }
 
 [[gnu::interrupt]] static void DoubleFault(interrupt_frame_t* )
 {
-   gloxDebugLogln("Double fault!\n");
+   gloxLogln("Double fault!\n");
    while (1)
       ;
 }
 [[gnu::interrupt]] static void SpurInterrupt(interrupt_frame_t* )
 {
-   gloxDebugLogln("Spurious Interrupt!\n");
+   gloxLogln("Spurious Interrupt!\n");
    while (1)
       ;
 }
 
-[[gnu::interrupt]] static void GPfault(interrupt_frame_t* , size_t errc)
+[[gnu::interrupt]] static void GPfault(interrupt_frame_t* frame, size_t errc)
 {
-   gloxDebugLogln("General Protection Fault!\n");
+   gloxLog("General Protection Fault!\nRIP = ",(void*)frame->ip);
    while (1)
       ;
 }
 
 [[gnu::interrupt]] static void PageFault(interrupt_frame_t* , size_t errc)
 {
-   gloxDebugLogln("Page Fault!\n");
+   gloxLogln("Page Fault!\n");
+   while (1)
+      ;
+}
+
+[[gnu::interrupt]] static void IllegalOpcode(interrupt_frame_t* , size_t errc)
+{
+   gloxLog("Illegal opcode!\n");
    while (1)
       ;
 }
 
 void initializeGdt();
 void initializeInterrupts();
+extern "C" void gloxAsmInitBasics();
+extern "C" void gloxAsmInitAvx();
+namespace x86
+{
+   void initKernelVirtMem();
+}
 
 namespace arch
 {
@@ -75,9 +87,17 @@ namespace arch
    void initializeCpu()
    {
       initializeGdt();
-
       initializeInterrupts();
-  
+      gloxAsmInitBasics();
+      u32 eax,ebx,ecx,edx;
+      __cpuid(0x1,eax,ebx,ecx,edx);
+      gloxLogln("CPUID ECX = ",ecx);
+      gloxLogln("Is XSAVE supported? ",(ecx & (1 << 26)) != 0);
+      gloxLogln("Is OSXSAVE supported? ",(ecx & (1 << 27)) != 0);
+      gloxLogln("Is RDRAND supported? ",((ecx >> 30) & 1));
+      gloxLogln("Is AVX supported? ",(ecx & (1 << 28)) != 0);
+      gloxAsmInitAvx();
+      //x86::initKernelVirtMem();
    }
 
    void haltForever()
@@ -140,7 +160,6 @@ gdt_pointer gdt_ptr = {
        : "memory");
 
 
-   // _gloxAsmLongJump();
 }
 
 void initializeInterrupts()
@@ -158,6 +177,7 @@ idt_pointer idt_ptr = {
 
    idt_list[0].registerHandler((uint64_t)DivZeroHandle, 0x8, 0, IDT_INTERRUPTGATE);
    idt_list[2].registerHandler((uint64_t)SpurInterrupt, 0x8, 0, IDT_INTERRUPTGATE);
+   idt_list[6].registerHandler((uint64_t)IllegalOpcode, 0x8, 0, IDT_INTERRUPTGATE);
    idt_list[8].registerHandler((uint64_t)DoubleFault, 0x8, 0, IDT_TRAPGATE);
    idt_list[13].registerHandler((uint64_t)GPfault, 0x8, 0, IDT_INTERRUPTGATE);
    idt_list[14].registerHandler((uint64_t)PageFault, 0x8, 0, IDT_INTERRUPTGATE);

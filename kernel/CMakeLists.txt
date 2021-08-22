@@ -1,11 +1,16 @@
 add_executable( kernel 
                 main.cpp
+                memory/pmm.cpp
+                gloxor/mutex.cpp
+                system/danger.cpp
+                system/logging.cpp
 )
 
 add_subdirectory(libarch)
 add_subdirectory(drivers)
-add_subdirectory(system)
-add_subdirectory(gloxor)
+#add_subdirectory(system)
+#add_subdirectory(gloxor)
+#add_subdirectory(memory)
 
 set_target_properties(kernel PROPERTIES 
                        SUFFIX .img

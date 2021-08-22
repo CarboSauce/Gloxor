@@ -1,9 +1,10 @@
 #include "logging.hpp"
 #include "drivers/e9.hpp"
 #include "danger.hpp"
+#include "gloxor/graphics.hpp"
+extern glox::framebuffer con;
 namespace glox
 {
-
 	void execAssert(const char* message, const char* file, const char* line)
    {
       gloxLog("Assertion failed: \n (", message, ")\n ",
@@ -11,14 +12,11 @@ namespace glox
 
       glox::kernelPanic();
    }
-	void write(glox::logStream& out, size_t s)
+	void write(glox::logStream& out, const char* str, size_t s)
 	{
-		printE9(out.buffer, s);
+		printE9(str, s);
+		(void)out;
 	}
-	void write(glox::logStream&, const char* str)
-	{
-		printE9(str);
-	}
-	logStream outStream;
 
+	logStream outStream;
 } // namespace glox

@@ -70,6 +70,26 @@ namespace glox
          }
       }
    }
+   void framebuffer::writeString(const char* str,size_t size)
+   {
+      size_t s = 0;
+      char c;
+      while ((c = str[s++]),s != size)
+      {
+         writeCharAt(c, curX, curY, print_color, 0x0);
+
+         // todo: modfify to work correctly with pitch values
+         if (size_t tempX; (tempX = curX + fontWidth) < this->pitch)
+         {
+            curX = tempX;
+         }
+         else
+         {
+            curY += fontHeight;
+            curX = 0;
+         }
+      }
+   }
 
    void framebuffer::cls(rgb_t color)
    {

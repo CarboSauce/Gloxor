@@ -3,7 +3,8 @@ ENTRY(stivale2_main)
 SECTIONS
 {
     . = 0xffffffff80200000;
-        
+    _kernelFileBegin = .;
+
     .stivale2hdr ALIGN(4K) :
     {
         KEEP(*(.stivale2hdr))
@@ -31,6 +32,9 @@ SECTIONS
         KEEP(*(.module.central*))
         KEEP(*(.module.driver*))
         PROVIDE(_moduleDriverEnd = .);
+        PROVIDE(_moduleTesting = .);
+        KEEP(*(.module.testing*))
+        PROVIDE(_moduleTestingEnd = .);
     }
 
     .data ALIGN(4K) : {
@@ -43,6 +47,7 @@ SECTIONS
         *(COMMON)
         PROVIDE(bss_end = .);
     }
+    _kernelFileEnd = .;
 /* 
     .interp : 
     {

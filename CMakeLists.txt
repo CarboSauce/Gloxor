@@ -17,7 +17,9 @@ include(CheckCXXSourceCompiles)
 if (FORCE_DEBUG)
     add_compile_definitions(DEBUGBUILD)
 endif()
-
+if (COMPILE_TESTS)
+    add_compile_definitions(GLOXTESTING)
+endif()
 
 
 set(CMAKE_C_STANDARD 11)

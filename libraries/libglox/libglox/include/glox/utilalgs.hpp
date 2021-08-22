@@ -1,7 +1,10 @@
 #pragma once
+#include <concepts>
+#include <glox/string.hpp>
 #include <utility>
-
-
+// temporary
+#include <bits/stl_construct.h>
+#include <bits/stl_uninitialized.h> 
 namespace glox
 {
 
@@ -32,5 +35,12 @@ namespace glox
 		}
 		return out;
 	}
+
+	template<typename T, typename... Args>
+	T* construct(T* at, Args&&... args)
+	{
+		return ::new(const_cast<void*>(static_cast<const volatile void*>(at))) T(std::forward<Args>(args)...);
+	}
+
 
 } // namespace glox
