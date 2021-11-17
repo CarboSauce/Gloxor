@@ -9,6 +9,7 @@ namespace glox
       void* start; // Start of memory
       pmmHeader* next; // Next header in list
       size_t size; // Size of memory, bitmap size is 8*PAGE smaller
+      size_t bitmapSize;
       u8 bitmap[];
       struct iterator
       {
@@ -29,18 +30,21 @@ namespace glox
    };
 
 
+   glox::pmmHeader* initPmm(void* base, size_t length, glox::pmmHeader* ctx);
+
    /**
     * @brief use this incase you need access to internals of pmm,  
+    * its temporary workaround of not having proper initilalization functions    
     */
    extern pmmHeader* pmmCtx;
    /**
     * @brief Allocate pNumber amount of pages 
     * @return pointer to allocated page, nullptr on out of memory
     */
-   void* pmmAlloc(size_t pNumber);
+   void* pmmAlloc();
    /**
     * @brief Free the allocated page
     * @param ptr Pointer previously obtained from pmm::alloc
     */
-   void pmmFree(void* ptr);
+   bool pmmFree(void* ptr);
 }

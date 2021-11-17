@@ -1,5 +1,4 @@
 add_library(libgloxor STATIC
-    src/font.cpp
     src/graphics.cpp
 )
 

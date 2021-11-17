@@ -16,4 +16,5 @@ namespace arch
    void initializeCpu();
 
    void haltForever();
+
 } // namespace arch

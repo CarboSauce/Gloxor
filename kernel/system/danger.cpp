@@ -1,13 +1,12 @@
 #include "system/danger.hpp"
 #include "glox/algo.hpp"
-#include "gloxor/graphics.hpp"
+#include "system/terminal.hpp"
 #include "arch/cpu.hpp"
-extern glox::framebuffer con;
 
 static inline void drawPanic()
 {
 
-	auto width = con.width;
+/* 	auto width = con.width;
 	auto height = con.height;
 	auto beg = con.fbBeg;
 	auto hmmm = 0;
@@ -18,7 +17,8 @@ static inline void drawPanic()
 			hmmm = (hmmm + (i * width + j)) % 12321;
 			beg[i * width + j] = hmmm;
 		}
-	}
+	} */
+	glox::term::writeStr("\nKernel Panic moment");
 
 }
 

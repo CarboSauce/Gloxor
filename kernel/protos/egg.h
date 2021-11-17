@@ -43,7 +43,7 @@ struct eggKernelInfo
 struct eggHandle
 {
 	struct eggFramebuffer fb;
-	struct eggMemoryMap memMap;
+	//struct eggMemoryMap memMap;
 	struct eggKernelInfo kInfo;
 };
 

@@ -7,10 +7,6 @@
 using namespace arch;
 using namespace x86::virt;
 
-struct arch::virtCtxImpl 
-{
-	lvl4table cr3;
-};
 
 // Untill kernel gets more fancy, this is the default options we use
 static constexpr u64 stdMask = writable | present;
@@ -24,7 +20,7 @@ static lvl3table klvl3{
 static lvl4table klvl4{
    maskEntry((u64)klvl3.entries - higherHalf, stdMask)};
 //static virtCtxImpl aha = {klvl4};
-static virtContext ctx{(virtCtxImpl*)klvl4.entries};
+static virtContext ctx{klvl4.entries};
 extern u8 _kernelFileBegin[];
 extern u8 _kernelFileEnd[];
 namespace x86
@@ -47,7 +43,7 @@ namespace x86
       gloxDebugLogln("Level 2 ",(u64)klvl2.entries,' ');
       gloxDebugLogln("Level 1 ",(u64)klvl1.entries,' ');
       gloxDebugLogln("ctx ",(u64)&ctx,' ',ctx.context);
-      gloxDebugLogln("(virtCtxImpl*)&klvl4 ", (virtCtxImpl*)&klvl4.entries);
+      gloxDebugLogln("(virtCtxImpl*)&klvl4 ", &klvl4.entries);
 		for (u64 i = 0; i < end + pageSize; i += pageSize)
 		{
          auto loc = reinterpret_cast<const void*>(physicalStart + i);
@@ -70,7 +66,7 @@ namespace arch
     */
 	bool virtContext::map(const void* from, const void* to)
 	{
-		auto lvl4ptr = context->cr3;
+		auto& lvl4ptr = *(lvl4table*)context;
 		auto virtAdr = (uintptr_t)from;
 		auto lvl3ptr = (lvl3table*)lvl4ptr.entries[lvl4ptr.index(virtAdr)];
       gloxDebugLogln("Level 4 ",(u64)lvl4ptr.entries,' ',lvl4ptr.index(virtAdr));

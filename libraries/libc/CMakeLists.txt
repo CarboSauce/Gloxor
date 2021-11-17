@@ -24,6 +24,7 @@ target_include_directories(libc PUBLIC
 target_compile_options(libc PRIVATE
 ${GLOX_COMPILE_FLAGS}
 ${WARNING_FLAGS}
+$<$<COMPILE_LANG_AND_ID:CXX,Clang,GNU,AppleClang>:$<BUILD_INTERFACE:-fno-builtin>>
 )
 
 # this shouldnt be needed but might be sometime, related to LTO 

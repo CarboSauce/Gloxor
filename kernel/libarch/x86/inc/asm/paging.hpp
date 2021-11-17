@@ -17,9 +17,9 @@ namespace x86::virt
 		ptePAT = 1 << 7,
 		pdePAT = 1 << 12,
 		pdptePAT = 1 << 12,
+		execDisable = size_t(1) << 63
 	};
 	// gcc doesnt like it being part of enum
-	constexpr u64 execDisable = size_t(1) << 63;
 	struct alignas(0x1000) pml5t
 	{
 		u64 entries[512];

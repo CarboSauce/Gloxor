@@ -19,8 +19,11 @@ namespace glox
    { return __builtin_memcpy(dst,src,size);}
    inline void* memset(void* dst, int byte, size_t size )
    { return __builtin_memset(dst,byte,size);}
+   inline void* memmove(void* dest, const void* src, size_t len)
+   { return __builtin_memmove(dest,src,len);}
 }
 
 using glox::strlen;
 using glox::memcpy;
 using glox::memset;
+using glox::memmove;

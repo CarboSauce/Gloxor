@@ -16,6 +16,7 @@ namespace glox
    using u32 = uint32_t;
    using i64 = int64_t;
    using u64 = uint64_t;
+   using colorT = uint32_t;
 } // namespace glox
 
 using glox::i16;

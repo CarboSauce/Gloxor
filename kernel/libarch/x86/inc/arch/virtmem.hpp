@@ -7,13 +7,13 @@ namespace arch
     * @brief class for managing virtual memory context 
     * 
     */
-    struct virtCtxImpl;
 	struct virtContext
 	{
-      virtCtxImpl* context; 
-	  public:
-        virtContext() = default;
-        virtContext(virtCtxImpl* ctx) : context{ctx} {};
+		void* context;
+
+		public:
+		virtContext() = default;
+		virtContext(void* ctx) : context{ctx} {};
 		/**
        * @brief Map virtual address to physical address
        * 
@@ -22,7 +22,7 @@ namespace arch
        * @return true Success
        * @return false Mapping failed
        */
-		bool map(const void* from,const void* to);
+		bool map(const void* from, const void* to);
 		/**
        * @brief Unmap virtual address from current context
        * 
@@ -62,7 +62,7 @@ namespace arch
     * @return true Success
     * @return false Allocation failure 
     */
-    bool virtInitContext(virtContext*);
-    void virtFlush(void* addr);
-    void virtCacheFlush();
+	bool virtInitContext(virtContext*);
+	void virtFlush(void* addr);
+	void virtCacheFlush();
 } // namespace arch

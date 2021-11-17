@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <stddef.h>
 #include "cpuid.h"
 
 namespace statusFlags
@@ -65,6 +66,12 @@ inline statusFlags::eflags getStatusFlags()
    return flags;
 }
 
+struct registerPair
+{
+   size_t edx;
+   size_t eax;
+};
+
 inline void setStatusFlags(statusFlags::eflags flags)
 {
    __asm__ volatile("push %0;popf"
@@ -73,7 +80,29 @@ inline void setStatusFlags(statusFlags::eflags flags)
                     : "memory", "cc");
 }
 
+/**
+ * @brief Returns EDX:EAX from xgetbv instruction
+ * 
+ * @param ecx XCR branch to read from, only 0 and 1 supported rest are reserved
+ * @return glox::pair<uint32_t,uint32_t> 
+ */
+inline registerPair xgetbv(size_t ecx)
+{
+   size_t eax,edx;
+   __asm__ ("xgetbv":"=a"(eax),"=d"(edx):"c"(ecx));
+   return {edx,eax};
+}
+
+inline void xsetbv(size_t ecx,size_t edx, size_t eax)
+{
+   __asm__ ("xsetbv"::"a"(eax),"d"(edx),"c"(ecx));
+}
+
+
 inline void cpuid(uint32_t code, uint32_t* a, uint32_t* d)
 {
     asm volatile ( "cpuid" : "=a"(*a), "=d"(*d) : "0"(code) : "ebx", "ecx" );
 }
+
+#define readCr(which,val) ({asm("mov %%cr"#which", %0":"=r"(val));})
+#define writeCr(which,val) ({asm("mov %0,%%cr"#which::"r"(val));})

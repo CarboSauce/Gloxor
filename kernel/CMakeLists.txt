@@ -4,6 +4,8 @@ add_executable( kernel
                 gloxor/mutex.cpp
                 system/danger.cpp
                 system/logging.cpp
+                system/font.cpp
+                system/terminal.cpp
 )
 
 add_subdirectory(libarch)
@@ -37,6 +39,6 @@ libc libglox libgloxor
 )
 
 install(TARGETS kernel 
-    DESTINATION "/"
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
 )
 

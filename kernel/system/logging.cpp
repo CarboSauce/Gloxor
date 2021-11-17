@@ -1,8 +1,7 @@
 #include "logging.hpp"
 #include "drivers/e9.hpp"
 #include "danger.hpp"
-#include "gloxor/graphics.hpp"
-extern glox::framebuffer con;
+#include "system/terminal.hpp"
 namespace glox
 {
 	void execAssert(const char* message, const char* file, const char* line)
@@ -14,7 +13,8 @@ namespace glox
    }
 	void write(glox::logStream& out, const char* str, size_t s)
 	{
-		printE9(str, s);
+		glox::term::writeStr(str,s);
+		printE9(str,s);
 		(void)out;
 	}
 

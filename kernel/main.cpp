@@ -1,14 +1,12 @@
 #include "arch/cpu.hpp"
 #include "arch/irq.hpp"
-#include "glox/algo.hpp"
-#include "gloxor/graphics.hpp"
+#include "cpuid.h"
 #include "gloxor/modules.hpp"
-#include "protos/egg.h"
-#include "system/danger.hpp"
-#include "system/logging.hpp"
 #include "memory/pmm.hpp"
-
-using ctor_t = void (*)(void);
+#include "protos/egg.h"
+#include "system/logging.hpp"
+#include "system/terminal.hpp"
+using ctor_t = void (*)();
 using namespace arch;
 using namespace glox;
 extern ctor_t _ctorArrayStart[];
@@ -20,7 +18,7 @@ extern ctor_t _moduleDriverEnd[];
 extern "C" void callCtorPointers(ctor_t* begin, ctor_t* end)
 {
 
-	gloxLog("There are: ", static_cast<glox::u32>(end - begin), " Ctors\n");
+	// gloxLog("There are: ", static_cast<glox::u32>(end - begin), " Ctors\n");
 	for (auto it = begin; it != end; ++it)
 	{
 		(*it)();
@@ -51,20 +49,10 @@ extern "C" void callGlobalCtors()
 }
 
 void gogole_test(eggHandle*);
-extern void sleep(u64 ticks, u64 ms);
-extern u64 getTicks();
-glox::framebuffer con;
+//extern void sleep(u64 ticks, u64 ms);
+//extern u64 getTicks();
 extern "C" void gloxorMain()
 {
-	con = {
-
-	(glox::rgb_t*)eggFrame.fb.fb_start,
-	(glox::rgb_t*)eggFrame.fb.fb_end,
-	eggFrame.fb.pitch,
-	eggFrame.fb.width,
-	eggFrame.fb.height,
-	0xFFFFFF //white color
-};
 	callPreCpuInits();
 	initializeCpu();
 	callDriverInits();
@@ -72,13 +60,14 @@ extern "C" void gloxorMain()
 #ifdef GLOXTESTING
 	extern ctor_t _moduleTesting[];
 	extern ctor_t _moduleTestingEnd[];
+	gloxLog("Testing ctors: ");
 	callCtorPointers(_moduleTesting, _moduleTestingEnd);
 #endif
 
 	gloxUnreachable();
 }
 
-void logFrameBuffer()
+/* void logFrameBuffer()
 {
 	gloxLogln("Frame Buffer Begin:\t", con.fbBeg);
 	gloxLogln("Frame Buffer End:\t", con.fbEnd);
@@ -86,55 +75,35 @@ void logFrameBuffer()
 	gloxLogln("Frame Buffer Width:\t", con.width);
 	gloxLogln("Frame Buffer Pitch:\t", con.pitch);
 }
-
-// Super useless and unscientific tests, take with grain of salt
-void gogole_test()
+ */
+static void gogole_test()
 {
-
-	con.cls(0x101010);
-	logFrameBuffer();
-	gloxLogln("Memory map moment");
+	// glox::term::clearScreen(0x111111);
 
 	size_t accum = 0;
 	int i = 0;
-/* 	for(auto it : *glox::pmmCtx)
+	for (auto& it : *glox::pmmCtx)
 	{
-		accum += it.size;
-	} */
-
-	for (size_t i = 0; i < eggFrame.memMap.size; ++i)
-	{
-		gloxLogln("From ",(void*)eggFrame.memMap.base[i].base," to ",
-		 (void*)(eggFrame.memMap.base[i].base+eggFrame.memMap.base[i].length),
-		 " Value = ", eggFrame.memMap.base[i].type);
-		
+		size_t s = it.size;
+		gloxLogln("Base of it: ", &it, " from it: ", it.start, " to: ", (void*)((u64)&it + s), " it->next: ", it.next,
+		" size: ",it.bitmapSize*8," number of pages ", s/4096); 
+		accum += s;
+		++i;
 	}
 
-	for (auto* it = pmmCtx; it != nullptr; it = it->next)
-	{
-		size_t s = it->size;
-		gloxLogln("from it: ",it," size: ",it+s/sizeof(decltype(*it))," it->next: ",it->next);
-		accum += s;++i;
-	}
 
-	gloxLogln("Iteration count is ",i,
-	"\npmmCtx address and next val ",pmmCtx,' ',pmmCtx->next);
-	gloxLogln("Size of memory is ",accum);
-	
+	gloxLogln("Iteration count is ", i,
+			  "\npmmCtx address and next val ", pmmCtx, ' ', pmmCtx->next);
+	gloxLogln("Size of memory is ", accum);
 	// Invoking strlen doesnt work if strlen is a function defined as __builtin_strlen
-/* 	u64 ticker = 0;
-	char buff[30];
-	while (1)
-	{
-		auto _tik = getTicks();
-		buff[glox::format(buff, ticker)] = '\0';
-		con.writeString(buff);
-		con.curX = 0;
-		con.curY = 0;
-		sleep(_tik, 1000);
-		ticker += 1;
-	} */
-	for (;;);
+	u32 brand[12];
+	__get_cpuid(0x80000002, brand + 0x0, brand + 0x1, brand + 0x2, brand + 0x3);
+	__get_cpuid(0x80000003, brand + 0x4, brand + 0x5, brand + 0x6, brand + 0x7);
+	__get_cpuid(0x80000004, brand + 0x8, brand + 0x9, brand + 0xa, brand + 0xb);
+	glox::term::setFgColor(0x80c000);
+	glox::term::writeStr((const char*)brand, 12 * sizeof(u32));
+	glox::term::writeStr("\n", 1);
+	glox::term::setFgColor(0xFFFFFF);
 }
 
 registerTest(gogole_test);
