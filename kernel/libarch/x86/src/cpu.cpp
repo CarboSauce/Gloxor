@@ -6,10 +6,11 @@
 #include "asm/idt.hpp"
 #include "gloxor/modules.hpp"
 #include "system/logging.hpp"
-
+#include "memory/virtmem.hpp"
 /* 
 [[gnu::no_caller_saved_registers]] extern "C" void _gloxAsmLongJump(); */
 using namespace arch;
+using namespace virt;
 
 [[gnu::used]] static gdt code_data[3]{
 	{},
@@ -31,6 +32,8 @@ using namespace arch;
 	}};
 [[gnu::used]] static idt idt_list[256]{};
 static u64 cpuFeatures;
+static u64 earlyCr3;
+virtCtxT kernelVirtCtx;
 
 [[gnu::interrupt]] static void DivZeroHandle(interrupt_frame_t*)
 {
@@ -62,9 +65,13 @@ static u64 cpuFeatures;
 
 [[gnu::interrupt]] static void PageFault(interrupt_frame_t*, size_t /* errc */)
 {
-	gloxLogln("Page Fault!\n");
-	while (1)
-		;
+	writeCr(3,earlyCr3);
+	u8* errorAdr;
+	readCr(2,errorAdr);
+	gloxLogln("Page Fault at address: ",errorAdr);
+	if (!virt::map(kernelVirtCtx,errorAdr,reinterpret_cast<void*>(arch::higherHalf-(u64)errorAdr)))
+		arch::haltForever();
+	
 }
 
 [[gnu::interrupt]] static void IllegalOpcode(interrupt_frame_t* frame)
@@ -80,7 +87,7 @@ inline void initializeCpuExtensions();
 
 namespace x86
 {
-	void initKernelVirtMem();
+	virtCtxT initKernelVirtMem();
 }
 
 namespace arch
@@ -96,8 +103,11 @@ namespace arch
 		initializeGdt();
 		initializeInterrupts();
 		initializeCpuExtensions();
+
 		gloxLogln("Cpu features:", cpuFeatures);
-		//x86::initKernelVirtMem();
+		readCr(3,earlyCr3);
+
+		kernelVirtCtx = x86::initKernelVirtMem();
 	}
 
 	void haltForever()

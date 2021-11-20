@@ -43,6 +43,12 @@ namespace glox
     */
    void* pmmAlloc();
    /**
+    * @brief Allocate single page and zero it 
+    * @return pointer to allocated page, nullptr on out of memory
+    */
+   void* pmmAllocZ();
+
+   /**
     * @brief Free the allocated page
     * @param ptr Pointer previously obtained from pmm::alloc
     */

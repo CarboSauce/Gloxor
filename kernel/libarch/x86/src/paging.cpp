@@ -1,98 +1,179 @@
 #include "asm/paging.hpp"
-#include "arch/virtmem.hpp"
+#include "asm/asmstubs.hpp"
 #include "gloxor/types.hpp"
+#include "memory/pmm.hpp"
+#include "memory/virtmem.hpp"
 #include "system/logging.hpp"
+#include "glox/bitfields.hpp"
+#include "system/danger.hpp"
 
 
 using namespace arch;
 using namespace x86::virt;
-
+using namespace virt;
 
 // Untill kernel gets more fancy, this is the default options we use
-static constexpr u64 stdMask = writable | present;
-static u64 higherHalf = 0xffffffff80000000;
+static constexpr u64 stdMask = writable | present | writeThrough;
+
 
 static lvl1table klvl1{};
-static lvl2table klvl2{
-   /* [0] =  */maskEntry((u64)klvl1.entries - higherHalf, stdMask)};
-static lvl3table klvl3{
-   /* [0] =  */maskEntry((u64)klvl2.entries - higherHalf, stdMask)};
-static lvl4table klvl4{
-   maskEntry((u64)klvl3.entries - higherHalf, stdMask)};
-//static virtCtxImpl aha = {klvl4};
-static virtContext ctx{klvl4.entries};
+static lvl2table klvl2{};
+static lvl3table klvl3{};
+static lvl3table klvl3lower{};
+static lvl4table klvl4{};
 extern u8 _kernelFileBegin[];
 extern u8 _kernelFileEnd[];
+
+static void identityMap200MB()
+{
+	auto start = (uintptr_t)_kernelFileBegin;
+	auto physicalStart = start - higherHalf;
+	auto index4 = lvl4tableIndex(start);
+	auto index3 = lvl3tableIndex(start);
+	auto index2 = lvl2tableIndex(start);
+
+	auto lvl4ptr = &klvl4;
+	auto& lvl3entry = lvl4ptr->entries[index4];
+	lvl3entry = maskEntry((u64)klvl3.entries - higherHalf, stdMask);
+	auto* lvl3ptr = (lvl3table*)getPhysical(lvl3entry);
+	auto& lvl2entry = lvl3ptr->entries[index3];
+	lvl2entry = maskEntry((u64)klvl2.entries - higherHalf, stdMask);
+	auto* lvl2ptr = (lvl2table*)getPhysical(lvl2entry);
+	for (u64 i = 0; i < 100; ++i)
+	{
+		lvl2ptr->entries[i] = maskEntry(i * 0x200000, stdMask | granul);
+	}
+
+	auto& lvl3entrylower = lvl4ptr->entries[0];
+	lvl3entrylower = maskEntry((u64)klvl3lower.entries - higherHalf, stdMask);
+	auto* lvl3ptrlower = (lvl3table*)getPhysical(lvl3entrylower);
+	auto& lvl2entrylower = lvl3ptrlower->entries[0];
+	lvl2entrylower = lvl2entry;
+
+	gloxDebugLog("Level 4 ", (void*)lvl4ptr, '\n');
+	gloxDebugLog("Level 3 ", (void*)lvl3ptr, '\n');
+	gloxDebugLog("Level 2 ", (void*)lvl2ptr, '\n');
+}
+
+static void identityMap()
+{
+	auto start = (uintptr_t)_kernelFileBegin;
+	auto physicalStart = start - higherHalf;
+	auto index4 = lvl4tableIndex(start);
+	auto index3 = lvl3tableIndex(start);
+	auto index2 = lvl2tableIndex(start);
+
+	auto lvl4ptr = &klvl4;
+	auto& lvl3entry = lvl4ptr->entries[index4];
+	lvl3entry = maskEntry((u64)klvl3.entries - higherHalf, stdMask);
+	auto* lvl3ptr = (lvl3table*)getPhysical(lvl3entry);
+	auto& lvl2entry = lvl3ptr->entries[index3];
+	lvl2entry = maskEntry((u64)klvl2.entries - higherHalf, stdMask);
+	auto* lvl2ptr = (lvl2table*)getPhysical(lvl2entry);
+	auto& lvl1entry = lvl2ptr->entries[index2];
+	lvl1entry = maskEntry((u64)klvl1.entries - higherHalf, stdMask);
+	auto* lvl1ptr = (lvl1table*)getPhysical(lvl1entry);
+	for (u64 i = 0; i < 512; ++i)
+	{
+		lvl1ptr->entries[i] = maskEntry(physicalStart + i * pageSize, stdMask);
+	}
+	gloxDebugLog("Level 4 ", (void*)lvl4ptr, '\n');
+	gloxDebugLog("Level 3 ", (void*)lvl3ptr, '\n');
+	gloxDebugLog("Level 2 ", (void*)lvl2ptr, '\n');
+	gloxDebugLog("Level 1 ", (void*)lvl1ptr, '\n');
+}
+
 namespace x86
 {
 
-	void initKernelVirtMem()
+	virtCtxT initKernelVirtMem()
 	{
-		gloxLogln("Remapping CR3\n\n\n");
-      u64 curcr3;
-      asm volatile("mov %%cr3,%0":"=r"(curcr3));
-      gloxLogln("Current CR3 value is = ",curcr3);
-		auto* start = _kernelFileBegin;
-		auto physicalStart = start - higherHalf;
-		u64 end = _kernelFileEnd - _kernelFileBegin;
-      gloxLogln("start = ",(u64)start);
-      gloxLogln("end = ",(u64)end);
-      gloxLogln("physicalStart = ",(u64)physicalStart);
-      gloxDebugLogln("Level 4 ",(u64)klvl4.entries,' ');
-      gloxDebugLogln("Level 3 ",(u64)klvl3.entries,' ');
-      gloxDebugLogln("Level 2 ",(u64)klvl2.entries,' ');
-      gloxDebugLogln("Level 1 ",(u64)klvl1.entries,' ');
-      gloxDebugLogln("ctx ",(u64)&ctx,' ',ctx.context);
-      gloxDebugLogln("(virtCtxImpl*)&klvl4 ", &klvl4.entries);
-		for (u64 i = 0; i < end + pageSize; i += pageSize)
-		{
-         auto loc = reinterpret_cast<const void*>(physicalStart + i);
-         gloxLogln("Mapping ",(u64)(start+i)," to ",loc);
-         ctx.map(start + i,loc);
-		}
-      for (int i = 0; i < 512; i++)
-      {
-         gloxLogln(i," entry of lvl1 is ",klvl1.entries[i]);
-      }
-      ctx.setContext();
+		gloxDebugLogln("Remapping CR3");
+		identityMap200MB();
+		virtCtxT context = (u64)klvl4.entries - higherHalf;
+		gloxDebugLogln(translate(context, _kernelFileBegin));
+		gloxDebugLogln(translate(context, _kernelFileEnd));
+		gloxDebugLogln(translate(context, (void*)0x300000));
+		setContext(context);
+		return context;
 	}
 } // namespace x86
 
-namespace arch
+namespace virt
 {
 
-   /* 
-      on x86, paging looks like a tree, so we need to traverse the tree of height 5
-    */
-	bool virtContext::map(const void* from, const void* to)
+	/*
+	   on x86, paging looks like a tree, so we need to traverse the tree of height 5
+	 */
+	bool map(virtCtxT context, const void* from, const void* to)
 	{
-		auto& lvl4ptr = *(lvl4table*)context;
-		auto virtAdr = (uintptr_t)from;
-		auto lvl3ptr = (lvl3table*)lvl4ptr.entries[lvl4ptr.index(virtAdr)];
-      gloxDebugLogln("Level 4 ",(u64)lvl4ptr.entries,' ',lvl4ptr.index(virtAdr));
-		auto lvl2ptr = (lvl2table*)lvl3ptr->entries[lvl3ptr->index(virtAdr)];
-      gloxDebugLogln("Level 3 ",(u64)lvl3ptr->entries,' ',lvl3ptr->index(virtAdr));
-		auto lvl1ptr = (lvl1table*)lvl2ptr->entries[lvl2ptr->index(virtAdr)];
-      gloxDebugLogln("Level 2 ",(u64)lvl2ptr->entries,' ',lvl2ptr->index(virtAdr));
-      gloxDebugLogln("Level 1 ",(u64)lvl1ptr->entries,' ',lvl1ptr->index(virtAdr));
-		lvl1ptr->entries[lvl1ptr->index(virtAdr)] = maskEntry((u64)to, stdMask);
-      return true;
-	}
-	bool virtContext::unmap(const void* whichVirtual)
-	{
-	}
-	void virtContext::setContext()
-	{
-      gloxDebugLogln("Setting the cr3 to ",context);
-		asm volatile("mov %0, %%cr3" ::"r"(context));
-	}
-	void* virtContext::translate(const void* from)
-	{
-	}
-	bool virtInitContext(virtContext* init)
-   {
+		auto index4 = lvl4tableIndex((uintptr_t)from);
+		auto index3 = lvl3tableIndex((uintptr_t)from);
+		auto index2 = lvl2tableIndex((uintptr_t)from);
+		auto index1 = lvl1tableIndex((uintptr_t)from);
 
-   }
+		auto lvl4ptr = (lvl4table*)context;
+		auto& lvl3entry = lvl4ptr->entries[index4];
+		if (!glox::bitmask(lvl3entry,present))
+		{
+			auto freshAdr = (u64)glox::pmmAllocZ();
+			if (!freshAdr) return false;
+			lvl3entry = maskEntry(freshAdr,stdMask);
+		}
+		auto* lvl3ptr = (lvl3table*)getPhysical(lvl3entry);
+		auto& lvl2entry = lvl3ptr->entries[index3];
+		if (!glox::bitmask(lvl2entry,present))
+		{
+			auto freshAdr = (u64)glox::pmmAllocZ();
+			if (!freshAdr) return false;
+			lvl2entry = maskEntry(freshAdr,stdMask);
+		}
+		auto* lvl2ptr = (lvl2table*)getPhysical(lvl2entry);
+		auto& lvl1entry = lvl2ptr->entries[index2];
+		if (!glox::bitmask(lvl1entry,present))
+		{
+			auto freshAdr = (u64)glox::pmmAllocZ();
+			if (!freshAdr) return false;
+			lvl1entry = maskEntry(freshAdr,stdMask);
+		}
+		auto* lvl1ptr = (lvl1table*)getPhysical(lvl1entry);
+		lvl1ptr->entries[index1] = maskEntry((u64)to, stdMask);
+		return true;
+	}
+	bool unmap(virtCtxT context, const void* whichVirtual)
+	{
+		(void)context;
+		(void)whichVirtual;
+		return false;
+	}
+	void setContext(virtCtxT context)
+	{
+		gloxDebugLogln("Setting the cr3 to ", (void*)context);
+		asm volatile("mov %0, %%cr3" ::"r"(maskEntry(context, writeThrough)));
+	}
+	void* translate(const virtCtxT context, const void* from)
+	{
+		gloxDebugLogln("Translating address ", from);
+		auto index4 = lvl4tableIndex((uintptr_t)from);
+		auto index3 = lvl3tableIndex((uintptr_t)from);
+		auto index2 = lvl2tableIndex((uintptr_t)from);
+		auto index1 = lvl1tableIndex((uintptr_t)from);
+		auto* lvl4ptr = (lvl4table*)context;
+		auto* lvl3ptr = (lvl3table*)getPhysical(lvl4ptr->entries[index4]);
+		// getPhysical would discard page granuality so we have to be careful
+		auto lvl3entry = lvl3ptr->entries[index3];
+		auto* lvl2ptr = (lvl2table*)getPhysical(lvl3entry);
+		if ((lvl3entry & granul) != 0)
+			return lvl2ptr;
+		auto lvl2entry = lvl2ptr->entries[index2];
+		auto* lvl1ptr = (lvl1table*)getPhysical(lvl2entry);
+		if ((lvl2entry & granul) != 0)
+			return lvl1ptr;
+		return reinterpret_cast<void*>(getPhysical(lvl1ptr->entries[index1]));
+	}
+	bool virtInitContext(virtCtxT)
+	{
+	}
 
 	void virtFlush(void* addr)
 	{

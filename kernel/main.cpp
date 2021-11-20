@@ -6,6 +6,7 @@
 #include "protos/egg.h"
 #include "system/logging.hpp"
 #include "system/terminal.hpp"
+#include "gloxor/graphics.hpp"
 using ctor_t = void (*)();
 using namespace arch;
 using namespace glox;
@@ -51,8 +52,12 @@ extern "C" void callGlobalCtors()
 void gogole_test(eggHandle*);
 //extern void sleep(u64 ticks, u64 ms);
 //extern u64 getTicks();
+extern glox::framebuffer getConFb();
 extern "C" void gloxorMain()
 {
+	auto con = getConFb();
+	gloxDebugLogln("Con begin: ",con.fbBeg);
+	gloxDebugLogln("Con end: ",con.fbEnd);
 	callPreCpuInits();
 	initializeCpu();
 	callDriverInits();

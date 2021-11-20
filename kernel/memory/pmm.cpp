@@ -4,6 +4,7 @@
 #include <glox/assert.hpp>
 #include <gloxor/modules.hpp>
 #include "system/logging.hpp"
+#include "arch/types.hpp"
 namespace glox
 {
    // This should point to context initialized by early protocol inits
@@ -60,6 +61,13 @@ namespace glox
       return nullptr;
    }
    
+   void* pmmAllocZ()
+   {
+      auto addr = pmmAlloc();
+      memset(addr,0,arch::pageSize);
+      return addr;
+   }
+
    bool pmmFree(void* ptr)
    {
       // free is sooo much harder to do in this scenario

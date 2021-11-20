@@ -23,56 +23,46 @@ namespace x86::virt
 	struct alignas(0x1000) pml5t
 	{
 		u64 entries[512];
-		size_t index(uintptr_t addr)
-		{
-			return (addr >> 48) & 0x1ff;
-		}
 	};
-	struct alignas(0x1000) pml4t
-	{
-		u64 entries[512];
-		size_t index(uintptr_t addr)
-		{
-			return (addr >> 39) & 0x1ff;
-		}
-	};
-	struct alignas(0x1000) pdpt
-	{
-		u64 entries[512];
-		size_t index(uintptr_t addr)
-		{
-			return (addr >> 30) & 0x1ff;
-		}
-	};
-	struct alignas(0x1000) pdt
-	{
-		u64 entries[512];
-		size_t index(uintptr_t addr)
-		{
-			return (addr >> 21) & 0x1ff;
-		}
-	};
-	struct alignas(0x1000) pt
-	{
-		u64 entries[512];
-		size_t index(uintptr_t addr)
-		{
-			return (addr >> 12) & 0x1ff;
-		}
-	};
+	using pml4t = pml5t;
+	using pdpt = pml5t;
+	using pdt = pml5t;
+	using pt = pml5t;
 	using lvl5table = pml5t;
 	using lvl4table = pml4t;
 	using lvl3table = pdpt;
 	using lvl2table = pdt;
 	using lvl1table = pt;
 
-	constexpr u64 maskEntry(u64 physAddr, u64 mask)
+	constexpr size_t lvl5tableIndex(uintptr_t addr)
 	{
-		return physAddr & mask;
+		return (addr >> 48) & 0x1ff;
 	}
+	constexpr size_t lvl4tableIndex(uintptr_t addr)
+	{
+		return (addr >> 39) & 0x1ff;
+	}
+	constexpr size_t lvl3tableIndex(uintptr_t addr)
+	{
+		return (addr >> 30) & 0x1ff;
+	}
+	constexpr size_t lvl2tableIndex(uintptr_t addr)
+	{
+		return (addr >> 21) & 0x1ff;
+	}
+	constexpr size_t lvl1tableIndex(uintptr_t addr)
+	{
+		return (addr >> 12) & 0x1ff;
+	}
+
 	constexpr u64 getPhysical(u64 entry)
 	{
-		return entry & (~0x1ff);
+		return entry & (~0xfff);
+	}
+
+	constexpr u64 maskEntry(u64 physAddr, u64 mask)
+	{
+		return (getPhysical(physAddr)/* physAddr & 0xffffff800 */) | mask;
 	}
 
 } // namespace x86::virt

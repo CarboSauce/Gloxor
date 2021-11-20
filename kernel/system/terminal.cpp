@@ -18,16 +18,14 @@ static glox::framebuffer con;
 static vec2<colorT> fgbg{0xFFFFFF, 0};
 static vec2<u32> at{0, 0};
 static u8 cursorShape = '_';
+glox::framebuffer getConFb()
+{
+	return con;
+}
 
 namespace glox::term
 {
 
-	inline void smallDelay()
-	{
-		for (volatile size_t i = 0; i < 3'000'000'000; i = i + 1)
-		{
-		}
-	}
 
 	inline void putPixel(int x, int y, colorT color)
 	{

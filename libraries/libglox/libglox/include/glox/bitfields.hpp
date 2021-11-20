@@ -1,6 +1,23 @@
 #pragma once
+#include "glox/types.hpp"
+namespace glox
+{
+   template<typename T,typename U>
+   T bitmask(T a, U b)
+   {
+      return a & b;
+   }
 
-#define BIT(x) (1<<(x))
-#define SETBIT(a,b) ((a)|BIT(b)))
-#define MASK(a,b) ((a)&(b))
-#define CHECKBIT(a,b) ((a)&BIT(b))
+   template<typename T>
+   T setbit(T a, unsigned int b)
+   {
+      return a | (1 << b);
+   }
+
+   template<typename T>
+   T checkbit(T a, unsigned int b)
+   {
+      return a & (1 << b);
+   }
+   
+}
