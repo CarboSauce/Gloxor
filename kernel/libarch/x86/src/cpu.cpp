@@ -72,6 +72,8 @@ virtCtxT kernelVirtCtx;
 	if (!virt::map(kernelVirtCtx,errorAdr,reinterpret_cast<void*>(arch::higherHalf-(u64)errorAdr)))
 		arch::haltForever();
 	
+	//virt::setContext(kernelVirtCtx);
+	
 }
 
 [[gnu::interrupt]] static void IllegalOpcode(interrupt_frame_t* frame)

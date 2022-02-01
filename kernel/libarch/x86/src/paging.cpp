@@ -23,29 +23,56 @@ static lvl3table klvl3lower{};
 static lvl4table klvl4{};
 extern u8 _kernelFileBegin[];
 extern u8 _kernelFileEnd[];
+// physical base, virtual base, and their difference respectively
+extern u64 kernelPhysOffset;
+extern u64 kernelVirtOffset;
+extern u64 kernelMappingOffset;
 
-static void identityMap200MB()
+inline u64 getPhysAddress(u64 virt)
+{
+	u64 addr = kernelPhysOffset + (virt - kernelVirtOffset);
+	return addr;
+}
+inline u64 getPhysAddress(u64* virt)
+{
+	return getPhysAddress((u64)virt);
+}
+
+static void identityMap()
 {
 	auto start = (uintptr_t)_kernelFileBegin;
-	auto physicalStart = start - higherHalf;
 	auto index4 = lvl4tableIndex(start);
 	auto index3 = lvl3tableIndex(start);
 	auto index2 = lvl2tableIndex(start);
 
 	auto lvl4ptr = &klvl4;
 	auto& lvl3entry = lvl4ptr->entries[index4];
-	lvl3entry = maskEntry((u64)klvl3.entries - higherHalf, stdMask);
+	lvl3entry = maskEntry(getPhysAddress(klvl3.entries), stdMask);
 	auto* lvl3ptr = (lvl3table*)getPhysical(lvl3entry);
 	auto& lvl2entry = lvl3ptr->entries[index3];
-	lvl2entry = maskEntry((u64)klvl2.entries - higherHalf, stdMask);
+	lvl2entry = maskEntry(getPhysAddress(klvl2.entries), stdMask);
 	auto* lvl2ptr = (lvl2table*)getPhysical(lvl2entry);
+	/* 
+		Map lower 200MB, stupid, broken, fix by actually checking memory ranges we have to map
+	*/
 	for (u64 i = 0; i < 100; ++i)
 	{
 		lvl2ptr->entries[i] = maskEntry(i * 0x200000, stdMask | granul);
 	}
 
+	/*
+		TODO:
+			This code is utterly broken and not generic at all,
+			it assumes there is direct mapping between kernel virtual address and physical address
+			preferably this code should 2MB map the kernel code 
+			from [higherhalf,higherhalf+size]
+			to   [physicalbase,physicalbase+size]
+			there is potential problem where bootloader loads the kernel at 4KB alligned address,
+			so to workaround it we have to allign the address down to 2MB boundary
+	*/
+
 	auto& lvl3entrylower = lvl4ptr->entries[0];
-	lvl3entrylower = maskEntry((u64)klvl3lower.entries - higherHalf, stdMask);
+	lvl3entrylower = maskEntry(getPhysAddress(klvl3lower.entries), stdMask);
 	auto* lvl3ptrlower = (lvl3table*)getPhysical(lvl3entrylower);
 	auto& lvl2entrylower = lvl3ptrlower->entries[0];
 	lvl2entrylower = lvl2entry;
@@ -55,33 +82,6 @@ static void identityMap200MB()
 	gloxDebugLog("Level 2 ", (void*)lvl2ptr, '\n');
 }
 
-static void identityMap()
-{
-	auto start = (uintptr_t)_kernelFileBegin;
-	auto physicalStart = start - higherHalf;
-	auto index4 = lvl4tableIndex(start);
-	auto index3 = lvl3tableIndex(start);
-	auto index2 = lvl2tableIndex(start);
-
-	auto lvl4ptr = &klvl4;
-	auto& lvl3entry = lvl4ptr->entries[index4];
-	lvl3entry = maskEntry((u64)klvl3.entries - higherHalf, stdMask);
-	auto* lvl3ptr = (lvl3table*)getPhysical(lvl3entry);
-	auto& lvl2entry = lvl3ptr->entries[index3];
-	lvl2entry = maskEntry((u64)klvl2.entries - higherHalf, stdMask);
-	auto* lvl2ptr = (lvl2table*)getPhysical(lvl2entry);
-	auto& lvl1entry = lvl2ptr->entries[index2];
-	lvl1entry = maskEntry((u64)klvl1.entries - higherHalf, stdMask);
-	auto* lvl1ptr = (lvl1table*)getPhysical(lvl1entry);
-	for (u64 i = 0; i < 512; ++i)
-	{
-		lvl1ptr->entries[i] = maskEntry(physicalStart + i * pageSize, stdMask);
-	}
-	gloxDebugLog("Level 4 ", (void*)lvl4ptr, '\n');
-	gloxDebugLog("Level 3 ", (void*)lvl3ptr, '\n');
-	gloxDebugLog("Level 2 ", (void*)lvl2ptr, '\n');
-	gloxDebugLog("Level 1 ", (void*)lvl1ptr, '\n');
-}
 
 namespace x86
 {
@@ -89,8 +89,8 @@ namespace x86
 	virtCtxT initKernelVirtMem()
 	{
 		gloxDebugLogln("Remapping CR3");
-		identityMap200MB();
-		virtCtxT context = (u64)klvl4.entries - higherHalf;
+		identityMap();
+		virtCtxT context = getPhysAddress(klvl4.entries);
 		gloxDebugLogln(translate(context, _kernelFileBegin));
 		gloxDebugLogln(translate(context, _kernelFileEnd));
 		gloxDebugLogln(translate(context, (void*)0x300000));

@@ -7,6 +7,7 @@
 #include "system/logging.hpp"
 #include "system/terminal.hpp"
 #include "gloxor/graphics.hpp"
+#include "asm/asmstubs.hpp"
 using ctor_t = void (*)();
 using namespace arch;
 using namespace glox;
@@ -81,6 +82,8 @@ extern "C" void gloxorMain()
 	gloxLogln("Frame Buffer Pitch:\t", con.pitch);
 }
  */
+
+
 static void gogole_test()
 {
 	// glox::term::clearScreen(0x111111);
@@ -109,6 +112,7 @@ static void gogole_test()
 	glox::term::writeStr((const char*)brand, 12 * sizeof(u32));
 	glox::term::writeStr("\n", 1);
 	glox::term::setFgColor(0xFFFFFF);
+
 }
 
 registerTest(gogole_test);

@@ -28,12 +28,15 @@ inline void initializePmm(stivale2_struct_tag_memmap*);
 __attribute__((section(".stivale2hdr"), used)) volatile struct stivale2_header header2 = {
 	.entry_point = (uint64_t)stivale2_main,
 	.stack = (uintptr_t)stacks[0] + sizeof(stack),
-	.flags = 1 << 1,
+	.flags = (1 << 1) | (1<<2) | (1<<3) ,
 	.tags = (uint64_t)&framebuffer_request};
 
 struct eggHandle eggFrame;
 extern char _kernelFileBegin[];
 extern char _kernelFileEnd[];
+u64 kernelMappingOffset;
+u64 kernelPhysOffset;
+u64 kernelVirtOffset;
 extern "C" void stivale2_main(struct stivale2_struct* info)
 {
 	// Print the tags.
@@ -60,6 +63,14 @@ extern "C" void stivale2_main(struct stivale2_struct* info)
 			case STIVALE2_STRUCT_TAG_MEMMAP_ID:
 			{
 				m = (stivale2_struct_tag_memmap*)tag;
+				break;
+			}
+			case STIVALE2_STRUCT_TAG_KERNEL_BASE_ADDRESS_ID:
+			{
+				auto baseaddr = (stivale2_struct_tag_kernel_base_address*)tag;
+				kernelPhysOffset = baseaddr->physical_base_address ;
+				kernelVirtOffset = baseaddr->virtual_base_address;
+				kernelMappingOffset = kernelPhysOffset - kernelVirtOffset;
 				break;
 			}
 			default:
