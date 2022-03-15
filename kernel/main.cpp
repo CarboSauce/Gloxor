@@ -20,7 +20,6 @@ extern ctor_t _moduleDriverEnd[];
 extern "C" void callCtorPointers(ctor_t* begin, ctor_t* end)
 {
 
-	// gloxLog("There are: ", static_cast<glox::u32>(end - begin), " Ctors\n");
 	for (auto it = begin; it != end; ++it)
 	{
 		(*it)();
@@ -53,12 +52,11 @@ extern "C" void callGlobalCtors()
 void gogole_test(eggHandle*);
 //extern void sleep(u64 ticks, u64 ms);
 //extern u64 getTicks();
-extern glox::framebuffer getConFb();
 extern "C" void gloxorMain()
 {
-	auto con = getConFb();
-	gloxDebugLogln("Con begin: ",con.fbBeg);
-	gloxDebugLogln("Con end: ",con.fbEnd);
+	auto [fbBegin,fbEnd] = glox::term::getUsedMemoryRange();
+	gloxDebugLogln("Con begin: ",fbBegin);
+	gloxDebugLogln("Con end: ",fbEnd);
 	callPreCpuInits();
 	initializeCpu();
 	callDriverInits();
@@ -69,7 +67,6 @@ extern "C" void gloxorMain()
 	gloxLog("Testing ctors: ");
 	callCtorPointers(_moduleTesting, _moduleTestingEnd);
 #endif
-
 	gloxUnreachable();
 }
 

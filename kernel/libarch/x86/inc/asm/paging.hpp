@@ -54,6 +54,10 @@ namespace x86::virt
 	{
 		return (addr >> 12) & 0x1ff;
 	}
+/* 	constexpr size_t virtOffsetIndex(uintptr_t addr)
+	{
+		return addr & (0xfff);
+	} */
 
 	constexpr u64 getPhysical(u64 entry)
 	{

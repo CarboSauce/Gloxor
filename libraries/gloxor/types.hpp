@@ -8,6 +8,7 @@
 
 namespace glox
 {
+   using uintptr = uintptr_t;
    using u8 = uint8_t;
    using i8 = int8_t;
    using i16 = int16_t;
@@ -19,6 +20,7 @@ namespace glox
    using colorT = uint32_t;
 } // namespace glox
 
+using glox::uintptr;
 using glox::i16;
 using glox::i32;
 using glox::i64;

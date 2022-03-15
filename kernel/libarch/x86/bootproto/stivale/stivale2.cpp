@@ -5,6 +5,7 @@
 #include "system/terminal.hpp"
 #include <new>
 #include <stddef.h>
+#include <arch/types.hpp>
 
 using namespace glox;
 // Abi requires for stack to be 16byte aligned,
@@ -37,6 +38,8 @@ extern char _kernelFileEnd[];
 u64 kernelMappingOffset;
 u64 kernelPhysOffset;
 u64 kernelVirtOffset;
+u64 physicalFbStart;
+u64 physicalFbEnd;
 extern "C" void stivale2_main(struct stivale2_struct* info)
 {
 	// Print the tags.
@@ -45,6 +48,7 @@ extern "C" void stivale2_main(struct stivale2_struct* info)
 	struct stivale2_struct_tag_framebuffer* fbuff;
 	// We need to initialize memory after everything else, otherwise we might corrupt bootloader reclaimable
 	stivale2_struct_tag_memmap* m{};
+	bool isFullVirtual = false;
 	while (tag != NULL)
 	{
 		switch (tag->identifier)
@@ -68,9 +72,10 @@ extern "C" void stivale2_main(struct stivale2_struct* info)
 			case STIVALE2_STRUCT_TAG_KERNEL_BASE_ADDRESS_ID:
 			{
 				auto baseaddr = (stivale2_struct_tag_kernel_base_address*)tag;
-				kernelPhysOffset = baseaddr->physical_base_address ;
+				kernelPhysOffset = baseaddr->physical_base_address;
 				kernelVirtOffset = baseaddr->virtual_base_address;
 				kernelMappingOffset = kernelPhysOffset - kernelVirtOffset;
+				isFullVirtual = true;
 				break;
 			}
 			default:
@@ -80,6 +85,12 @@ extern "C" void stivale2_main(struct stivale2_struct* info)
 		tag = (struct stivale2_tag*)tag->next;
 	}
 
+	if (!isFullVirtual)
+	{
+		kernelPhysOffset = (u64)_kernelFileBegin-arch::kernelHalfBase;
+		kernelVirtOffset = (u64)_kernelFileBegin;
+		kernelMappingOffset = -arch::kernelHalfBase;
+	}
 	eggFrame.kInfo.start = _kernelFileBegin;
 	eggFrame.kInfo.end = _kernelFileEnd;
 
@@ -103,6 +114,11 @@ inline void initializePmm(stivale2_struct_tag_memmap* m)
 			pmmCtx = glox::initPmm((void*)mTemp.base,mTemp.length, glox::pmmCtx);
 			break;
 		}
+		else if (mMap[curIndex].type == STIVALE2_MMAP_FRAMEBUFFER)
+		{
+			physicalFbStart = mMap[curIndex].base;
+			physicalFbEnd	 = mMap[curIndex].base+mMap[curIndex].length;
+		}
 	}
 	for (; curIndex != entryCount; ++curIndex)
 	{
@@ -112,6 +128,11 @@ inline void initializePmm(stivale2_struct_tag_memmap* m)
 			recentCtx->next = (glox::pmmHeader*)mTemp.base;
 			recentCtx = recentCtx->next;
 			recentCtx = glox::initPmm((void*)mTemp.base,mTemp.length, recentCtx);
+		}
+		else if (mMap[curIndex].type == STIVALE2_MMAP_FRAMEBUFFER)
+		{
+			physicalFbStart = mMap[curIndex].base;
+			physicalFbEnd	 = mMap[curIndex].base+mMap[curIndex].length;
 		}
 	}
 	recentCtx->next = nullptr;

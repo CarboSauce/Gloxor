@@ -18,21 +18,18 @@ static glox::framebuffer con;
 static vec2<colorT> fgbg{0xFFFFFF, 0};
 static vec2<u32> at{0, 0};
 static u8 cursorShape = '_';
-glox::framebuffer getConFb()
-{
-	return con;
-}
-
 namespace glox::term
 {
-
-
+	glox::pair<uintptr,uintptr> getUsedMemoryRange()
+	{
+		return {(uintptr)con.fbBeg,(uintptr)con.fbEnd};
+	}
 	inline void putPixel(int x, int y, colorT color)
 	{
-		con.fbBeg[y * con.pitch + x] = color;
+		const_cast<volatile colorT*>(con.fbBeg)[y * con.pitch + x] = color;
 	}
 
-	inline void writeChar(char ch, const glox::vec2<u32>& at, const glox::vec2<colorT>& fgbg)
+	inline void writeChar(char ch,glox::vec2<u32> at,glox::vec2<colorT> fgbg)
 	{
 		int index = ((uint8_t)ch /* - 32 */) * 16;
 		/* 

@@ -65,15 +65,18 @@ virtCtxT kernelVirtCtx;
 
 [[gnu::interrupt]] static void PageFault(interrupt_frame_t*, size_t /* errc */)
 {
-	writeCr(3,earlyCr3);
 	u8* errorAdr;
 	readCr(2,errorAdr);
 	gloxLogln("Page Fault at address: ",errorAdr);
-	if (!virt::map(kernelVirtCtx,errorAdr,reinterpret_cast<void*>(arch::higherHalf-(u64)errorAdr)))
-		arch::haltForever();
+/* 	if (errorAdr < (u8*)0x1000)
+	{
+		gloxLog("Null pointer access\n");
+	} */
+//	if (!virt::map(kernelVirtCtx,errorAdr,reinterpret_cast<void*>(arch::higherHalf-(u64)errorAdr)))
+//		arch::haltForever();
 	
 	//virt::setContext(kernelVirtCtx);
-	
+	haltForever();	
 }
 
 [[gnu::interrupt]] static void IllegalOpcode(interrupt_frame_t* frame)
