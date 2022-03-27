@@ -1,5 +1,5 @@
 #pragma once
-#include "arch/types.hpp"
+#include "arch/paging.hpp"
 #include "gloxor/types.hpp"
 
 namespace virt
@@ -19,6 +19,7 @@ namespace virt
 	 * @return false Mapping failed
 	 */
 	bool map(virtCtxT, const void* from, const void* to);
+	bool map(virtCtxT, const void* from, const void* to, u64 flags);
 	/**
 	 * @brief Unmap virtual address from current context
 	 *
@@ -42,7 +43,7 @@ namespace virt
 	 * @return false Allocation failure
 	 */
 	bool virtInitContext(virtCtxT);
-    void setContext(virtCtxT);
-    void virtFlush(void* addr);
+   void setContext(virtCtxT);
+   void virtFlush(void* addr);
 	void virtCacheFlush();
 } // namespace arch

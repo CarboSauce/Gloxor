@@ -20,9 +20,9 @@ static vec2<u32> at{0, 0};
 static u8 cursorShape = '_';
 namespace glox::term
 {
-	glox::pair<uintptr,uintptr> getUsedMemoryRange()
+	glox::span<u8> getUsedMemoryRange()
 	{
-		return {(uintptr)con.fbBeg,(uintptr)con.fbEnd};
+		return {(u8*)con.fbBeg,(u8*)con.fbEnd};
 	}
 	inline void putPixel(int x, int y, colorT color)
 	{

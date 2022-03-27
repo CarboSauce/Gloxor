@@ -1,5 +1,5 @@
 #include "arch/cpu.hpp"
-#include "arch/featuretest.hpp"
+#include "arch/feature.hpp"
 #include "arch/irq.hpp"
 #include "asm/asmstubs.hpp"
 #include "asm/gdt.hpp"
@@ -65,8 +65,7 @@ virtCtxT kernelVirtCtx;
 
 [[gnu::interrupt]] static void PageFault(interrupt_frame_t*, size_t /* errc */)
 {
-	u8* errorAdr;
-	readCr(2,errorAdr);
+	void* errorAdr = (void*)readCr(2);
 	gloxLogln("Page Fault at address: ",errorAdr);
 /* 	if (errorAdr < (u8*)0x1000)
 	{
@@ -110,8 +109,7 @@ namespace arch
 		initializeCpuExtensions();
 
 		gloxLogln("Cpu features:", cpuFeatures);
-		readCr(3,earlyCr3);
-
+		earlyCr3 = readCr(3);
 		kernelVirtCtx = x86::initKernelVirtMem();
 	}
 
@@ -162,12 +160,12 @@ inline void initializeInterrupts()
 		sizeof(idt_list),
 		idt_list};
 
-	idt_list[0].registerHandler((uint64_t)DivZeroHandle, 0x8, 0, IDT_INTERRUPTGATE);
-	idt_list[2].registerHandler((uint64_t)SpurInterrupt, 0x8, 0, IDT_INTERRUPTGATE);
-	idt_list[6].registerHandler((uint64_t)IllegalOpcode, 0x8, 0, IDT_INTERRUPTGATE);
-	idt_list[8].registerHandler((uint64_t)DoubleFault, 0x8, 0, IDT_TRAPGATE);
-	idt_list[13].registerHandler((uint64_t)GPfault, 0x8, 0, IDT_INTERRUPTGATE);
-	idt_list[14].registerHandler((uint64_t)PageFault, 0x8, 0, IDT_INTERRUPTGATE);
+	idt_list[0].registerHandler((u64)DivZeroHandle, 0x8, 0, IDT_INTERRUPTGATE);
+	idt_list[2].registerHandler((u64)SpurInterrupt, 0x8, 0, IDT_INTERRUPTGATE);
+	idt_list[6].registerHandler((u64)IllegalOpcode, 0x8, 0, IDT_INTERRUPTGATE);
+	idt_list[8].registerHandler((u64)DoubleFault, 0x8, 0, IDT_TRAPGATE);
+	idt_list[13].registerHandler((u64)GPfault, 0x8, 0, IDT_INTERRUPTGATE);
+	idt_list[14].registerHandler((u64)PageFault, 0x8, 0, IDT_INTERRUPTGATE);
 	loadIdt(idt_ptr);
 }
 
@@ -179,11 +177,11 @@ inline void initializeCpuExtensions()
 	if (edx & (1 << 25))
 	{
 		u64 control;
-		readCr(0, control);
+		control = readCr(0);
 		control &= ~(1 << 2);
 		control |= 1 << 1;
 		writeCr(0, control);
-		readCr(4, control);
+		control = readCr(4);
 		control |= (1 << 9 | 1 << 10);
 		cpuFeatures |= 1;
 		if (ecx & (1 << 26))

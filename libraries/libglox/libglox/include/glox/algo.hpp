@@ -8,14 +8,31 @@ namespace glox
 	 * @param str String for which hash is to be computed, UB if string is null
 	 * @link http://www.cse.yorku.ca/~oz/hash.html 
  	 */
-	uint32_t djb2_hash(const char* str);
+	constexpr uint32_t djb2_hash(const char* str)
+	{
+		uint32_t hash = 5381; //magic prime number
+		uint8_t c;
+		while ((c = *str++))
+			hash = ((hash << 5) + hash) ^ c;
+		return hash;
+	}
+
 
 	/**
 	 * @brief Implementation of FNV-1a hash
  	 * @link https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
 	 * @param str String for which hash is to be computed, UB if string is null
 	 */
-	uint32_t fnv_hash(const char* str);
+	constexpr uint32_t fnv_hash(const char* str)
+	{
+		uint32_t hash = 0x811c9dc5; //magic prime
+		uint8_t c;
+		while ((c = *str++))
+		{
+			hash = (hash * 0x01000193) ^ c; //magic Prime 2^24 + 2^8 + 0x93
+		}
+		return hash;
+	}
 
 	constexpr auto fxdPointFactor = 8;
 

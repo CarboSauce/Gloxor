@@ -34,23 +34,23 @@ namespace x86::virt
 	using lvl2table = pdt;
 	using lvl1table = pt;
 
-	constexpr size_t lvl5tableIndex(uintptr_t addr)
+	constexpr size_t lvl5tableIndex(u64 addr)
 	{
 		return (addr >> 48) & 0x1ff;
 	}
-	constexpr size_t lvl4tableIndex(uintptr_t addr)
+	constexpr size_t lvl4tableIndex(u64 addr)
 	{
 		return (addr >> 39) & 0x1ff;
 	}
-	constexpr size_t lvl3tableIndex(uintptr_t addr)
+	constexpr size_t lvl3tableIndex(u64 addr)
 	{
 		return (addr >> 30) & 0x1ff;
 	}
-	constexpr size_t lvl2tableIndex(uintptr_t addr)
+	constexpr size_t lvl2tableIndex(u64 addr)
 	{
 		return (addr >> 21) & 0x1ff;
 	}
-	constexpr size_t lvl1tableIndex(uintptr_t addr)
+	constexpr size_t lvl1tableIndex(u64 addr)
 	{
 		return (addr >> 12) & 0x1ff;
 	}

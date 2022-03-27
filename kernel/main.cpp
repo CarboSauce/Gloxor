@@ -54,9 +54,9 @@ void gogole_test(eggHandle*);
 //extern u64 getTicks();
 extern "C" void gloxorMain()
 {
-	auto [fbBegin,fbEnd] = glox::term::getUsedMemoryRange();
-	gloxDebugLogln("Con begin: ",fbBegin);
-	gloxDebugLogln("Con end: ",fbEnd);
+	auto fbrange = glox::term::getUsedMemoryRange();
+	gloxDebugLogln("Con begin: ",fbrange.begin());
+	gloxDebugLogln("Con end: ",fbrange.end());
 	callPreCpuInits();
 	initializeCpu();
 	callDriverInits();
@@ -87,14 +87,14 @@ static void gogole_test()
 
 	size_t accum = 0;
 	int i = 0;
-	for (auto& it : *glox::pmmCtx)
-	{
-		size_t s = it.size;
-		gloxLogln("Base of it: ", &it, " from it: ", it.start, " to: ", (void*)((u64)&it + s), " it->next: ", it.next,
-		" size: ",it.bitmapSize*8," number of pages ", s/4096); 
-		accum += s;
-		++i;
-	}
+	// for (auto& it : *glox::pmmCtx)
+	// {
+	// 	size_t s = it.size;
+	// 	gloxLogln("Base of it: ", &it, " from it: ", it.start, " to: ", (void*)((u64)&it + s), " it->next: ", it.next,
+	// 	" size: ",it.bitmapSize*8," number of pages ", s/4096); 
+	// 	accum += s;
+	// 	++i;
+	// }
 
 
 	gloxLogln("Iteration count is ", i,

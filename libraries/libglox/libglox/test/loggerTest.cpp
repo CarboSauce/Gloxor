@@ -1,15 +1,12 @@
 #include "glox/logger.hpp"
 #include <algorithm>
-#include <Windows.h>
-#include <cstring>
-#include <iostream>
+#include <cstdio>
 
 #define gloxLog(...) out, __VA_ARGS__
 
 
 struct testest
 {
-	
 };
 
 inline auto format(char* buffer, testest a)
@@ -19,89 +16,27 @@ inline auto format(char* buffer, testest a)
 	return (size_t)18;
 }
 
-constexpr size_t bufSize = (4096);
-
 struct testStream : glox::bStream
 {
-	char _buffer[bufSize];
-	char* buffer = _buffer;
-	~testStream();
+	char buffer[256];
 };
 
-// void write(testStream& st, size_t s)
-// {
-// 	std::fwrite(st.buffer, 1, s, stdout);
-// }
-
-struct based
+void write(testStream& st, size_t s)
 {
-	based()
-	{
-	
-#ifdef ASYNC_TEST
-		con=CreateFile("CONOUT$",GENERIC_WRITE,0,NULL,OPEN_EXISTING,FILE_FLAG_OVERLAPPED,NULL);
-#else
-		con=CreateFile("CONOUT$",GENERIC_WRITE,0,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
-#endif
-		if (con == nullptr)
-		{
-			std::cout << "epic fail";
-			abort();
-		}
-	}
+	std::fwrite(st.buffer, 1, s, stdout);
+}
 
-	HANDLE con;
-	#ifdef ASYNC_TEST
-	OVERLAPPED overl;
-	#endif
-};
-
-based bogus{};
-
+void write(testStream&, const char* str, size_t s)
+{
+	std::fwrite(str, 1, s, stdout);
+}
 
 testStream out;
 
-
-#ifdef ASYNC_TEST
-char flushbuf[bufSize]{};
-void flush(testStream& ouut)
-{
-	DWORD bajto;
-	memcpy((void*)flushbuf, out._buffer, out.buffer - out._buffer );
-	while(!HasOverlappedIoCompleted((volatile OVERLAPPED*)&bogus.overl));
-	WriteFile(bogus.con,(void*)flushbuf,(DWORD)(out.buffer - out._buffer),NULL,&bogus.overl);
-
-	out.buffer = out._buffer;
-}
-#else
-void flush(testStream& ouut)
-{
-	DWORD bajto;
-	WriteFile(bogus.con,ouut._buffer,(DWORD)(out.buffer - out._buffer),&bajto,NULL);
-	out.buffer = out._buffer;
-}
-#endif
-
-
-void write(testStream& ok, const char* str, size_t s)
-{
-	//std::fwrite(str, 1, s, stdout);
-	if ((size_t)(ok.buffer-ok._buffer + s) >= bufSize)
-		flush(ok);
-	memcpy(ok.buffer,str,s);
-	ok.buffer+=s;
-}
-
-testStream::~testStream()
-{
-	flush(*this);
-}
 int main()
 {
-   for (size_t i = 0; i < 1'000'000; ++i)
-   {
-      gloxLog("Omegalul you retarded fastio ",
-		i,
-		'\n');
-   }
+	gloxLog("Hello World!\nToday is " __TIME__
+			"\nInt max64 = ",
+			INT64_MAX, "\nInt min64 = ", INT64_MIN,
+			"\n-1 = ", -1, "\n0 = ", 0, "Hopefully\n", testest{});
 }

@@ -8,7 +8,7 @@ add_executable( kernel
                 system/terminal.cpp
 )
 
-add_subdirectory(libarch)
+add_subdirectory(arch)
 add_subdirectory(drivers)
 #add_subdirectory(system)
 #add_subdirectory(gloxor)
