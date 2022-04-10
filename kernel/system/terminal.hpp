@@ -2,6 +2,7 @@
 #include "gloxor/types.hpp"
 #include "glox/string.hpp"
 #include "glox/util.hpp"
+#include "gloxor/graphics.hpp"
 namespace glox::term
 {
    void initTerm(colorT* begin,colorT* end, size_t pitch, size_t width, size_t height);

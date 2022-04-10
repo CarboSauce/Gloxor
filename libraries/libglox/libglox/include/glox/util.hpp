@@ -1,8 +1,12 @@
 #pragma once
 #include "assert.hpp"
 #include "type_traits"
-#include <utility>
+//#include <utility>
 #include "types.hpp"
+
+#define RVALUE(...) static_cast<std::remove_reference_t<decltype(__VA_ARGS__)>&&>(__VA_ARGS__)
+#define FORWARD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)
+
 namespace glox
 {
 
@@ -54,7 +58,7 @@ namespace glox
       T val;
 		E err;
    public:
-      constexpr result(T val, E err) : val(std::move(val)), err(std::move(err)) {}
+      constexpr result(T val, E err) : val(RVALUE(val)), err(RVALUE(err)) {}
 		T& unwrap()
 		{
 			gloxAssert(!err, "unwrap called with error set");

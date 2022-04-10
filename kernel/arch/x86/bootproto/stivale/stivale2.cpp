@@ -117,5 +117,4 @@ inline void initializePmm(stivale2_struct_tag_memmap* m)
 			physicalFbEnd	 = mMap[curIndex].base+mMap[curIndex].length;
 		}
 	}
-	glox::pmmFinalize();
 }

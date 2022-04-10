@@ -85,21 +85,6 @@ static void gogole_test()
 {
 	// glox::term::clearScreen(0x111111);
 
-	size_t accum = 0;
-	int i = 0;
-	// for (auto& it : *glox::pmmCtx)
-	// {
-	// 	size_t s = it.size;
-	// 	gloxLogln("Base of it: ", &it, " from it: ", it.start, " to: ", (void*)((u64)&it + s), " it->next: ", it.next,
-	// 	" size: ",it.bitmapSize*8," number of pages ", s/4096); 
-	// 	accum += s;
-	// 	++i;
-	// }
-
-
-	gloxLogln("Iteration count is ", i,
-			  "\npmmCtx address and next val ", pmmCtx, ' ', pmmCtx->next);
-	gloxLogln("Size of memory is ", accum);
 	// Invoking strlen doesnt work if strlen is a function defined as __builtin_strlen
 	u32 brand[12];
 	__get_cpuid(0x80000002, brand + 0x0, brand + 0x1, brand + 0x2, brand + 0x3);

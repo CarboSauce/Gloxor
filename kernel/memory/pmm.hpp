@@ -4,48 +4,42 @@
 
 namespace glox
 {   
-   struct pmmHeader
-   {
-      pmmHeader* next; // Next header in list
-      pmmHeader* prev;
-      size_t size; // Size of memory, bitmap size is 8*PAGE smaller
-      struct iterator
-      {
-         pmmHeader* it;
-         auto operator++(){return it = it->next;}
-         auto operator--(){return it = it->prev;}
-         friend auto operator<=>(iterator,iterator) = default;
-         auto& operator*() const { return *it;}
-      };
-      iterator begin()
-      {
-         return {this};
-      }
-      iterator end()
-      {
-         return {nullptr};
-      }
-   };
 
    /**
     * @brief use this incase you need access to internals of pmm,  
     * its temporary workaround of not having proper initilalization functions    
     */
-   extern pmmHeader* pmmCtx;
+   //extern pmmHeader* pmmCtx;
 
+   constexpr sizeT pmmChunkSize = 0x1000;
    /**
     * @brief use this after adding all memory chunks with pmmAddChunk
     */
-   void pmmFinalize();
+   //void pmmFinalize();
    /**
     * @brief Adds memory chunk to PMM
     */
    void pmmAddChunk(void* base, size_t length);
    /**
-    * @brief Allocate pNumber amount of pages 
+    * @brief Allocate single page
     * @return pointer to allocated page, nullptr on out of memory
     */
    void* pmmAlloc();
+   /**
+    * @brief Allocate pageCount amount of pages 
+    * @return pointer to allocated page, nullptr on out of memory
+    */
+   void* pmmAlloc(size_t pageCount);
+   /**
+    * @brief Allocate single page below given address 
+    * @return pointer to allocated page, nullptr on out of memory
+    */
+   void* pmmAlloc(void* below);
+   /**
+    * @brief Allocate pageCount amount of pages below given address 
+    * @return pointer to allocated page, nullptr on out of memory
+    */
+   void* pmmAlloc(void* below, size_t pageCount);
    /**
     * @brief Allocate single page and zero it 
     * @return pointer to allocated page, nullptr on out of memory
@@ -56,5 +50,6 @@ namespace glox
     * @brief Free the allocated page
     * @param ptr Pointer previously obtained from pmm::alloc
     */
-   bool pmmFree(void* ptr);
+   void pmmFree(void* ptr);
+   void pmmFree(void* ptr,sizeT pageCount);
 }

@@ -2,5 +2,5 @@
 
 namespace glox
 {   
-    void kernelPanic();
+    [[noreturn]] void kernelPanic();
 }

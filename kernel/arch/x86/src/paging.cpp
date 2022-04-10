@@ -98,14 +98,12 @@ namespace x86
 		identityMap();
 		auto fbrange = glox::term::getUsedMemoryRange();
 		
+		gloxDebugLogln("Mapping framebuffer");
 		for (const auto& i : fbrange)
 		{
 			map(context,&i,(void*)getPhysUserAddr(&i));
 		}
 
-		gloxDebugLogln(translate(context, (void*)0x1419242));
-		gloxDebugLogln(translate(context, _kernelFileBegin));
-		gloxDebugLogln(translate(context, _kernelFileEnd));
 		if (setupPAT()) gloxDebugLogln("PAT supported on boot cpu");
 		setContext(context);
 		return context;

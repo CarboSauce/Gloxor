@@ -2,7 +2,7 @@
 
 namespace glox
 {
-   void execAssert(const char* message, const char* file, const char* line);
+   [[noreturn]] void execAssert(const char* message, const char* file, const char* line);
 }
 
 

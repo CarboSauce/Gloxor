@@ -3,8 +3,11 @@
 #include "glox/utilalgs.hpp"
 #include "gloxor/types.hpp"
 
+
 namespace glox
 {
+   using colorT = u32;
+
 	struct framebuffer
 	{
 		colorT* fbBeg;
