@@ -3,9 +3,16 @@
 #include "type_traits"
 //#include <utility>
 #include "types.hpp"
+#include <bit>
 
 #define RVALUE(...) static_cast<std::remove_reference_t<decltype(__VA_ARGS__)>&&>(__VA_ARGS__)
 #define FORWARD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)
+
+#if __has_builtin(__builtin_bit_cast)
+	#define BITCAST(T,from) __builtin_bit_cast(T,from)
+#else
+	#error Missing support for __builtin_bit_cast
+#endif
 
 namespace glox
 {
@@ -23,7 +30,7 @@ namespace glox
 	{
 		T x;
 		T y;
-      constexpr friend auto operator<=>(const vec2&,const vec2&) = default;
+      //constexpr friend auto operator<=>(const vec2&,const vec2&) = default;
 	};
 
    template<typename T>
@@ -41,12 +48,12 @@ namespace glox
       constexpr size_t size() const {return to-from;}
       constexpr const T& operator[](size_t i) const
       {
-         gloxAssert(i >= 0 && i<size(),"Span access out of bounds");
+         gloxAssert(i<size(),"Span access out of bounds");
          return *(from+i);
       }
       constexpr T& operator[](size_t i)
       {
-         return const_cast<T&>(static_cast<const T&>(*this)[i]);
+         return const_cast<T&>(static_cast<const span<T>&>(*this)[i]);
       }
    };
 
@@ -54,20 +61,25 @@ namespace glox
 	template <typename T, typename E>
 	class result
 	{
-		static_assert(std::is_default_constructible<T>::value, "Result type needs default constructible");
-      T val;
-		E err;
+		//static_assert(std::is_default_constructible<T>::value, "Result type needs to be default constructible");
+      union 
+		{
+			T val;
+			E err;
+		};
+		bool isErr;
    public:
-      constexpr result(T val, E err) : val(RVALUE(val)), err(RVALUE(err)) {}
+      constexpr result(T val) : val(RVALUE(val)), isErr(false) {}
+      constexpr result(E err) : val(RVALUE(err)), isErr(true) {}
 		T& unwrap()
 		{
-			gloxAssert(!err, "unwrap called with error set");
+			gloxAssert(!isErr, "unwrap called with error set");
 			return val;
 		}
 
 		constexpr operator bool()
 		{
-			return static_cast<bool>(err);
+			return isErr;
 		}
 	};
 

@@ -2,12 +2,9 @@
 #include "arch/irq.hpp"
 #include "cpuid.h"
 #include "gloxor/modules.hpp"
-#include "memory/pmm.hpp"
 #include "protos/egg.h"
 #include "system/logging.hpp"
 #include "system/terminal.hpp"
-#include "gloxor/graphics.hpp"
-#include "asm/asmstubs.hpp"
 using ctor_t = void (*)();
 using namespace arch;
 using namespace glox;
@@ -19,7 +16,6 @@ extern ctor_t _moduleDriverEnd[];
 
 extern "C" void callCtorPointers(ctor_t* begin, ctor_t* end)
 {
-
 	for (auto it = begin; it != end; ++it)
 	{
 		(*it)();
@@ -70,22 +66,9 @@ extern "C" void gloxorMain()
 	gloxUnreachable();
 }
 
-/* void logFrameBuffer()
-{
-	gloxLogln("Frame Buffer Begin:\t", con.fbBeg);
-	gloxLogln("Frame Buffer End:\t", con.fbEnd);
-	gloxLogln("Frame Buffer Height:\t", con.height);
-	gloxLogln("Frame Buffer Width:\t", con.width);
-	gloxLogln("Frame Buffer Pitch:\t", con.pitch);
-}
- */
-
-
 static void gogole_test()
 {
-	// glox::term::clearScreen(0x111111);
 
-	// Invoking strlen doesnt work if strlen is a function defined as __builtin_strlen
 	u32 brand[12];
 	__get_cpuid(0x80000002, brand + 0x0, brand + 0x1, brand + 0x2, brand + 0x3);
 	__get_cpuid(0x80000003, brand + 0x4, brand + 0x5, brand + 0x6, brand + 0x7);

@@ -7,10 +7,12 @@
 #include "gloxor/modules.hpp"
 #include "system/logging.hpp"
 #include "memory/virtmem.hpp"
+#include "system/danger.hpp"
 /* 
 [[gnu::no_caller_saved_registers]] extern "C" void _gloxAsmLongJump(); */
 using namespace arch;
-using namespace virt;
+using namespace glox;
+using namespace arch::vmem;
 
 [[gnu::used]] static gdt code_data[3]{
 	{},
@@ -33,34 +35,29 @@ using namespace virt;
 [[gnu::used]] static idt idt_list[256]{};
 static u64 cpuFeatures;
 static u64 earlyCr3;
-virtCtxT kernelVirtCtx;
+vmemCtxT kernelVirtCtx;
 
 [[gnu::interrupt]] static void DivZeroHandle(interrupt_frame_t*)
 {
-
 	gloxLogln("You Fool Divided By Zero!\n");
-	while (1)
-		;
+	glox::kernelPanic();
 }
 
 [[gnu::interrupt]] static void DoubleFault(interrupt_frame_t*)
 {
 	gloxLogln("Double fault!\n");
-	while (1)
-		;
+	glox::kernelPanic();
 }
 [[gnu::interrupt]] static void SpurInterrupt(interrupt_frame_t*)
 {
 	gloxLogln("Spurious Interrupt!\n");
-	while (1)
-		;
+	glox::kernelPanic();
 }
 
 [[gnu::interrupt]] static void GPfault(interrupt_frame_t* frame, size_t /* errc */)
 {
 	gloxLogln("General Protection Fault!\nRIP = ", (void*)frame->ip);
-	while (1)
-		;
+	glox::kernelPanic();
 }
 
 [[gnu::interrupt]] static void PageFault(interrupt_frame_t*, size_t /* errc */)
@@ -71,18 +68,17 @@ virtCtxT kernelVirtCtx;
 	{
 		gloxLog("Null pointer access\n");
 	} */
-//	if (!virt::map(kernelVirtCtx,errorAdr,reinterpret_cast<void*>(arch::higherHalf-(u64)errorAdr)))
+//	if (!vmem::map(kernelVirtCtx,errorAdr,reinterpret_cast<void*>(arch::higherHalf-(u64)errorAdr)))
 //		arch::haltForever();
 	
-	//virt::setContext(kernelVirtCtx);
-	haltForever();	
+	//vmem::setContext(kernelVirtCtx);
+	glox::kernelPanic();
 }
 
 [[gnu::interrupt]] static void IllegalOpcode(interrupt_frame_t* frame)
 {
 	gloxLogln("Illegal opcode! RIP = ", (void*)frame->ip);
-	while (1)
-		;
+	arch::haltForever();
 }
 
 inline void initializeGdt();
@@ -91,7 +87,7 @@ inline void initializeCpuExtensions();
 
 namespace x86
 {
-	virtCtxT initKernelVirtMem();
+	vmemCtxT initKernelVirtMem();
 }
 
 namespace arch
@@ -113,14 +109,7 @@ namespace arch
 		kernelVirtCtx = x86::initKernelVirtMem();
 	}
 
-	void haltForever()
-	{
-		while (1)
-		{
-			stopIrq();
-			halt();
-		}
-	}
+
 
 } // namespace arch
 

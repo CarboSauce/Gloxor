@@ -4,7 +4,7 @@ namespace glox
 {
 	struct logStream : glox::bStream
 	{
-		char buffer[256*2];
+		char buffer[512];
 		template<typename... args>
 		void operator()(args... Args)
 		{

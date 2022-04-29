@@ -50,6 +50,6 @@ namespace glox
     * @brief Free the allocated page
     * @param ptr Pointer previously obtained from pmm::alloc
     */
-   void pmmFree(void* ptr);
-   void pmmFree(void* ptr,sizeT pageCount);
+   //void pmmFree(void* ptr);
+   void pmmFree(void* ptr,sizeT pageCount = 1);
 }

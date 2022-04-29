@@ -6,7 +6,7 @@ namespace arch
 
    using irqT = u64;
 
-   inline irqT saveIrq(void)
+   inline irqT saveIrq()
    {
       irqT flags;
       asm volatile("pushf;pop %0"

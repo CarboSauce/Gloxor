@@ -1,6 +1,7 @@
 #pragma once
 #include "glox/assert.hpp"
 #include "glox/types.hpp"
+#include <type_traits>
 
 namespace glox
 {
@@ -11,12 +12,12 @@ namespace glox
 		public:
 		constexpr const T& operator[](size_t i) const
 		{
-			gloxAssert(i >= 0 && i < N, "Out of bounds access");
+			gloxAssert(i < N, "Out of bounds access");
 			return data[i];
 		}
 		constexpr T& operator[](size_t i)
 		{
-			return const_cast<T&>(static_cast<const T&>(*this)[i]);
+			return const_cast<T&>(static_cast<const array<T,N>&>(*this)[i]);
 		}
 		constexpr explicit operator T*() { return data; }
 		constexpr explicit operator const T*() const { return data; }

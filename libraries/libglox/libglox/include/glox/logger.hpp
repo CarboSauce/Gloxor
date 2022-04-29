@@ -1,7 +1,7 @@
 #pragma once
 #include "glox/format.hpp"
-#include "glox/types.hpp"
 #include "glox/string.hpp"
+#include "glox/types.hpp"
 
 namespace glox
 {
@@ -13,10 +13,12 @@ namespace glox
 	using namespace glox::unsafe;
 
 	/**
-	 * @brief Base Class used for ADL, derive from that class and implement 
+	 * @brief Base Class used for ADL, derive from that class and implement
 	 * write function
 	 */
-	struct bStream{};
+	struct bStream
+	{
+	};
 
 	template <typename BStream, typename T>
 	inline BStream& operator,(BStream& out, const T& val)
@@ -25,20 +27,20 @@ namespace glox
 		return out;
 	}
 
-#define defineComma(x)                             \
-	template <typename BStream>                    \
-	constexpr BStream& operator,(BStream& out, x val) \
-	{                                              \
-		write(out, out.buffer, format(out.buffer, val));       \
-		return out;                                \
+#define defineComma(x)                                   \
+	template <typename BStream>                          \
+	constexpr BStream& operator,(BStream& out, x val)    \
+	{                                                    \
+		write(out, out.buffer, format(out.buffer, val)); \
+		return out;                                      \
 	}
 
-#define defineCommaCast(x, to)                        \
-	template <typename BStream>                       \
-	constexpr BStream& operator,(BStream& out, x val) \
-	{                                                 \
-		write(out, out.buffer, format(out.buffer, (to)val));      \
-		return out;                                   \
+#define defineCommaCast(x, to)                               \
+	template <typename BStream>                              \
+	constexpr BStream& operator,(BStream& out, x val)        \
+	{                                                        \
+		write(out, out.buffer, format(out.buffer, (to)val)); \
+		return out;                                          \
 	}
 	// clang-format off
 		defineComma(char)
@@ -72,6 +74,5 @@ namespace glox
 
 #undef defineComma
 #undef defineCommaCast
-
 
 } // namespace glox

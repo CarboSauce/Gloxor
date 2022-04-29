@@ -15,6 +15,13 @@ namespace arch
 
    void initializeCpu();
 
-   void haltForever();
+   [[noreturn]] inline void haltForever()
+   {
+	   while (1)
+	   {
+		   asm("cli;hlt");
+	   }
+   }
+
 
 } // namespace arch

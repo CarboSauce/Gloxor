@@ -1,11 +1,9 @@
 #include "stivale2.h"
-#include "glox/utilalgs.hpp"
 #include "memory/pmm.hpp"
 #include "protos/egg.h"
 #include "system/terminal.hpp"
-#include <new>
+#include <arch/addrspace.hpp>
 #include <stddef.h>
-#include <arch/segments.hpp>
 
 using namespace glox;
 using namespace arch;
@@ -37,18 +35,18 @@ struct eggHandle eggFrame;
 u64 arch::kernelMappingOffset;
 u64 arch::kernelPhysOffset;
 u64 arch::kernelVirtOffset;
-u64 physicalFbStart;
-u64 physicalFbEnd;
+//u64 physicalFbStart;
+//u64 physicalFbEnd;
 extern "C" void stivale2_main(stivale2_struct* info)
 {
 	// Print the tags.
-	stivale2_tag* tag = (stivale2_tag*)info->tags;
+	auto* tag = (stivale2_tag*)info->tags;
 
 	stivale2_struct_tag_framebuffer* fbuff;
 	// We need to initialize memory after everything else, otherwise we might corrupt bootloader reclaimable
 	stivale2_struct_tag_memmap* m{};
 	bool isFullVirtual = false;
-	while (tag != NULL)
+	while (tag != nullptr)
 	{
 		switch (tag->identifier)
 		{
@@ -86,12 +84,12 @@ extern "C" void stivale2_main(stivale2_struct* info)
 
 	if (!isFullVirtual)
 	{
-		kernelPhysOffset = (u64)_kernelFileBegin-arch::kernelHalfBase;
-		kernelVirtOffset = (u64)_kernelFileBegin;
-		kernelMappingOffset = -arch::kernelHalfBase;
+		kernelPhysOffset = (u64)kernelFileBegin -arch::kernelMemBase;
+		kernelVirtOffset = (u64)kernelFileBegin;
+		kernelMappingOffset = -arch::kernelMemBase;
 	}
-	eggFrame.kInfo.start = _kernelFileBegin;
-	eggFrame.kInfo.end = _kernelFileEnd;
+	eggFrame.kInfo.start = kernelFileBegin;
+	eggFrame.kInfo.end = kernelFileEnd;
 
 	initializePmm(m);
 
@@ -111,10 +109,10 @@ inline void initializePmm(stivale2_struct_tag_memmap* m)
 		{
 			glox::pmmAddChunk((void*)mTemp.base,mTemp.length);
 		}
-		else if (mMap[curIndex].type == STIVALE2_MMAP_FRAMEBUFFER)
+		/*else if (mMap[curIndex].type == STIVALE2_MMAP_FRAMEBUFFER)
 		{
 			physicalFbStart = mMap[curIndex].base;
 			physicalFbEnd	 = mMap[curIndex].base+mMap[curIndex].length;
-		}
+		}*/
 	}
 }

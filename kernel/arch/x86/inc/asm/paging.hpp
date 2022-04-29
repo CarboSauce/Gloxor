@@ -1,7 +1,7 @@
 #pragma once
 #include "gloxor/types.hpp"
-
-namespace x86::virt
+#include "glox/util.hpp"
+namespace x86::vmem
 {
 	enum pagingBits
 	{
@@ -19,15 +19,25 @@ namespace x86::virt
 		pdptePAT = 1 << 12,
 		execDisable = size_t(1) << 63
 	};
-	// gcc doesnt like it being part of enum
-	struct alignas(0x1000) pml5t
+	enum class pteShift
+	{
+		lvl1 = 12, //4KB page
+		lvl2 = 21, //2MB page
+		lvl3 = 30, //1GB page
+		lvl4 = 39,
+		lvl5 = 48
+	};
+
+
+	struct alignas(0x1000) pagetable
 	{
 		u64 entries[512];
 	};
-	using pml4t = pml5t;
-	using pdpt = pml5t;
-	using pdt = pml5t;
-	using pt = pml5t;
+	using pml5t = pagetable;
+	using pml4t = pagetable;
+	using pdpt  = pagetable;
+	using pdt   = pagetable;
+	using pt    = pagetable;
 	using lvl5table = pml5t;
 	using lvl4table = pml4t;
 	using lvl3table = pdpt;
@@ -63,10 +73,30 @@ namespace x86::virt
 	{
 		return entry & (~0xfff);
 	}
+//	inline u64 getPhysical(void* entry)
+//	{
+//		return reinterpret_cast<u64>(entry) & (~0xfff);
+//	}
 
 	constexpr u64 maskEntry(u64 physAddr, u64 mask)
 	{
 		return (getPhysical(physAddr)/* physAddr & 0xffffff800 */) | mask;
 	}
+	constexpr size_t pteIndex(u64 addr, pteShift shiftval)
+	{
+		return (addr >> static_cast<int>(shiftval)) & 0x1ff;
+	}
 
-} // namespace x86::virt
+	inline u64* getNextPte(pagetable* table, u64 addr, pteShift shiftval)
+	{
+		gloxAssert(table != nullptr);
+		return &table->entries[pteIndex(addr,shiftval)];
+	}
+	inline const u64* getNextPte(const pagetable* table, u64 addr, pteShift shiftval)
+	{
+		gloxAssert(table != nullptr);
+		return &table->entries[pteIndex(addr,shiftval)];
+	}
+
+
+} // namespace x86::vmem

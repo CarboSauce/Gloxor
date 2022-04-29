@@ -12,7 +12,7 @@ PHDRS
 SECTIONS
 {
     . = 0xffffffff80000000;
-    _kernelFileBegin = .;
+    kernelFileBegin = .;
 
 
     .text ALIGN(4K)  : {   
@@ -59,7 +59,7 @@ SECTIONS
     {
         KEEP(*(.stivale2hdr))
     } :rodata
-    _kernelFileEnd = .;
+    kernelFileEnd = .;
 /* 
     .interp : 
     {

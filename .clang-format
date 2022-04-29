@@ -1,8 +1,8 @@
 BasedOnStyle: LLVM
 BreakBeforeBraces: Allman
 UseTab: Always
-IndentWidth:     4
-TabWidth:        4
+IndentWidth:     3
+TabWidth:        3
 ColumnLimit: 0
 BinPackArguments: true
 BinPackParameters: false
