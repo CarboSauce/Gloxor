@@ -17,12 +17,11 @@ using namespace arch;
 using namespace x86::vmem;
 using namespace glox;
 
-// Untill kernel gets more fancy, this is the default options we use
 
-static lvl2table identlvl2{};
-static lvl2table kcodelvl2{};
-static lvl3table identlvl3{};
-static lvl3table kcodelvl3{};
+//static lvl2table identlvl2{};
+//static lvl2table kcodelvl2{};
+//static lvl3table identlvl3{};
+//static lvl3table kcodelvl3{};
 static lvl4table klvl4{};
 
 inline void mapKernel()
@@ -38,24 +37,25 @@ inline void mapKernel()
 
 static void identityMap()
 {
-	auto index4 = 0; // lvl4tableIndex(start);
-	auto index3 = 0; // lvl3tableIndex(start);
-	auto lvl4ptr = &klvl4;
-	auto& lvl3entry = lvl4ptr->entries[index4];
-	lvl3entry = maskEntry(getRealKernelAddr(identlvl3.entries), defFlags);
-	auto* lvl3ptr = (lvl3table*)getPhysical(lvl3entry);
-	auto& lvl2entry = lvl3ptr->entries[index3];
-	lvl2entry = maskEntry(getRealKernelAddr(identlvl2.entries), defFlags);
-	auto* lvl2ptr = (lvl2table*)getPhysical(lvl2entry);
-	/*
-		Map lower 1GB, stupid, broken, fix by actually checking memory ranges we have to map
-	*/
-	for (u64 i = 0; i < 512; ++i)
-	{
-		lvl2ptr->entries[i] = maskEntry(i * 0x200000, defFlags | granul);
-	}
+//	auto index4 = lvl4tableIndex(arch::physicalMemBase);
+//	auto index3 = lvl3tableIndex(arch::physicalMemBase);
+//	auto lvl4ptr = &klvl4;
+//	auto& lvl3entry = lvl4ptr->entries[index4];
+//	lvl3entry = maskEntry(getRealKernelAddr(identlvl3.entries), defFlags);
+//	auto* lvl3ptr = (lvl3table*)getPhysical(lvl3entry);
+//	auto& lvl2entry = lvl3ptr->entries[index3];
+//	lvl2entry = maskEntry(getRealKernelAddr(identlvl2.entries), defFlags);
+//	auto* lvl2ptr = (lvl2table*)getPhysical(lvl2entry);
+//	/*
+//		Map lower 1GB, stupid, broken, fix by actually checking memory ranges we have to map
+//	*/
+//	for (u64 i = 0; i < 512; ++i)
+//	{
+//		lvl2ptr->entries[i] = maskEntry(i * 0x200000, defFlags | granul);
+//	}
 
-	mapKernel();
+
+
 }
 inline bool setupPAT()
 {
@@ -76,6 +76,7 @@ namespace x86
 	{
 		auto context = getRealKernelAddr(klvl4.entries);
 		gloxDebugLogln("Remapping CR3 to ",(void*)context);
+		mapKernel();
 		identityMap();
 		auto fbrange = glox::term::getUsedMemoryRange();
 		
@@ -85,9 +86,9 @@ namespace x86
 			map(context,&i,(void*)getRealDataAddr(&i));
 		}
 
-		gloxDebugLogln(translate(context, (void*)0x0));
-		gloxDebugLogln(translate(context, kernelFileBegin));
-		gloxDebugLogln(translate(context, kernelFileEnd));
+//		gloxDebugLogln(translate(context, nullptr));
+//		gloxDebugLogln(translate(context, kernelFileBegin));
+//		gloxDebugLogln(translate(context, kernelFileEnd));
 
 		if (setupPAT()) gloxDebugLogln("PAT supported on boot cpu");
 		setContext(context);
@@ -104,13 +105,43 @@ namespace arch::vmem
 		workaround is to completely rewrite memory manager
 		perhaps x86 paging shouldnt leak to kernel code
 	*/
+	bool mapHugePage(vmemCtxT context, const void* from, const void* to, u64 mask)
+	{
+		const auto toaddr = (u64)to;
+		const auto fromaddr = (u64)from;
+		auto* lvl4ptr = (lvl4table*)context;
+		auto& lvl4entry = *getNextPte(lvl4ptr,toaddr,pteShift::lvl4);
+		if (!(lvl4entry & present))
+		{
+			const auto freshAdr = (u64)glox::pmmAllocZ();
+			if (!freshAdr)
+				return false;
+			lvl4entry = maskEntry(freshAdr, mask);
+		}
+
+		auto* lvl3ptr = (lvl3table*)getPhysical(lvl4entry);
+		auto& lvl3entry = *getNextPte(lvl3ptr,toaddr,pteShift::lvl3);
+		if (!(lvl3entry & present))
+		{
+			auto freshAdr = (u64)glox::pmmAllocZ();
+			if (!freshAdr)
+				return false;
+			lvl3entry = maskEntry(freshAdr, mask);
+		}
+		auto* lvl2ptr = (lvl2table*)getPhysical(lvl3entry);
+		auto& lvl2entry = *getNextPte(lvl2ptr,toaddr,pteShift::lvl2);
+		lvl2entry = maskEntry(toaddr & ~0x100000,mask | granul);
+		return true;
+	}
+
+
 	bool map(vmemCtxT context, const void* from, const void* to, u64 mask)
 	{
 		auto index4 = lvl4tableIndex((u64)from);
 		auto index3 = lvl3tableIndex((u64)from);
 		auto index2 = lvl2tableIndex((u64)from);
 		auto index1 = lvl1tableIndex((u64)from);
-		auto lvl4ptr = (lvl4table*)context;
+		auto lvl4ptr = (lvl4table*)getPhysical(context);
 		auto& lvl3entry = lvl4ptr->entries[index4];
 		if (!glox::bitmask(lvl3entry, present))
 		{

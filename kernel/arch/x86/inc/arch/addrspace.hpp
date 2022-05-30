@@ -7,35 +7,33 @@ namespace arch
 {
 	constexpr u64 kernelMemBase = 0xffffffff80000000;
 	constexpr u64 physicalMemBase = 0xffff800000000000;
-	extern uintptr kernelPhysOffset;
-	extern uintptr kernelVirtOffset;
-	extern uintptr kernelMappingOffset;
+	inline paddrT kernelPhysOffset;
+	inline vaddrT kernelVirtOffset;
+	inline sizeT kernelMappingOffset;
 
-	inline u64 getRealKernelAddr(u64 virt)
+	inline paddrT getRealKernelAddr(vaddrT virt)
 	{
 		gloxAssert(virt >= arch::kernelMemBase);
 		return virt + kernelMappingOffset;
 	}
-	inline u64 getRealKernelAddr(const void* virt)
+	inline paddrT getRealKernelAddr(const void* virt)
 	{
 		return getRealKernelAddr((u64)virt);
 	}
-	inline u64 getRealDataAddr(u64 virt)
+	inline paddrT getRealDataAddr(vaddrT virt)
 	{
 		gloxAssert(virt >= arch::physicalMemBase);
 		return virt - arch::physicalMemBase;
 	}
 
-	inline u64 getRealDataAddr(const void* virt)
+	inline paddrT getRealDataAddr(const void* virt)
 	{
 		return getRealDataAddr((u64)virt);
 	}
-	inline u64 getRealAddress(u64 virt)
+	inline paddrT getRealAddress(vaddrT virt)
 	{
 		if (virt >= arch::kernelMemBase  ) return getRealKernelAddr(virt);
 		if (virt >= arch::physicalMemBase) return getRealDataAddr(virt);
 		return virt;
 	}
-
-
 } // namespace arch

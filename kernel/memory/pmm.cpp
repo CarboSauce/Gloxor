@@ -44,7 +44,7 @@ struct node
 	}
 	void insert(node<T>* left, node<T>* right)
 	{
-		gloxAssert(left != nullptr && right != nullptr);	
+		gloxAssert(left != nullptr && right != nullptr);
 		left->next = this;
 		right->prev = this;
 		this->next = right;
@@ -55,7 +55,7 @@ struct node
 template <typename T>
 struct list
 {
-	
+
 	node<T>* front;
 	node<T>* back;
 
@@ -76,7 +76,6 @@ struct list
 	{
 		return {nullptr};
 	}
-
 
 	/*
 		this function isnt actually used anywhere it handles too many edge cases
@@ -131,12 +130,12 @@ using pmmHeader = node<pmmChunk>;
 using pmmList = list<pmmChunk>;
 
 static list<pmmChunk> pmmCtx;
-
+static u64 memorySize;
 /*
 	Both of those functions actually return nullptr on OOM situations
 	Single chunk allocator is seperate for purpouses of optimization.
 	I very much doubt compiler can eliminate loop when page count is 1.
-	Loop doesnt need to be there because we can guarantee that if 
+	Loop doesnt need to be there because we can guarantee that if
 	node is present in the list, it has atleast 1 free page
 */
 inline void* allocFromChunk(list<pmmChunk>& chunk)
@@ -186,12 +185,10 @@ inline void* allocFromChunk(list<pmmChunk>& chunk, sizeT pageCount)
 	return nullptr;
 }
 
-
 // this functions seems like it could be eliminated and added to insert chunk
-inline void appendChunk(pmmHeader*& back, void* base, sizeT length)
+inline void appendChunk(pmmHeader*& back, pmmHeader* chunk, sizeT length)
 {
-	auto* chunk = (pmmHeader*)base;
-	if ((uintptr)back + back->data.size == (uintptr)base)
+	if ((uintptr)back + back->data.size == (uintptr)chunk)
 	{
 		back->data.size += length;
 	}
@@ -203,10 +200,9 @@ inline void appendChunk(pmmHeader*& back, void* base, sizeT length)
 	}
 }
 
-// assumes base is in the node list range
-inline void insertChunk(pmmHeader*& from, void* base, sizeT length)
+// assumes chunk is in the node list range
+inline void insertChunk(pmmHeader*& from, pmmHeader* chunk, sizeT length)
 {
-	auto* chunk = (pmmHeader*)base;
 	auto* it = from;
 	if (it > chunk)
 	{
@@ -225,7 +221,7 @@ inline void insertChunk(pmmHeader*& from, void* base, sizeT length)
 	}
 	for (; it < chunk; it = it->next)
 	{
-		if ((uintptr)it + it->data.size == (uintptr)base)
+		if ((uintptr)it + it->data.size == (uintptr)chunk)
 		{
 			it->data.size += length;
 			auto nextChunk = it->next;
@@ -248,7 +244,7 @@ inline void insertChunk(pmmHeader*& from, void* base, sizeT length)
 		it->prev->next = chunk;
 		return;
 	}
-	chunk->insert(it->prev,it);
+	chunk->insert(it->prev, it);
 }
 
 namespace glox
@@ -257,12 +253,13 @@ namespace glox
 	void pmmAddChunk(void* base, size_t length)
 	{
 		gloxAssert(length % glox::pmmChunkSize == 0, "Pmm chunk length must be multiple of pmmChunkSize");
-		auto* chunk = (pmmHeader*)base;
+		const auto realBase = (uintptr)base + arch::physicalMemBase;
+		auto* chunk = reinterpret_cast<pmmHeader*>(realBase);
 		auto& pmmStart = pmmCtx.front;
 		auto& pmmEnd = pmmCtx.back;
 		chunk->next = nullptr;
 		chunk->data.size = length;
-
+		memorySize += length;
 		if (pmmStart == nullptr)
 		{
 			pmmStart = chunk;
@@ -271,16 +268,10 @@ namespace glox
 		}
 		else if (pmmEnd < chunk)
 		{
-			appendChunk(pmmEnd,base,length);
-		}	
-		else insertChunk(pmmStart,base,length);
-	}
-
-	void* pmmAlloc()
-	{
-		auto mem = allocFromChunk(pmmCtx);
-		gloxDebugLogln("pmmAlloc(): allocated address: ", mem);
-		return mem;
+			appendChunk(pmmEnd, chunk, length);
+		}
+		else
+			insertChunk(pmmStart, chunk, length);
 	}
 
 	void* pmmAlloc(sizeT pageCount)
@@ -288,13 +279,6 @@ namespace glox
 		auto mem = allocFromChunk(pmmCtx, pageCount);
 		gloxDebugLogln("pmmAlloc(", pageCount, "): allocated address: ", mem);
 		return mem;
-	}
-
-	void* pmmAllocZ()
-	{
-		auto addr = pmmAlloc();
-		memset(addr, 0, glox::pmmChunkSize);
-		return addr;
 	}
 	void* pmmAllocZ(sizeT pageCount)
 	{
@@ -309,39 +293,37 @@ namespace glox
 	// }
 	void pmmFree(void* ptr, sizeT pageCount)
 	{
-		if (ptr == nullptr) return;
+		if (ptr == nullptr)
+			return;
 		glox::pmmAddChunk(ptr, glox::pmmChunkSize * pageCount);
 	}
 } // namespace glox
 
-//static void test()
-//{
-//	gloxDebugLog("pmm test\nBefore:\n");
-//	for (const auto& it : pmmCtx)
-//	{
-//		gloxDebugLogln(&it, '-', (char*)&it + it.data.size);
-//	}
-//
-//	constexpr auto size = 250;
-//	static glox::array<void*,size> ptrs;
-//	for (int i = 0; i < size; ++i)
-//		ptrs[i] = pmmAlloc((i+1));
-//	gloxDebugLog("\nAfter allocations:\n");
-//	for (const auto& it : pmmCtx)
-//	{
-//		gloxDebugLogln(&it, '-', (char*)&it + it.data.size);
-//	}
-//	for (int i = 0; i < size; i+=2)
-//		pmmFree(ptrs[i],i+1);
-//	for (int i = 1; i < size; i+=2)
-//		pmmFree(ptrs[i],i+1);
-//
-//
-//	gloxDebugLog("\nAfter freeing:\n");
-//	for (const auto& it : pmmCtx)
-//	{
-//		gloxDebugLogln(&it, '-', (char*)&it + it.data.size);
-//	}
-//}
-//
-//registerTest(test);
+static void test()
+{
+	gloxDebugLog("Memory size: ", memorySize, " pmm test\nBefore:\n");
+	for (const auto& it : pmmCtx)
+	{
+		gloxDebugLogln(&it, '-', (char*)&it + it.data.size);
+	}
+
+	constexpr auto size = 200;
+	static glox::array<void*, size> ptrs;
+	for (int i = 0; i < size; ++i)
+		ptrs[i] = pmmAlloc();
+	gloxDebugLog("\nAfter allocations:\n");
+	for (const auto& it : pmmCtx)
+	{
+		gloxDebugLogln(&it, '-', (char*)&it + it.data.size);
+	}
+	for (int i = 0; i < size; i ++)
+		pmmFree(ptrs[i]);
+
+	gloxDebugLog("\nAfter freeing:\n");
+	for (const auto& it : pmmCtx)
+	{
+		gloxDebugLogln(&it, '-', (char*)&it + it.data.size);
+	}
+}
+
+registerTest(test);

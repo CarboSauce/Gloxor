@@ -22,35 +22,35 @@ namespace glox::term
 {
 	glox::span<u8> getUsedMemoryRange()
 	{
-		return {(u8*)con.fbBeg,(u8*)con.fbEnd};
+		return {(u8*)con.fbBeg, (u8*)con.fbEnd};
 	}
 	inline void putPixel(int x, int y, colorT color)
 	{
 		const_cast<volatile colorT*>(con.fbBeg)[y * con.pitch + x] = color;
 	}
 
-	inline void writeChar(char ch,glox::vec2<u32> at,glox::vec2<colorT> fgbg)
+	inline void writeChar(char ch, glox::vec2<u32> at, glox::vec2<colorT> fgbg)
 	{
 		int index = ((uint8_t)ch /* - 32 */) * 16;
-		/* 
-    auto prescX = x*scale;
-    auto prescY = y*scale;
-     */
+		/*
+	 auto prescX = x*scale;
+	 auto prescY = y*scale;
+	  */
 
 		/* 	    for (int i = 0; i < fontHeight; ++i)
-    {
-        for (int k = 0; k < fontWidth; ++k)
-        {
-            auto fontBit =  0b10000000 >> (k/scaleX);
-            auto fontMask = fontBitmap[index + (i/scaleY)];
-            putPixel(at.x+k, at.y+i , fontMask & fontBit ? fgbg.x : fgbg.y);
-        }
+	 {
+		  for (int k = 0; k < fontWidth; ++k)
+		  {
+				auto fontBit =  0b10000000 >> (k/scaleX);
+				auto fontMask = fontBitmap[index + (i/scaleY)];
+				putPixel(at.x+k, at.y+i , fontMask & fontBit ? fgbg.x : fgbg.y);
+		  }
 
-    } */
+	 } */
 
-		/* 
-        Magic code stolen from ted
-   */
+		/*
+		  Magic code stolen from ted
+	*/
 
 		for (u32 i = 0, i1 = 0, i2 = 0; i2 < fontHeight; ++i, ++i2, (i == scaleY) ? (i = 0, i1++) : i)
 		{
@@ -115,17 +115,17 @@ namespace glox::term
 	void initTerm(colorT* begin, colorT* end, size_t pitch, size_t width, size_t height)
 	{
 		con =
-			{
-				.fbBeg = begin,
-				.fbEnd = end,
-				.width = width,
-				.height = height,
-				.pitch = pitch};
+			 {
+				  .fbBeg = begin,
+				  .fbEnd = end,
+				  .width = width,
+				  .height = height,
+				  .pitch = pitch};
 	}
 
 	void clearScreen(colorT color)
 	{
-		//glox::drawRectangle(fbBeg,pitch,{0,0},{(colorT)width,(colorT)height},color);
+		// glox::drawRectangle(fbBeg,pitch,{0,0},{(colorT)width,(colorT)height},color);
 		glox::setRange(con.fbBeg, con.fbEnd, color);
 		at = {0, 0};
 	}

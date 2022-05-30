@@ -22,7 +22,7 @@ namespace glox
 	{
 		T first;
 		U second;
-      constexpr friend auto operator<=>(const pair&,const pair&) = default;
+        constexpr friend auto operator<=>(const pair&,const pair&) = default;
 	};
 
 	template <typename T>
@@ -39,13 +39,14 @@ namespace glox
       T* from,*to;
       public:
       using iterator = T*;
-		constexpr span(T* from, T* to) : from(from), to(to) 
+	  constexpr span() : from(nullptr),to(nullptr) {}
+	  constexpr span(T* from, T* to) : from(from), to(to)
       {
          gloxAssert(this->from < this->to,"Span shouldn't have negative range!");
       }
-      constexpr iterator begin() const {return from;}
-      constexpr iterator end() const {return to;}
-      constexpr size_t size() const {return to-from;}
+	  [[nodiscard]] constexpr iterator begin() const {return from;}
+	  [[nodiscard]] constexpr iterator end() const {return to;}
+      [[nodiscard]] constexpr size_t size() const {return to-from;}
       constexpr const T& operator[](size_t i) const
       {
          gloxAssert(i<size(),"Span access out of bounds");

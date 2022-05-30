@@ -9,6 +9,8 @@
 namespace glox
 {
    using uintptr = uintptr_t;
+	using paddrT = uintptr_t;
+	using vaddrT = uintptr_t;
    using sizeT = size_t;
    using u8 = uint8_t;
    using i8 = int8_t;
@@ -20,6 +22,9 @@ namespace glox
    using u64 = uint64_t;
 } // namespace glox
 
+using glox::paddrT;
+using glox::vaddrT;
+using glox::sizeT;
 using glox::uintptr;
 using glox::i16;
 using glox::i32;

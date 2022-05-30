@@ -6,7 +6,9 @@ add_executable( kernel
                 system/logging.cpp
                 system/font.cpp
                 system/terminal.cpp
+#                gloxor/allocator.cpp
 )
+
 
 add_subdirectory(arch)
 add_subdirectory(drivers)

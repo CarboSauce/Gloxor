@@ -48,11 +48,11 @@ struct eggHandle
 };
 
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-	extern struct eggHandle eggFrame;
-#ifdef __cplusplus
-}
-#endif
+//#ifdef __cplusplus
+//extern "C"
+//{
+//#endif
+//	extern struct eggHandle eggFrame;
+//#ifdef __cplusplus
+//}
+//#endif

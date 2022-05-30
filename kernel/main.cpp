@@ -2,9 +2,9 @@
 #include "arch/irq.hpp"
 #include "cpuid.h"
 #include "gloxor/modules.hpp"
-#include "protos/egg.h"
 #include "system/logging.hpp"
 #include "system/terminal.hpp"
+#include "gloxor/kinfo.hpp"
 using ctor_t = void (*)();
 using namespace arch;
 using namespace glox;
@@ -45,7 +45,6 @@ extern "C" void callGlobalCtors()
 	callCtorPointers(_ctorArrayStart, _ctorArrayEnd);
 }
 
-void gogole_test(eggHandle*);
 //extern void sleep(u64 ticks, u64 ms);
 //extern u64 getTicks();
 extern "C" void gloxorMain()
@@ -53,6 +52,7 @@ extern "C" void gloxorMain()
 	auto fbrange = glox::term::getUsedMemoryRange();
 	gloxDebugLogln("Con begin: ",fbrange.begin());
 	gloxDebugLogln("Con end: ",fbrange.end());
+
 	callPreCpuInits();
 	initializeCpu();
 	callDriverInits();
