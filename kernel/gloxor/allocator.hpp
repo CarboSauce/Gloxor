@@ -2,7 +2,11 @@
 #include "glox/math.hpp"
 #include "gloxor/types.hpp"
 #include "memory/pmm.hpp"
-
+#if defined(__GNUC__) && !defined(__clang__)
+	#define mallocAttribute(...) malloc(__VA_ARGS__)
+#else
+	#define mallocAttribute(...)
+#endif
 namespace glox
 {
 
@@ -11,9 +15,9 @@ namespace glox
 		return glox::pmmFree(ptr, size / glox::pmmChunkSize);
 	}
 
-	[[using gnu: malloc, malloc(glox::free, 1), alloc_size(1), aligned(glox::pmmChunkSize)]] void* alloc(sizeT bytes)
+	[[using gnu: malloc, mallocAttribute(glox::free, 1), alloc_size(1), aligned(glox::pmmChunkSize)]] void* alloc(sizeT bytes)
 	{
-		return glox::pmmAlloc(ALLIGNUP(bytes, glox::pmmChunkSize));
+		return glox::pmmAlloc(bytes/pmmChunkSize + 1);
 	}
 
 	struct kallocator

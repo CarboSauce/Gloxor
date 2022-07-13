@@ -35,8 +35,7 @@ namespace glox
 			sizeT width;
 		};
 
-		memoryMap* mmapEntries;
-		sizeT mmapSize;
+		glox::span<memoryMap> mmapEntries;
 		fbInfo fbInfoEntry;
 		glox::span<u8> kernelCode;
 		arch::kinfo archInfo; // meant to be used by arch specific code

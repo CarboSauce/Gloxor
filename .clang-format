@@ -25,7 +25,7 @@ FixNamespaceComments: true
 IndentCaseLabels: true
 IndentExternBlock: Indent
 IndentPPDirectives: BeforeHash
-NamespaceIndentation: All
+NamespaceIndentation: Inner
 PointerAlignment: Left
 SpaceBeforeAssignmentOperators: true
 AllowAllArgumentsOnNextLine: false
