@@ -1,5 +1,6 @@
 #include "asm/paging.hpp"
 #include "arch/addrspace.hpp"
+#include "arch/cpu.hpp"
 #include "arch/paging.hpp"
 #include "asm/asmstubs.hpp"
 #include "asm/msr.hpp"
@@ -44,7 +45,6 @@ static void identityMap()
 				const auto from = reinterpret_cast<void*>(it.base + i + physicalMemBase);
 				const auto to = reinterpret_cast<void*>(it.base + i);
 				map((u64)klvl4.entries, from,to);
-				map((u64)klvl4.entries, to, to);
 			}
 		}
 	}
@@ -72,15 +72,11 @@ vmemCtxT initKernelVirtMem()
 	identityMap();
 	auto fbrange = glox::term::getUsedMemoryRange();
 
-	gloxDebugLogln("Mapping framebuffer");
 	for (auto fbBeg = fbrange.begin(); fbBeg != fbrange.end(); fbBeg+=pageSize)
 	{
 		map((u64)klvl4.entries, fbBeg, (void*)getRealDataAddr(fbBeg));
 	}
 	mapKernel();
-	// gloxDebugLog("Kernel phys: ",kernelPhysOffset);
-	// gloxDebugLogln(translate((u64)klvl4.entries, kernelFileBegin));
-	// gloxDebugLogln(translate((u64)klvl4.entries, kernelFileEnd));
 	if (setupPAT())
 		gloxDebugLogln("PAT supported on boot cpu");
 	setContext(context);
@@ -138,7 +134,7 @@ bool map(vmemCtxT context, const void* from, const void* to, u64 mask)
 		auto freshAdr = (u64)glox::pmmAllocZ();
 		if (!freshAdr)
 			return false;
-		lvl3entry = maskEntry(freshAdr, mask);
+		lvl3entry = maskEntry(getRealDataAddr(freshAdr), mask);
 	}
 	auto* lvl3ptr = (lvl3table*)getPhysical(lvl3entry);
 	auto& lvl2entry = lvl3ptr->entries[index3];
@@ -147,7 +143,7 @@ bool map(vmemCtxT context, const void* from, const void* to, u64 mask)
 		auto freshAdr = (u64)glox::pmmAllocZ();
 		if (!freshAdr)
 			return false;
-		lvl2entry = maskEntry(freshAdr, mask);
+		lvl2entry = maskEntry(getRealDataAddr(freshAdr), mask);
 	}
 	auto* lvl2ptr = (lvl2table*)getPhysical(lvl2entry);
 	auto& lvl1entry = lvl2ptr->entries[index2];
@@ -156,7 +152,7 @@ bool map(vmemCtxT context, const void* from, const void* to, u64 mask)
 		auto freshAdr = (u64)glox::pmmAllocZ();
 		if (!freshAdr)
 			return false;
-		lvl1entry = maskEntry(freshAdr, mask);
+		lvl1entry = maskEntry(getRealDataAddr(freshAdr), mask);
 	}
 	auto* lvl1ptr = (lvl1table*)getPhysical(lvl1entry);
 	lvl1ptr->entries[index1] = maskEntry((u64)to, mask);

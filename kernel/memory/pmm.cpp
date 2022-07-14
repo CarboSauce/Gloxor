@@ -44,9 +44,12 @@ struct node
 	}
 	void insert(node<T>* left, node<T>* right)
 	{
-		gloxAssert(left != nullptr && right != nullptr);
-		left->next = this;
-		right->prev = this;
+		// gloxAssert(left != nullptr && right != nullptr);
+		//  temporary fix
+		if (left != nullptr)
+			left->next = this;
+		if (right != nullptr)
+			right->prev = this;
 		this->next = right;
 		this->prev = left;
 	}
@@ -162,6 +165,7 @@ inline void* allocFromChunk(list<pmmChunk>& chunk, sizeT pageCount)
 		it.data.size -= allocSize;
 		if (it.data.size == 0)
 		{
+			gloxDebugLogln("Empty chunk for removal detected");
 			if (it.next == nullptr)
 			{
 				if (it.prev == nullptr)
@@ -177,6 +181,8 @@ inline void* allocFromChunk(list<pmmChunk>& chunk, sizeT pageCount)
 				it.next->prev = it.prev;
 				it.prev->next = it.next;
 			}
+			if (&it == chunk.front) chunk.front = it.next;
+			if (&it == chunk.back ) chunk.back = it.prev;
 			return &it;
 		}
 		return reinterpret_cast<void*>(reinterpret_cast<uintptr>(&it) + it.data.size);
@@ -199,6 +205,23 @@ inline void appendChunk(pmmHeader*& back, pmmHeader* chunk, sizeT length)
 		back = chunk;
 	}
 }
+
+inline void prependChunk(pmmHeader*& front, pmmHeader* chunk, sizeT length)
+{
+	if ((uintptr)chunk + length == (uintptr)front)
+	{
+		chunk->data.size = front->data.size + length;
+		chunk->next = front->next;
+		front = chunk;
+	}
+	else
+	{
+		chunk->next = front;
+		chunk->prev = nullptr;
+		front = chunk;
+	}
+}
+
 
 // assumes chunk is in the node list range
 inline void insertChunk(pmmHeader*& from, pmmHeader* chunk, sizeT length)
@@ -250,53 +273,53 @@ inline void insertChunk(pmmHeader*& from, pmmHeader* chunk, sizeT length)
 namespace glox
 {
 
-	void pmmAddChunk(void* base, size_t length)
+void pmmAddChunk(void* base, size_t length)
+{
+	gloxAssert(length % glox::pmmChunkSize == 0, "Pmm chunk length must be multiple of pmmChunkSize");
+	const auto realBase = arch::toVirt((glox::vaddrT)base);
+	auto* chunk = reinterpret_cast<pmmHeader*>(realBase);
+	auto& pmmStart = pmmCtx.front;
+	auto& pmmEnd = pmmCtx.back;
+	chunk->next = nullptr;
+	chunk->data.size = length;
+	memorySize += length;
+	if (pmmStart == nullptr)
 	{
-		gloxAssert(length % glox::pmmChunkSize == 0, "Pmm chunk length must be multiple of pmmChunkSize");
-		const auto realBase = (uintptr)base + arch::physicalMemBase;
-		auto* chunk = reinterpret_cast<pmmHeader*>(realBase);
-		auto& pmmStart = pmmCtx.front;
-		auto& pmmEnd = pmmCtx.back;
-		chunk->next = nullptr;
-		chunk->data.size = length;
-		memorySize += length;
-		if (pmmStart == nullptr)
-		{
-			pmmStart = chunk;
-			pmmStart->prev = nullptr;
-			pmmEnd = chunk;
-		}
-		else if (pmmEnd < chunk)
-		{
-			appendChunk(pmmEnd, chunk, length);
-		}
-		else
-			insertChunk(pmmStart, chunk, length);
+		pmmStart = chunk;
+		pmmStart->prev = nullptr;
+		pmmEnd = chunk;
 	}
+	else if (pmmEnd < chunk)
+		appendChunk(pmmEnd, chunk, length);
+	else if (pmmStart > chunk)
+		prependChunk(pmmStart, chunk, length);
+	else
+		insertChunk(pmmStart, chunk, length);
+}
 
-	void* pmmAlloc(sizeT pageCount)
-	{
-		auto mem = allocFromChunk(pmmCtx, pageCount);
-		gloxDebugLogln("pmmAlloc(", pageCount, "): allocated address: ", mem);
-		return mem;
-	}
-	void* pmmAllocZ(sizeT pageCount)
-	{
-		auto addr = pmmAlloc(pageCount);
-		memset(addr, 0, pageCount * glox::pmmChunkSize);
-		return addr;
-	}
+void* pmmAlloc(sizeT pageCount)
+{
+	auto mem = allocFromChunk(pmmCtx, pageCount);
+	gloxDebugLogln("pmmAlloc(", pageCount, "): allocated address: ", mem);
+	return mem;
+}
+void* pmmAllocZ(sizeT pageCount)
+{
+	auto addr = pmmAlloc(pageCount);
+	memset(addr, 0, pageCount * glox::pmmChunkSize);
+	return addr;
+}
 
-	// void pmmFree(void* ptr)
-	// {
-	// 	glox::pmmAddChunk(ptr, glox::pmmChunkSize);
-	// }
-	void pmmFree(void* ptr, sizeT pageCount)
-	{
-		if (ptr == nullptr)
-			return;
-		glox::pmmAddChunk(ptr, glox::pmmChunkSize * pageCount);
-	}
+// void pmmFree(void* ptr)
+// {
+// 	glox::pmmAddChunk(ptr, glox::pmmChunkSize);
+// }
+void pmmFree(void* ptr, sizeT pageCount)
+{
+	if (ptr == nullptr)
+		return;
+	glox::pmmAddChunk(ptr, glox::pmmChunkSize * pageCount);
+}
 } // namespace glox
 
 static void test()
@@ -316,7 +339,7 @@ static void test()
 	{
 		gloxDebugLogln(&it, '-', (char*)&it + it.data.size);
 	}
-	for (int i = 0; i < size; i ++)
+	for (int i = 0; i < size; i++)
 		pmmFree(ptrs[i]);
 
 	gloxDebugLog("\nAfter freeing:\n");

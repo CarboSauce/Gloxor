@@ -25,6 +25,11 @@ namespace arch
 		gloxAssert(virt >= arch::physicalMemBase);
 		return virt - arch::physicalMemBase;
 	}
+	inline vaddrT toVirt(const paddrT addr)
+	{
+		if (addr < arch::physicalMemBase) return addr + arch::physicalMemBase;
+		return addr;
+	}
 
 	inline paddrT getRealDataAddr(const void* virt)
 	{

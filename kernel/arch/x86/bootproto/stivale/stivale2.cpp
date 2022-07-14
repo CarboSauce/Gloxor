@@ -115,7 +115,7 @@ inline void initializePmm(stivale2_struct_tag_memmap* m)
 		if (auto mTemp = mMap[curIndex];
 			 mTemp.type == STIVALE2_MMAP_USABLE) //|| mTemp.type == STIVALE2_MMAP_BOOTLOADER_RECLAIMABLE)
 		{
-			glox::pmmAddChunk(reinterpret_cast<void*>(mTemp.base), mTemp.length);
+			glox::pmmAddChunk(reinterpret_cast<void*>(mTemp.base + arch::physicalMemBase), mTemp.length);
 		}
 		/*else if (mMap[curIndex].type == STIVALE2_MMAP_FRAMEBUFFER)
 		{
