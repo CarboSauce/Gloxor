@@ -14,6 +14,16 @@ include(CMakeOptions.cmake)
 include(CheckCXXSourceCompiles)
 
 
+if (WITH_PIC)
+	set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+	#ist(APPEND CMMN_FLAGS -fpie -static-pie)
+	#list(APPEND KERNEL_LINK_FLAGS)
+else()
+	set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
+	list(APPEND CMMN_FLAGS -mcmodel=kernel -fno-pic -fno-pic )
+	list(APPEND KERNEL_LINK_FLAGS -no-pie)
+endif()
+
 if (FORCE_DEBUG)
     add_compile_definitions(DEBUGBUILD)
 endif()

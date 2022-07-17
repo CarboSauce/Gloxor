@@ -181,8 +181,10 @@ inline void* allocFromChunk(list<pmmChunk>& chunk, sizeT pageCount)
 				it.next->prev = it.prev;
 				it.prev->next = it.next;
 			}
-			if (&it == chunk.front) chunk.front = it.next;
-			if (&it == chunk.back ) chunk.back = it.prev;
+			if (&it == chunk.front)
+				chunk.front = it.next;
+			if (&it == chunk.back)
+				chunk.back = it.prev;
 			return &it;
 		}
 		return reinterpret_cast<void*>(reinterpret_cast<uintptr>(&it) + it.data.size);
@@ -221,7 +223,6 @@ inline void prependChunk(pmmHeader*& front, pmmHeader* chunk, sizeT length)
 		front = chunk;
 	}
 }
-
 
 // assumes chunk is in the node list range
 inline void insertChunk(pmmHeader*& from, pmmHeader* chunk, sizeT length)

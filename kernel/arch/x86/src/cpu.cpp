@@ -5,33 +5,34 @@
 #include "asm/gdt.hpp"
 #include "asm/idt.hpp"
 #include "gloxor/modules.hpp"
-#include "system/logging.hpp"
 #include "memory/virtmem.hpp"
 #include "system/danger.hpp"
-/* 
+#include "system/logging.hpp"
+
+/*
 [[gnu::no_caller_saved_registers]] extern "C" void _gloxAsmLongJump(); */
 using namespace arch;
 using namespace glox;
 using namespace arch::vmem;
 
 [[gnu::used]] static gdt code_data[3]{
-	{},
-	{
-		0x0000,		// limit
-		0x0000,		// base
-		0x00,		// base
-		0b10011010, // flags
-		0b00100000, // gran
-		0x00		// base
-	},
-	{
-		0x0000,		// limit
-		0x0000,		// base
-		0x00,		// base
-		0b10010010, // flags
-		0b00000000, // gran
-		0x00		// base
-	}};
+	 {},
+	 {
+		  0x0000,	  // limit
+		  0x0000,	  // base
+		  0x00,		  // base
+		  0b10011010, // flags
+		  0b00100000, // gran
+		  0x00		  // base
+	 },
+	 {
+		  0x0000,	  // limit
+		  0x0000,	  // base
+		  0x00,		  // base
+		  0b10010010, // flags
+		  0b00000000, // gran
+		  0x00		  // base
+	 }};
 [[gnu::used]] static idt idt_list[256]{};
 static u64 cpuFeatures;
 static u64 earlyCr3;
@@ -63,15 +64,15 @@ vmemCtxT kernelVirtCtx;
 [[gnu::interrupt]] static void PageFault(interrupt_frame_t*, size_t /* errc */)
 {
 	void* errorAdr = (void*)readCr(2);
-	gloxLogln("Page Fault at address: ",errorAdr);
-/* 	if (errorAdr < (u8*)0x1000)
-	{
-		gloxLog("Null pointer access\n");
-	} */
-//	if (!vmem::map(kernelVirtCtx,errorAdr,reinterpret_cast<void*>(arch::higherHalf-(u64)errorAdr)))
-//		arch::haltForever();
-	
-	//vmem::setContext(kernelVirtCtx);
+	gloxLogln("Page Fault at address: ", errorAdr);
+	/* 	if (errorAdr < (u8*)0x1000)
+		{
+			gloxLog("Null pointer access\n");
+		} */
+	//	if (!vmem::map(kernelVirtCtx,errorAdr,reinterpret_cast<void*>(arch::higherHalf-(u64)errorAdr)))
+	//		arch::haltForever();
+
+	// vmem::setContext(kernelVirtCtx);
 	glox::kernelPanic();
 }
 
@@ -87,29 +88,27 @@ inline void initializeCpuExtensions();
 
 namespace x86
 {
-	vmemCtxT initKernelVirtMem();
+vmemCtxT initKernelVirtMem();
 }
 
 namespace arch
 {
 
-	bool isFeatureSupported(featureBit features)
-	{
-		return cpuFeatures & static_cast<u64>(features);
-	}
+bool isFeatureSupported(featureBit features)
+{
+	return cpuFeatures & static_cast<u64>(features);
+}
 
-	void initializeCpu()
-	{
-		initializeGdt();
-		initializeInterrupts();
-		initializeCpuExtensions();
+void initializeCpu()
+{
+	initializeGdt();
+	initializeInterrupts();
+	initializeCpuExtensions();
 
-		gloxLogln("Cpu features:", cpuFeatures);
-		earlyCr3 = readCr(3);
-		kernelVirtCtx = x86::initKernelVirtMem();
-	}
-
-
+	gloxLogln("Cpu features:", cpuFeatures);
+	earlyCr3 = readCr(3);
+	kernelVirtCtx = x86::initKernelVirtMem();
+}
 
 } // namespace arch
 
@@ -118,36 +117,41 @@ inline void initializeGdt()
 	stopIrq();
 
 	gdt_pointer gdt_ptr = {
-		sizeof(code_data),
-		code_data};
+		 sizeof(code_data),
+		 code_data};
 
 	load_gdt(gdt_ptr);
 	// Perform long jump after loading gdt to flush instruction cache
 	// x86_64 doesnt support immediate long jump, so we have to do "magic"
 	// Its really ugly but tldr; it loads long pointer on stack and iretqs
 	asm volatile(
-		"pushq %%rbp\n"
-		"movq %%rsp, %%rbp\n"
-		"push %0\n"
-		"pushq %%rbp\n"
-		"pushfq\n"
-		"push %1\n"
-		"pushq $1f\n"
-		"iretq\n"
-		"1:\n"
-		"pop %%rbp\n"
-		"mov %0,%%ds; mov %0,%%es; mov %0,%%fs; mov %0,%%gs; mov %0,%%ss;"
-		:
-		: "r"((uint64_t)(0x10) /* ds */), "r"((uint64_t)0x8 /* cs */)
-		: "memory");
+		 "pushq %%rbp\n"
+		 "movq %%rsp, %%rbp\n"
+		 "push %0\n"
+		 "pushq %%rbp\n"
+		 "pushfq\n"
+		 "push %1\n"
+#if (__PIE__ > 0) || (__PIC__ > 0)
+		 "leaq 0x2(%%rip), %%rax\n" // 0x2 is the size of pushq and iretq
+		 "pushq %%rax\n"
+#else
+		 "pushq $1f\n"
+#endif
+		 "iretq\n"
+		 "1:\n"
+		 "pop %%rbp\n"
+		 "mov %0,%%ds; mov %0,%%es; mov %0,%%fs; mov %0,%%gs; mov %0,%%ss;"
+		 :
+		 : "r"((uint64_t)(0x10) /* ds */), "r"((uint64_t)0x8 /* cs */)
+		 : "memory", "%rax");
 }
 
 inline void initializeInterrupts()
 {
 
 	idt_pointer idt_ptr = {
-		sizeof(idt_list),
-		idt_list};
+		 sizeof(idt_list),
+		 idt_list};
 
 	idt_list[0].registerHandler((u64)DivZeroHandle, 0x8, 0, IDT_INTERRUPTGATE);
 	idt_list[2].registerHandler((u64)SpurInterrupt, 0x8, 0, IDT_INTERRUPTGATE);

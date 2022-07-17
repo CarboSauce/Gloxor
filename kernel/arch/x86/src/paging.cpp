@@ -8,7 +8,6 @@
 #include "gloxor/kinfo.hpp"
 #include "gloxor/types.hpp"
 #include "memory/pmm.hpp"
-#include "memory/virtmem.hpp"
 #include "system/logging.hpp"
 #include "system/terminal.hpp"
 /*
