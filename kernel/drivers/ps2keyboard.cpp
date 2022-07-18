@@ -1,9 +1,7 @@
-#include "ps2keyboard.hpp"
 #include "asm/asmstubs.hpp"
 #include "system/logging.hpp"
 #include "asm/idt.hpp"
-#include "pic8042contr.hpp"
-#include "arch/irq.hpp"
+#include "asm/pic8042contr.hpp"
 #include "gloxor/modules.hpp"
 #include "system/terminal.hpp"
 

@@ -1,7 +1,6 @@
 #include "arch/cpu.hpp"
 #include "arch/irq.hpp"
 #include "cpuid.h"
-#include "gloxor/kinfo.hpp"
 #include "gloxor/modules.hpp"
 #include "system/logging.hpp"
 #include "system/terminal.hpp"

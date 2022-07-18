@@ -1,6 +1,6 @@
 #include "logging.hpp"
 #include "danger.hpp"
-#include "drivers/e9.hpp"
+#include "asm/e9.hpp"
 #include "system/terminal.hpp"
 namespace glox
 {

@@ -1,5 +1,7 @@
 target_sources(kernel PRIVATE 
-    src/cpu.cpp
+	src/pic8042contr.cpp
+	src/pit8042.cpp
+	src/cpu.cpp
     src/paging.cpp
     # src/cpuHelpers.asm #Not needed for now
 )

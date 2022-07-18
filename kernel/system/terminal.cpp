@@ -1,5 +1,4 @@
 #include "terminal.hpp"
-#include "drivers/e9.hpp"
 #include "glox/string.hpp"
 #include "gloxor/graphics.hpp"
 

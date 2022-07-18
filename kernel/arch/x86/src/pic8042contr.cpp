@@ -1,4 +1,4 @@
-#include "pic8042contr.hpp"
+#include "asm/pic8042contr.hpp"
 #include "asm/asmstubs.hpp"
 #include "gloxor/modules.hpp"
 #include "system/logging.hpp"
