@@ -13,7 +13,8 @@ list(APPEND CMMN_FLAGS
 -fno-exceptions -fno-rtti -ffreestanding -fbuiltin -fno-threadsafe-statics -mgeneral-regs-only -mno-mmx -mno-sse -mno-sse2 -nostdlib)
 list(APPEND KERNEL_LINK_FLAGS -ffreestanding -nostdlib)
 
-set(LOG_LEVEL 0 CACHE STRING "Defines default log level; Debug = 0, Trace = 1, None = 2")
+set(LOG_LEVEL 3 CACHE STRING "Defines default log level; Fatal = 0, Trace = 1, Debug = 2")
+option(FORCE_DEBUG "Force debug checks, even in Release" ON)
 option(USE_LTO "Compile with LTO" OFF)
 option(COMPILE_TESTS "Compile Tests" ON)
 option(WITH_PIC "Compile kernel with PIC" ON)

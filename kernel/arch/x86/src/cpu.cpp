@@ -40,31 +40,31 @@ vmemCtxT kernelVirtCtx;
 
 [[gnu::interrupt]] static void DivZeroHandle(interrupt_frame_t*)
 {
-	gloxTraceLogln("You Fool Divided By Zero!\n");
+	gloxFatalLogln("You Fool Divided By Zero!\n");
 	glox::kernelPanic();
 }
 
 [[gnu::interrupt]] static void DoubleFault(interrupt_frame_t*)
 {
-	gloxTraceLogln("Double fault!\n");
+	gloxFatalLogln("Double fault!\n");
 	glox::kernelPanic();
 }
 [[gnu::interrupt]] static void SpurInterrupt(interrupt_frame_t*)
 {
-	gloxTraceLogln("Spurious Interrupt!\n");
+	gloxFatalLogln("Spurious Interrupt!\n");
 	glox::kernelPanic();
 }
 
 [[gnu::interrupt]] static void GPfault(interrupt_frame_t* frame, size_t /* errc */)
 {
-	gloxTraceLogln("General Protection Fault!\nRIP = ", (void*)frame->ip);
+	gloxFatalLogln("General Protection Fault!\nRIP = ", (void*)frame->ip);
 	glox::kernelPanic();
 }
 
 [[gnu::interrupt]] static void PageFault(interrupt_frame_t*, size_t /* errc */)
 {
 	void* errorAdr = (void*)readCr(2);
-	gloxTraceLogln("Page Fault at address: ", errorAdr);
+	gloxFatalLogln("Page Fault at address: ", errorAdr);
 	/* 	if (errorAdr < (u8*)0x1000)
 		{
 			gloxTraceLog("Null pointer access\n");
@@ -78,7 +78,7 @@ vmemCtxT kernelVirtCtx;
 
 [[gnu::interrupt]] static void IllegalOpcode(interrupt_frame_t* frame)
 {
-	gloxTraceLogln("Illegal opcode! RIP = ", (void*)frame->ip);
+	gloxFatalLogln("Illegal opcode! RIP = ", (void*)frame->ip);
 	arch::haltForever();
 }
 
@@ -198,12 +198,12 @@ static void testing()
 {
 	u32 eax, ebx, ecx, edx;
 	__cpuid(0x1, eax, ebx, ecx, edx);
-	gloxDebugLogln("CPUID ECX = ", ecx);
-	gloxDebugLogln("Is SSE supported? ", (edx & (1 << 25)) != 0);
-	gloxDebugLogln("Is XSAVE supported? ", (ecx & (1 << 26)) != 0);
-	gloxDebugLogln("Is OSXSAVE supported? ", (ecx & (1 << 27)) != 0);
-	gloxDebugLogln("Is RDRAND supported? ", ((ecx >> 30) & 1));
-	gloxDebugLogln("Is AVX supported? ", (ecx & (1 << 28)) != 0);
+	gloxTraceLogln("CPUID ECX = ", ecx);
+	gloxTraceLogln("Is SSE supported? ", (edx & (1 << 25)) != 0);
+	gloxTraceLogln("Is XSAVE supported? ", (ecx & (1 << 26)) != 0);
+	gloxTraceLogln("Is OSXSAVE supported? ", (ecx & (1 << 27)) != 0);
+	gloxTraceLogln("Is RDRAND supported? ", ((ecx >> 30) & 1));
+	gloxTraceLogln("Is AVX supported? ", (ecx & (1 << 28)) != 0);
 }
 
 registerTest(testing);

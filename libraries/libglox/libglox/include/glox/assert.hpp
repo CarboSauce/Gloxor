@@ -7,7 +7,7 @@ namespace glox
 
 
 #define gloxUnimplemented() glox::execAssert( "The function is unimplemented",__FILE__,_mSTRINGIFY(__LINE__))
-#ifndef NDEBUG
+#ifdef DEBUG
    #define _mSTRINGIFY(x) _implSTRINGIFY(x)
    #define _implSTRINGIFY(x) #x
 	#define gloxAssert(cond, ...) (void)((!!(cond)) || \

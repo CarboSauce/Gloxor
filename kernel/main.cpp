@@ -26,14 +26,14 @@ extern "C" void callCtorPointers(ctor_t* begin, ctor_t* end)
 
 extern "C" void callPreCpuInits()
 {
-	gloxTraceLogln("Pre Cpu Init:");
+	gloxDebugLogln("Pre Cpu Init:");
 
 	callCtorPointers(_modulePreCpuBegin, _moduleDriverCentralBegin);
 }
 
 extern "C" void callDriverInits()
 {
-	gloxTraceLogln("Driver Init:");
+	gloxDebugLogln("Driver Init:");
 	callCtorPointers(_moduleDriverCentralBegin, _moduleDriverEnd);
 	// We assume that Drivers havent enabled interrupts hopefully
 	gloxDebugLog("Starting Interrupts after driver initialization\n");
@@ -42,7 +42,7 @@ extern "C" void callDriverInits()
 
 extern "C" void callGlobalCtors()
 {
-	gloxTraceLogln("Global ctors :");
+	gloxDebugLogln("Global ctors :");
 	callCtorPointers(_ctorArrayStart, _ctorArrayEnd);
 }
 

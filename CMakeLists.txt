@@ -13,7 +13,6 @@ set(CMAKE_VERBOSE_MAKEFILE TRUE)
 include(CMakeOptions.cmake)
 include(CheckCXXSourceCompiles)
 
-
 if (WITH_PIC)
 	#set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 	list(APPEND CMMN_FLAGS -fpie)
@@ -25,18 +24,18 @@ else()
 	list(APPEND KERNEL_LINK_FLAGS -no-pie)
 endif()
 
-
-
 add_compile_definitions(LOGLEVEL=${LOG_LEVEL})
 if (COMPILE_TESTS)
-    add_compile_definitions(GLOXTESTING)
+   add_compile_definitions(GLOXTESTING)
+endif()
+if (FORCE_DEBUG OR CMAKE_BUILD_TYPE EQUAL "DEBUG")
+	add_compile_definitions(DEBUG)
 endif()
 
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
 
 set(WARNING_FLAGS
     $<$<COMPILE_LANG_AND_ID:CXX,Clang,GNU,AppleClang>:$<BUILD_INTERFACE:-Wall;-Wextra;-Wno-interrupt-service-routine>>
@@ -50,7 +49,6 @@ set(GLOX_COMPILE_FLAGS
 if (USE_LTO)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${USE_LTO})
 endif()
-
 
 add_subdirectory(libraries)
 add_subdirectory(kernel)
