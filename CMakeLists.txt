@@ -36,12 +36,6 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    message(STATUS "Detected Clang")
-    include(cmake/ClangToolchain.cmake)
-endif()
-
-
 
 set(WARNING_FLAGS
     $<$<COMPILE_LANG_AND_ID:CXX,Clang,GNU,AppleClang>:$<BUILD_INTERFACE:-Wall;-Wextra;-Wno-interrupt-service-routine>>
