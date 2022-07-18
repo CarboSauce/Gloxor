@@ -28,9 +28,7 @@ namespace glox::pit
 
 [[gnu::interrupt]] static void timerHandler(interrupt_frame_t* frame)
 {
-   tick += 1;/* 
-   if (tick % 1000 == 0)
-      gloxDebugLogln("Tick value is ",tick); */
+   tick += 1;
    glox::pic::sendEoiMaster();
 }
 

@@ -22,8 +22,8 @@ namespace arch::vmem
 	* @return false Mapping failed
 	 */
 
-	bool mapHugePage(vmemCtxT, const void* from, const void* to, vpageFlags flags = arch::vmem::defFlags);
-	bool map(vmemCtxT, const void* from, const void* to, vpageFlags flags = arch::vmem::defFlags);
+	bool mapHugePage(vmemCtxT, vaddrT from, paddrT to, vpageFlags flags = arch::vmem::defFlags);
+	bool map(vmemCtxT, vaddrT from, paddrT to, vpageFlags flags = arch::vmem::defFlags);
 	/**
 	 * @brief Unmap virtual address from current context
 	 *
@@ -31,14 +31,14 @@ namespace arch::vmem
 	 * @return true Success
 	 * @return false Unmapping failed, if even possible
 	 */
-	bool unmap(vmemCtxT, const void* whichVirtual);
+	bool unmap(vmemCtxT, vaddrT whichVirtual);
 	/**
 	 * @brief Translate virtual address to physical address
 	 *
 	 * @param from Virtual address to translate
 	 * @return void* Physical Address from translation
 	 */
-	void* translate(vmemCtxT, const void* from);
+	void* translate(vmemCtxT, vaddrT from);
 	/**
 	 * @brief Initialize Virtual memory context
 	 * @note Possibly allocating, hence we need to return error

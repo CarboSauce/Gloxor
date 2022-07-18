@@ -28,7 +28,7 @@ inline void mapKernel()
 	gloxDebugLogln("kernelPhysOffset: ", kernelPhysOffset);
 	for (size_t i = 0; i < size; i+=pageSize)
 	{
-		map(ctx, kernelFileBegin + i, (void*)(kernelPhysOffset + i), defFlags);
+		map(ctx, (vaddrT)kernelFileBegin + i, kernelPhysOffset + i, defFlags);
 	}
 }
 
@@ -41,8 +41,8 @@ static void identityMap()
 		{
 			for (sizeT i = 0; i < it.length; i += arch::vmem::pageSize)
 			{
-				const auto from = reinterpret_cast<void*>(it.base + i + physicalMemBase);
-				const auto to = reinterpret_cast<void*>(it.base + i);
+				const auto from = it.base + i + physicalMemBase;
+				const auto to = it.base + i;
 				map((u64)klvl4.entries, from,to);
 			}
 		}
@@ -62,6 +62,27 @@ inline bool setupPAT()
 	return true;
 }
 
+inline void mapRegion(vmemCtxT ctx, vaddrT from, paddrT to)
+{
+	auto isalign = [](auto a, auto b){return a % b == 0;};
+
+	while(from < to)
+	{
+		
+		if (to - from > 0x200'000 && isalign(from,0x200'000)) 
+		{
+			gloxDebugLogln("Performing huge map");
+			mapHugePage(ctx,from,getRealAddress(from));
+			from += 0x200'000;
+		}
+		else 
+		{
+			map(ctx,from,getRealAddress(from));
+			from += 0x1000;
+		}
+	}
+}
+
 namespace x86
 {
 vmemCtxT initKernelVirtMem()
@@ -70,11 +91,12 @@ vmemCtxT initKernelVirtMem()
 	gloxDebugLogln("Remapping CR3 to ", (void*)klvl4.entries, " phys address: ",(void*)context);
 	identityMap();
 	auto fbrange = glox::term::getUsedMemoryRange();
-
-	for (auto fbBeg = fbrange.begin(); fbBeg <= fbrange.end(); fbBeg+=pageSize)
-	{
-		map((u64)klvl4.entries, fbBeg, (void*)getRealDataAddr(fbBeg));
-	}
+	gloxDebugLogln("Mapping framebuffer from: ",fbrange.begin()," to: ",fbrange.end());
+	mapRegion(context,(vaddrT)fbrange.begin(),(paddrT)fbrange.end());
+	// for (auto fbBeg = fbrange.begin(); fbBeg <= fbrange.end(); fbBeg+=pageSize)
+	// {
+	// 	map((u64)klvl4.entries, (vaddrT)fbBeg, getRealDataAddr(fbBeg));
+	// }
 	mapKernel();
 	if (setupPAT())
 		gloxDebugLogln("PAT supported on boot cpu");
@@ -92,40 +114,38 @@ namespace arch::vmem
 	workaround is to completely rewrite memory manager
 	perhaps x86 paging shouldnt leak to kernel code
 */
-bool mapHugePage(vmemCtxT context, const void* from, const void* to, u64 mask)
+bool mapHugePage(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 {
-	const auto toaddr = (u64)to;
-	const auto fromaddr = (u64)from;
 	auto* lvl4ptr = (lvl4table*)context;
-	auto& lvl4entry = *getNextPte(lvl4ptr, toaddr, pteShift::lvl4);
+	auto& lvl4entry = *getNextPte(lvl4ptr, from, pteShift::lvl4);
 	if (!(lvl4entry & present))
 	{
 		const auto freshAdr = (u64)glox::pmmAllocZ();
 		if (!freshAdr)
 			return false;
-		lvl4entry = maskEntry(freshAdr, mask);
+		lvl4entry = maskEntry(getRealDataAddr(freshAdr), mask);
 	}
 	auto* lvl3ptr = (lvl3table*)getPhysical(lvl4entry);
-	auto& lvl3entry = *getNextPte(lvl3ptr, toaddr, pteShift::lvl3);
+	auto& lvl3entry = *getNextPte(lvl3ptr, from, pteShift::lvl3);
 	if (!(lvl3entry & present))
 	{
 		auto freshAdr = (u64)glox::pmmAllocZ();
 		if (!freshAdr)
 			return false;
-		lvl3entry = maskEntry(freshAdr, mask);
+		lvl3entry = maskEntry(getRealDataAddr(freshAdr), mask);
 	}
 	auto* lvl2ptr = (lvl2table*)getPhysical(lvl3entry);
-	auto& lvl2entry = *getNextPte(lvl2ptr, toaddr, pteShift::lvl2);
-	lvl2entry = maskEntry(toaddr & ~0x100000, mask | granul);
+	auto& lvl2entry = *getNextPte(lvl2ptr, from, pteShift::lvl2);
+	lvl2entry = maskEntry(to & ~0x100000, mask | granul);
 	return true;
 }
 
-bool map(vmemCtxT context, const void* from, const void* to, u64 mask)
+bool map(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 {
-	auto index4 = lvl4tableIndex((u64)from);
-	auto index3 = lvl3tableIndex((u64)from);
-	auto index2 = lvl2tableIndex((u64)from);
-	auto index1 = lvl1tableIndex((u64)from);
+	auto index4 = lvl4tableIndex(from);
+	auto index3 = lvl3tableIndex(from);
+	auto index2 = lvl2tableIndex(from);
+	auto index1 = lvl1tableIndex(from);
 	auto lvl4ptr = (lvl4table*)getPhysical(context);
 	auto& lvl3entry = lvl4ptr->entries[index4];
 	if (!glox::bitmask(lvl3entry, present))
@@ -154,7 +174,7 @@ bool map(vmemCtxT context, const void* from, const void* to, u64 mask)
 		lvl1entry = maskEntry(getRealDataAddr(freshAdr), mask);
 	}
 	auto* lvl1ptr = (lvl1table*)getPhysical(lvl1entry);
-	lvl1ptr->entries[index1] = maskEntry((u64)to, mask);
+	lvl1ptr->entries[index1] = maskEntry(to, mask);
 	return true;
 }
 
@@ -169,30 +189,27 @@ void setContext(vmemCtxT context)
 	gloxDebugLogln("Setting the cr3 to: ", (void*)maskEntry(context, writeThrough));
 	asm volatile("mov %0, %%cr3" ::"r"(maskEntry(context, writeThrough)));
 }
-void* translate(const vmemCtxT context, const void* from)
+void* translate(const vmemCtxT context, vaddrT from)
 {
-	gloxDebugLogln("Translating address ", from);
-	const auto addr = (u64)from;
 	const auto* lvl4ptr = (lvl4table*)getPhysical(context);
-	auto* lvl3ptr = (lvl3table*)getPhysical(*getNextPte(lvl4ptr, addr, pteShift::lvl4));
-	// VVVVVV is wrong
-	auto lvl3entry = *getNextPte(lvl3ptr, addr, pteShift::lvl3);
+	auto* lvl3ptr = (lvl3table*)getPhysical(*getNextPte(lvl4ptr, from, pteShift::lvl4));
+	auto lvl3entry = *getNextPte(lvl3ptr, from, pteShift::lvl3);
 	auto* lvl2ptr = (lvl2table*)getPhysical(lvl3entry);
 	if ((lvl3entry & granul) != 0)
 	{
-		const auto offset = addr & 0x3fffffff;
+		const auto offset = from & 0x3fffffff;
 		return (char*)lvl2ptr + offset;
 	}
-	const auto lvl2entry = *getNextPte(lvl2ptr, addr, pteShift::lvl2);
+	const auto lvl2entry = *getNextPte(lvl2ptr, from, pteShift::lvl2);
 	auto* lvl1ptr = (lvl1table*)getPhysical(lvl2entry);
 	if ((lvl2entry & granul) != 0)
 	{
-		const auto offset = addr & 0x1fffff;
+		const auto offset = from & 0x1fffff;
 		return (char*)lvl1ptr + offset;
 	}
 	gloxDebugLogln("Its lvl1: ", lvl1ptr);
-	const auto lvl1entry = *getNextPte(lvl1ptr, addr, pteShift::lvl1);
-	const auto offset = addr & 0xfff;
+	const auto lvl1entry = *getNextPte(lvl1ptr, from, pteShift::lvl1);
+	const auto offset = from & 0xfff;
 	return reinterpret_cast<char*>(getPhysical(lvl1entry)) + offset;
 }
 bool virtInitContext(vmemCtxT)
