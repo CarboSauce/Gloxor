@@ -40,34 +40,34 @@ vmemCtxT kernelVirtCtx;
 
 [[gnu::interrupt]] static void DivZeroHandle(interrupt_frame_t*)
 {
-	gloxLogln("You Fool Divided By Zero!\n");
+	gloxTraceLogln("You Fool Divided By Zero!\n");
 	glox::kernelPanic();
 }
 
 [[gnu::interrupt]] static void DoubleFault(interrupt_frame_t*)
 {
-	gloxLogln("Double fault!\n");
+	gloxTraceLogln("Double fault!\n");
 	glox::kernelPanic();
 }
 [[gnu::interrupt]] static void SpurInterrupt(interrupt_frame_t*)
 {
-	gloxLogln("Spurious Interrupt!\n");
+	gloxTraceLogln("Spurious Interrupt!\n");
 	glox::kernelPanic();
 }
 
 [[gnu::interrupt]] static void GPfault(interrupt_frame_t* frame, size_t /* errc */)
 {
-	gloxLogln("General Protection Fault!\nRIP = ", (void*)frame->ip);
+	gloxTraceLogln("General Protection Fault!\nRIP = ", (void*)frame->ip);
 	glox::kernelPanic();
 }
 
 [[gnu::interrupt]] static void PageFault(interrupt_frame_t*, size_t /* errc */)
 {
 	void* errorAdr = (void*)readCr(2);
-	gloxLogln("Page Fault at address: ", errorAdr);
+	gloxTraceLogln("Page Fault at address: ", errorAdr);
 	/* 	if (errorAdr < (u8*)0x1000)
 		{
-			gloxLog("Null pointer access\n");
+			gloxTraceLog("Null pointer access\n");
 		} */
 	//	if (!vmem::map(kernelVirtCtx,errorAdr,reinterpret_cast<void*>(arch::higherHalf-(u64)errorAdr)))
 	//		arch::haltForever();
@@ -78,7 +78,7 @@ vmemCtxT kernelVirtCtx;
 
 [[gnu::interrupt]] static void IllegalOpcode(interrupt_frame_t* frame)
 {
-	gloxLogln("Illegal opcode! RIP = ", (void*)frame->ip);
+	gloxTraceLogln("Illegal opcode! RIP = ", (void*)frame->ip);
 	arch::haltForever();
 }
 
@@ -105,7 +105,7 @@ void initializeCpu()
 	initializeInterrupts();
 	initializeCpuExtensions();
 
-	gloxLogln("Cpu features:", cpuFeatures);
+	gloxTraceLogln("Cpu features:", cpuFeatures);
 	earlyCr3 = readCr(3);
 	kernelVirtCtx = x86::initKernelVirtMem();
 }

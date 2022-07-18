@@ -16,14 +16,14 @@
    }
    else if (val == 158)
    {
-      gloxLog("Borgir\n");
+      gloxTraceLog("Borgir\n");
    }
    else if (val == 22)
-      gloxLog("Bor");
+      gloxTraceLog("Bor");
    else if (val == 150)
-      gloxLog("gar");
+      gloxTraceLog("gar");
    else
-      gloxLogln("Kbval = ",val);
+      gloxTraceLogln("Kbval = ",val);
    glox::pic::sendEoiMaster();
 }
 

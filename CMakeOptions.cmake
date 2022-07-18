@@ -13,7 +13,7 @@ list(APPEND CMMN_FLAGS
 -fno-exceptions -fno-rtti -ffreestanding -fbuiltin -fno-threadsafe-statics -mgeneral-regs-only -mno-mmx -mno-sse -mno-sse2 -nostdlib)
 list(APPEND KERNEL_LINK_FLAGS -ffreestanding -nostdlib)
 
-option(FORCE_DEBUG "Should asserts work even in release" ON)
+set(LOG_LEVEL 0 CACHE STRING "Defines default log level; Debug = 0, Trace = 1, None = 2")
 option(USE_LTO "Compile with LTO" OFF)
 option(COMPILE_TESTS "Compile Tests" ON)
 option(WITH_PIC "Compile kernel with PIC" ON)

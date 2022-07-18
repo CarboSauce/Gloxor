@@ -71,7 +71,7 @@ vmemCtxT initKernelVirtMem()
 	identityMap();
 	auto fbrange = glox::term::getUsedMemoryRange();
 
-	for (auto fbBeg = fbrange.begin(); fbBeg != fbrange.end(); fbBeg+=pageSize)
+	for (auto fbBeg = fbrange.begin(); fbBeg <= fbrange.end(); fbBeg+=pageSize)
 	{
 		map((u64)klvl4.entries, fbBeg, (void*)getRealDataAddr(fbBeg));
 	}

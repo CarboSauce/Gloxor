@@ -15,18 +15,19 @@ include(CheckCXXSourceCompiles)
 
 
 if (WITH_PIC)
-	set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-	#ist(APPEND CMMN_FLAGS -fpie -static-pie)
+	#set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+	list(APPEND CMMN_FLAGS -fpie)
+	list(APPEND KERNEL_LINK_FLAGS -pie)
 	#list(APPEND KERNEL_LINK_FLAGS)
 else()
 	set(CMAKE_POSITION_INDEPENDENT_CODE OFF)
-	list(APPEND CMMN_FLAGS -mcmodel=kernel -fno-pic -fno-pic )
+	list(APPEND CMMN_FLAGS -mcmodel=kernel -fno-pic -fno-pie )
 	list(APPEND KERNEL_LINK_FLAGS -no-pie)
 endif()
 
-if (FORCE_DEBUG)
-    add_compile_definitions(DEBUGBUILD)
-endif()
+
+
+add_compile_definitions(LOGLEVEL=${LOG_LEVEL})
 if (COMPILE_TESTS)
     add_compile_definitions(GLOXTESTING)
 endif()

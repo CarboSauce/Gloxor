@@ -1,5 +1,6 @@
 #include "system/danger.hpp"
 #include "glox/algo.hpp"
+#include "system/logging.hpp"
 #include "system/terminal.hpp"
 #include "arch/cpu.hpp"
 
@@ -18,7 +19,7 @@ static inline void drawPanic()
 			beg[i * width + j] = hmmm;
 		}
 	} */
-	glox::term::writeStr("\nKernel Panic moment");
+	gloxDebugLog("\nKernel Panic moment");
 
 }
 

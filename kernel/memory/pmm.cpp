@@ -165,7 +165,6 @@ inline void* allocFromChunk(list<pmmChunk>& chunk, sizeT pageCount)
 		it.data.size -= allocSize;
 		if (it.data.size == 0)
 		{
-			gloxDebugLogln("Empty chunk for removal detected");
 			if (it.next == nullptr)
 			{
 				if (it.prev == nullptr)
@@ -301,7 +300,7 @@ void pmmAddChunk(void* base, size_t length)
 void* pmmAlloc(sizeT pageCount)
 {
 	auto mem = allocFromChunk(pmmCtx, pageCount);
-	gloxDebugLogln("pmmAlloc(", pageCount, "): allocated address: ", mem);
+	//gloxDebugLogln("pmmAlloc(", pageCount, "): allocated address: ", mem);
 	return mem;
 }
 void* pmmAllocZ(sizeT pageCount)
