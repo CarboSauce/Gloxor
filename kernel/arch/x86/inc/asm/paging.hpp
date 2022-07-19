@@ -1,8 +1,8 @@
 #pragma once
-#include "glox/util.hpp"
-#include "gloxor/types.hpp"
 #include "arch/addrspace.hpp"
+#include "gloxor/types.hpp"
 
+// TODO: this namespace name is so bad, change it
 namespace x86::vmem
 {
 enum pagingBits
@@ -45,26 +45,6 @@ using lvl3table = pdpt;
 using lvl2table = pdt;
 using lvl1table = pt;
 
-constexpr size_t lvl5tableIndex(u64 addr)
-{
-	return (addr >> 48) & 0x1ff;
-}
-constexpr size_t lvl4tableIndex(u64 addr)
-{
-	return (addr >> 39) & 0x1ff;
-}
-constexpr size_t lvl3tableIndex(u64 addr)
-{
-	return (addr >> 30) & 0x1ff;
-}
-constexpr size_t lvl2tableIndex(u64 addr)
-{
-	return (addr >> 21) & 0x1ff;
-}
-constexpr size_t lvl1tableIndex(u64 addr)
-{
-	return (addr >> 12) & 0x1ff;
-}
 constexpr u64 getPhysical(u64 entry)
 {
 	return entry & (~0xfff);
@@ -82,14 +62,54 @@ constexpr size_t pteIndex(u64 addr, pteShift shiftval)
 inline u64* getNextPte(pagetable* table, u64 addr, pteShift shiftval)
 {
 	gloxAssert(table != nullptr);
-	const auto index = pteIndex(addr, shiftval);
-	return &table->entries[index];
+    const auto tab = (pagetable*)arch::toVirt((u64)table);
+    const auto index = pteIndex(addr, shiftval);
+    return &(tab->entries[index]);
 }
-inline const u64* getNextPte(const pagetable* table, u64 addr, pteShift shiftval)
+
+enum class pageLevel
 {
-	gloxAssert(table != nullptr);
-	const auto index = pteIndex(addr, shiftval);
-	return &table->entries[index];
-}
+    lvl1 = 1,
+    lvl2,
+    lvl3,
+    lvl4,
+    lvl5
+};
+
+/**
+ * @brief Type used for managing page tables
+ * slowly shift towards using this type for all ptable manipulations
+ */
+template <pageLevel I>
+struct alignas(0x1000) pageTable
+{
+    static constexpr size_t lvl = static_cast<size_t>(I);
+    static_assert(lvl > 0 && lvl < 5, "Page table level must be between 1 and 4");
+    static constexpr size_t shift = lvl * 9 + 3;
+    u64 entries[512];
+
+    auto begin()
+    {
+        return entries;
+    }
+    auto end()
+    {
+        return entries + 512;
+    }
+    auto index(glox::vaddrT addr)
+    {
+        return (addr >> shift) & 0x1ff;
+    }
+    /**
+     * @brief Obtains lower level table from the provided addr
+     * @param addr Address used for retrieving next table
+     * @return Next table of lower level
+     */
+    auto next(glox::vaddrT addr)
+    {
+        static_assert(I > pageLevel::lvl1, "Can't get next table from lvl1 page table");
+        return reinterpret_cast<pageTable<pageLevel(lvl - 1)>*>(entries[index(addr)]);
+    }
+};
 
 } // namespace x86::vmem

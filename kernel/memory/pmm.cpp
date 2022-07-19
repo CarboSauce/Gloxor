@@ -299,9 +299,8 @@ void pmmAddChunk(void* base, size_t length)
 
 void* pmmAlloc(sizeT pageCount)
 {
-	auto mem = allocFromChunk(pmmCtx, pageCount);
-	//gloxDebugLogln("pmmAlloc(", pageCount, "): allocated address: ", mem);
-	return mem;
+    auto mem = allocFromChunk(pmmCtx, pageCount);
+    return mem;
 }
 void* pmmAllocZ(sizeT pageCount)
 {
