@@ -10,12 +10,13 @@
 namespace glox
 {
 
-	void free(void* ptr, sizeT size)
+	inline void free(void* ptr, sizeT size)
 	{
 		return glox::pmmFree(ptr, size / glox::pmmChunkSize);
 	}
 
-	[[using gnu: malloc, mallocAttribute(glox::free, 1), alloc_size(1), aligned(glox::pmmChunkSize)]] void* alloc(sizeT bytes)
+	[[using gnu: malloc, mallocAttribute(glox::free, 1), alloc_size(1), aligned(glox::pmmChunkSize)]] 
+	inline void* alloc(sizeT bytes)
 	{
 		return glox::pmmAlloc(bytes/pmmChunkSize + 1);
 	}

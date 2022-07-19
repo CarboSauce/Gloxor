@@ -155,7 +155,7 @@ inline void setupKernelmemmap(stivale2_struct_tag_memmap* m)
 {
 	const auto* mMap = m->memmap;
 	const auto entryCount = m->entries;
-	auto* memmap = (bootInfo::memoryMap*)glox::alloc(entryCount * sizeof(bootInfo::memoryMap));
+	auto* memmap = new bootInfo::memoryMap[entryCount];//(bootInfo::memoryMap*)glox::alloc(entryCount * sizeof(bootInfo::memoryMap));
 	for (size_t i = 0; i != entryCount; ++i)
 	{
 		auto mTemp = mMap[i];

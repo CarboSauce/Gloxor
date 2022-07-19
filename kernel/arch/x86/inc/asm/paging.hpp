@@ -64,19 +64,10 @@ constexpr size_t lvl1tableIndex(u64 addr)
 {
 	return (addr >> 12) & 0x1ff;
 }
-/* 	constexpr size_t virtOffsetIndex(uintptr_t addr)
-	{
-		return addr & (0xfff);
-	} */
-
 constexpr u64 getPhysical(u64 entry)
 {
 	return entry & (~0xfff);
 }
-//	inline u64 getPhysical(void* entry)
-//	{
-//		return reinterpret_cast<u64>(entry) & (~0xfff);
-//	}
 
 constexpr u64 maskEntry(u64 physAddr, u64 mask)
 {

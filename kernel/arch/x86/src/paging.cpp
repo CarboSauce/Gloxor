@@ -62,7 +62,7 @@ inline bool setupPAT()
 	return true;
 }
 
-inline void mapRegion(vmemCtxT ctx, vaddrT from, paddrT to)
+inline void mapRegion(vmemCtxT ctx, vaddrT from, vaddrT to, paddrT start)
 {
 	auto isalign = [](auto a, auto b){return a % b == 0;};
 
@@ -72,13 +72,15 @@ inline void mapRegion(vmemCtxT ctx, vaddrT from, paddrT to)
 		if (to - from > 0x200'000 && isalign(from,0x200'000)) 
 		{
 			gloxDebugLogln("Performing huge map");
-			mapHugePage(ctx,from,getRealAddress(from));
+			mapHugePage(ctx,from,start);
 			from += 0x200'000;
+			start += 0x200'000;
 		}
 		else 
 		{
-			map(ctx,from,getRealAddress(from));
+			map(ctx,from,start);
 			from += 0x1000;
+			start += 0x1000;
 		}
 	}
 }
@@ -90,9 +92,9 @@ vmemCtxT initKernelVirtMem()
 	auto context = getRealKernelAddr(klvl4.entries);
 	gloxDebugLogln("Remapping CR3 to ", (void*)klvl4.entries, " phys address: ",(void*)context);
 	identityMap();
-	auto fbrange = glox::term::getUsedMemoryRange();
-	gloxDebugLogln("Mapping framebuffer from: ",fbrange.begin()," to: ",fbrange.end());
-	mapRegion(context,(vaddrT)fbrange.begin(),(paddrT)fbrange.end());
+	auto [fbeg,fend] = glox::term::getUsedMemoryRange();
+	gloxDebugLogln("Mapping framebuffer from: ",fbeg," to: ",fbeg);
+	mapRegion(context,(vaddrT)fbeg,(paddrT)fend,getRealDataAddr((paddrT)fbeg));
 	// for (auto fbBeg = fbrange.begin(); fbBeg <= fbrange.end(); fbBeg+=pageSize)
 	// {
 	// 	map((u64)klvl4.entries, (vaddrT)fbBeg, getRealDataAddr(fbBeg));
@@ -108,11 +110,7 @@ vmemCtxT initKernelVirtMem()
 namespace arch::vmem
 {
 /*
-	Allocator seems to work, but because of PAT flag being the same
-	as granuality flag, one cant actually allocate page with PAT set
-
-	workaround is to completely rewrite memory manager
-	perhaps x86 paging shouldnt leak to kernel code
+	Completely unreadable, reconsider rewritting with member functions
 */
 bool mapHugePage(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 {
@@ -142,39 +140,35 @@ bool mapHugePage(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 
 bool map(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 {
-	auto index4 = lvl4tableIndex(from);
-	auto index3 = lvl3tableIndex(from);
-	auto index2 = lvl2tableIndex(from);
-	auto index1 = lvl1tableIndex(from);
-	auto lvl4ptr = (lvl4table*)getPhysical(context);
-	auto& lvl3entry = lvl4ptr->entries[index4];
-	if (!glox::bitmask(lvl3entry, present))
+	auto* lvl4ptr = (lvl4table*)context;
+	auto& lvl4entry = *getNextPte(lvl4ptr, from, pteShift::lvl4);
+	if (!(lvl4entry & present))
+	{
+		const auto freshAdr = (u64)glox::pmmAllocZ();
+		if (!freshAdr)
+			return false;
+		lvl4entry = maskEntry(getRealDataAddr(freshAdr), mask);
+	}
+	auto* lvl3ptr = (lvl3table*)getPhysical(lvl4entry);
+	auto& lvl3entry = *getNextPte(lvl3ptr, from, pteShift::lvl3);
+	if (!(lvl3entry & present))
 	{
 		auto freshAdr = (u64)glox::pmmAllocZ();
 		if (!freshAdr)
 			return false;
 		lvl3entry = maskEntry(getRealDataAddr(freshAdr), mask);
 	}
-	auto* lvl3ptr = (lvl3table*)getPhysical(lvl3entry);
-	auto& lvl2entry = lvl3ptr->entries[index3];
-	if (!glox::bitmask(lvl2entry, present))
+	auto* lvl2ptr = (lvl2table*)getPhysical(lvl3entry);
+	auto& lvl2entry = *getNextPte(lvl2ptr, from, pteShift::lvl2);
+	if (!(lvl2entry & present))
 	{
 		auto freshAdr = (u64)glox::pmmAllocZ();
 		if (!freshAdr)
 			return false;
 		lvl2entry = maskEntry(getRealDataAddr(freshAdr), mask);
 	}
-	auto* lvl2ptr = (lvl2table*)getPhysical(lvl2entry);
-	auto& lvl1entry = lvl2ptr->entries[index2];
-	if (!glox::bitmask(lvl1entry, present))
-	{
-		auto freshAdr = (u64)glox::pmmAllocZ();
-		if (!freshAdr)
-			return false;
-		lvl1entry = maskEntry(getRealDataAddr(freshAdr), mask);
-	}
-	auto* lvl1ptr = (lvl1table*)getPhysical(lvl1entry);
-	lvl1ptr->entries[index1] = maskEntry(to, mask);
+	auto* lvl1ptr = (lvl1table*)getPhysical(lvl2entry);
+	*getNextPte(lvl1ptr, from, pteShift::lvl1) = maskEntry(getPhysical(to), mask );
 	return true;
 }
 
