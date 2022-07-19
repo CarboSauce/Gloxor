@@ -21,12 +21,36 @@ using namespace glox;
 
 static lvl4table klvl4{};
 
+inline void mapRegion(vmemCtxT ctx, vaddrT from, vaddrT to, paddrT start)
+{
+	auto isalign = [](auto a, auto b)
+	{ return a % b == 0; };
+
+	while (from < to)
+	{
+
+		if (to - from > 0x200'000 && isalign(from, 0x200'000))
+		{
+			gloxDebugLogln("Performing huge map");
+			mapHugePage(ctx, from, start);
+			from += 0x200'000;
+			start += 0x200'000;
+		}
+		else
+		{
+			map(ctx, from, start);
+			from += 0x1000;
+			start += 0x1000;
+		}
+	}
+}
+
 inline void mapKernel()
 {
 	auto ctx = (vmemCtxT)klvl4.entries;
 	size_t size = (kernelFileEnd - kernelFileBegin);
 	gloxDebugLogln("kernelPhysOffset: ", kernelPhysOffset);
-	for (size_t i = 0; i < size; i+=pageSize)
+	for (size_t i = 0; i < size; i += pageSize)
 	{
 		map(ctx, (vaddrT)kernelFileBegin + i, kernelPhysOffset + i, defFlags);
 	}
@@ -36,15 +60,17 @@ static void identityMap()
 {
 	for (const auto& it : glox::machineInfo.mmapEntries)
 	{
-		if (it.type == bootInfo::memTypes::usable || 
-			 it.type == bootInfo::memTypes::reclaimable)
+		if (it.type == bootInfo::memTypes::usable || it.type == bootInfo::memTypes::reclaimable)
 		{
-			for (sizeT i = 0; i < it.length; i += arch::vmem::pageSize)
-			{
-				const auto from = it.base + i + physicalMemBase;
-				const auto to = it.base + i;
-				map((u64)klvl4.entries, from,to);
-			}
+			// for (sizeT i = 0; i < it.length; i += arch::vmem::pageSize)
+			// {
+			// 	const auto from = it.base + i + physicalMemBase;
+			// 	const auto to = it.base + i;
+			// 	map((u64)klvl4.entries, from, to);
+			// }
+			const auto from = it.base + physicalMemBase;
+			const auto to = it.base;
+			mapRegion((u64)klvl4.entries,from,from+it.length,to); 
 		}
 	}
 }
@@ -62,43 +88,16 @@ inline bool setupPAT()
 	return true;
 }
 
-inline void mapRegion(vmemCtxT ctx, vaddrT from, vaddrT to, paddrT start)
-{
-	auto isalign = [](auto a, auto b){return a % b == 0;};
-
-	while(from < to)
-	{
-		
-		if (to - from > 0x200'000 && isalign(from,0x200'000)) 
-		{
-			gloxDebugLogln("Performing huge map");
-			mapHugePage(ctx,from,start);
-			from += 0x200'000;
-			start += 0x200'000;
-		}
-		else 
-		{
-			map(ctx,from,start);
-			from += 0x1000;
-			start += 0x1000;
-		}
-	}
-}
-
 namespace x86
 {
 vmemCtxT initKernelVirtMem()
 {
 	auto context = getRealKernelAddr(klvl4.entries);
-	gloxDebugLogln("Remapping CR3 to ", (void*)klvl4.entries, " phys address: ",(void*)context);
+	gloxDebugLogln("Remapping CR3 to ", (void*)klvl4.entries, " phys address: ", (void*)context);
 	identityMap();
-	auto [fbeg,fend] = glox::term::getUsedMemoryRange();
-	gloxDebugLogln("Mapping framebuffer from: ",fbeg," to: ",fbeg);
-	mapRegion(context,(vaddrT)fbeg,(paddrT)fend,getRealDataAddr((paddrT)fbeg));
-	// for (auto fbBeg = fbrange.begin(); fbBeg <= fbrange.end(); fbBeg+=pageSize)
-	// {
-	// 	map((u64)klvl4.entries, (vaddrT)fbBeg, getRealDataAddr(fbBeg));
-	// }
+	auto [fbeg, fend] = glox::term::getUsedMemoryRange();
+	gloxDebugLogln("Mapping framebuffer from: ", fbeg, " to: ", fbeg);
+	mapRegion(context, (vaddrT)fbeg, (paddrT)fend, getRealDataAddr((paddrT)fbeg));
 	mapKernel();
 	if (setupPAT())
 		gloxDebugLogln("PAT supported on boot cpu");
@@ -112,6 +111,11 @@ namespace arch::vmem
 /*
 	Completely unreadable, reconsider rewritting with member functions
 */
+inline u64* toVirt(u64* addr)
+{
+	return (u64*)arch::toVirt((u64)addr);
+}
+
 bool mapHugePage(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 {
 	auto* lvl4ptr = (lvl4table*)context;
@@ -141,7 +145,7 @@ bool mapHugePage(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 bool map(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 {
 	auto* lvl4ptr = (lvl4table*)context;
-	auto& lvl4entry = *getNextPte(lvl4ptr, from, pteShift::lvl4);
+	auto& lvl4entry = *toVirt(getNextPte(lvl4ptr, from, pteShift::lvl4));
 	if (!(lvl4entry & present))
 	{
 		const auto freshAdr = (u64)glox::pmmAllocZ();
@@ -168,7 +172,7 @@ bool map(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 		lvl2entry = maskEntry(getRealDataAddr(freshAdr), mask);
 	}
 	auto* lvl1ptr = (lvl1table*)getPhysical(lvl2entry);
-	*getNextPte(lvl1ptr, from, pteShift::lvl1) = maskEntry(getPhysical(to), mask );
+	*getNextPte(lvl1ptr, from, pteShift::lvl1) = maskEntry(getPhysical(to), mask);
 	return true;
 }
 

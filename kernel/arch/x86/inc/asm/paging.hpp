@@ -1,6 +1,7 @@
 #pragma once
 #include "glox/util.hpp"
 #include "gloxor/types.hpp"
+#include "arch/addrspace.hpp"
 
 namespace x86::vmem
 {
