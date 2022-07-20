@@ -29,7 +29,7 @@ inline void mapRegion(vmemCtxT ctx, vaddrT from, vaddrT to, paddrT start)
 
 		if (to - from > 0x200'000 && isalign(from, 0x200'000))
 		{
-            mapHugePage(ctx, from, start);
+			mapHugePage(ctx, from, start);
 			from += 0x200'000;
 			start += 0x200'000;
 		}
@@ -46,11 +46,11 @@ inline void mapKernel()
 {
 	auto ctx = (vmemCtxT)klvl4.entries;
 	size_t size = (kernelFileEnd - kernelFileBegin);
-    gloxDebugLogln("kernelPhysOffset: ", kernelPhysOffset);
+	gloxDebugLogln("kernelPhysOffset: ", kernelPhysOffset);
 	for (size_t i = 0; i < size; i += pageSize)
 	{
-        map(ctx, (vaddrT)kernelFileBegin + i, kernelPhysOffset + i, defFlags);
-    }
+		map(ctx, (vaddrT)kernelFileBegin + i, kernelPhysOffset + i, defFlags);
+	}
 }
 
 static void identityMap()
@@ -61,7 +61,7 @@ static void identityMap()
 		{
 			const auto from = it.base + physicalMemBase;
 			const auto to = it.base;
-            mapRegion((u64)klvl4.entries, from, from + it.length, to);
+			mapRegion((u64)klvl4.entries, from, from + it.length, to);
 		}
 	}
 }
@@ -83,7 +83,7 @@ namespace x86
 {
 vmemCtxT initKernelVirtMem()
 {
-    auto context = (vmemCtxT)klvl4.entries;
+	auto context = (vmemCtxT)klvl4.entries;
 	gloxDebugLogln("Remapping CR3 to ", (void*)klvl4.entries, " phys address: ", (void*)context);
 	identityMap();
 	auto [fbeg, fend] = glox::term::getUsedMemoryRange();
@@ -93,15 +93,15 @@ vmemCtxT initKernelVirtMem()
 	if (setupPAT())
 		gloxDebugLogln("PAT supported on boot cpu");
 	setContext(context);
-    map(context, 0x5000, 0x5000);
-    return context;
+	map(context, 0x5000, 0x5000);
+	return context;
 }
 } // namespace x86
 
 namespace arch::vmem
 {
 /*
-     TODO: Completely unreadable, reconsider rewritting with member functions
+	  TODO: Completely unreadable, reconsider rewritting with member functions
 */
 bool mapHugePage(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 {
@@ -132,7 +132,7 @@ bool mapHugePage(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 bool map(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 {
 	auto* lvl4ptr = (lvl4table*)context;
-    auto& lvl4entry = *getNextPte(lvl4ptr, from, pteShift::lvl4);
+	auto& lvl4entry = *getNextPte(lvl4ptr, from, pteShift::lvl4);
 	if (!(lvl4entry & present))
 	{
 		const auto freshAdr = (u64)glox::pmmAllocZ();
@@ -171,13 +171,13 @@ bool unmap(vmemCtxT context, const void* whichVirtual)
 }
 void setContext(vmemCtxT context)
 {
-    auto realCtx = getRealAddress(context);
-    gloxDebugLogln("Setting the cr3 to: ", (void*)maskEntry(realCtx, writeThrough));
-    asm volatile("mov %0, %%cr3" ::"r"(maskEntry(realCtx, writeThrough)));
+	auto realCtx = getRealAddress(context);
+	gloxDebugLogln("Setting the cr3 to: ", (void*)maskEntry(realCtx, writeThrough));
+	asm volatile("mov %0, %%cr3" ::"r"(maskEntry(realCtx, writeThrough)));
 }
 void* translate(const vmemCtxT context, vaddrT from)
 {
-    auto* lvl4ptr = (lvl4table*)getPhysical(context);
+	auto* lvl4ptr = (lvl4table*)getPhysical(context);
 	auto* lvl3ptr = (lvl3table*)getPhysical(*getNextPte(lvl4ptr, from, pteShift::lvl4));
 	auto lvl3entry = *getNextPte(lvl3ptr, from, pteShift::lvl3);
 	auto* lvl2ptr = (lvl2table*)getPhysical(lvl3entry);
@@ -186,7 +186,7 @@ void* translate(const vmemCtxT context, vaddrT from)
 		const auto offset = from & 0x3fffffff;
 		return (char*)lvl2ptr + offset;
 	}
-    auto lvl2entry = *getNextPte(lvl2ptr, from, pteShift::lvl2);
+	auto lvl2entry = *getNextPte(lvl2ptr, from, pteShift::lvl2);
 	auto* lvl1ptr = (lvl1table*)getPhysical(lvl2entry);
 	if ((lvl2entry & granul) != 0)
 	{
@@ -195,7 +195,7 @@ void* translate(const vmemCtxT context, vaddrT from)
 	}
 	gloxDebugLogln("Its lvl1: ", lvl1ptr);
 	const auto lvl1entry = *getNextPte(lvl1ptr, from, pteShift::lvl1);
-    const auto offset = from & 0xfff;
+	const auto offset = from & 0xfff;
 	return reinterpret_cast<char*>(getPhysical(lvl1entry)) + offset;
 }
 bool virtInitContext(vmemCtxT)
