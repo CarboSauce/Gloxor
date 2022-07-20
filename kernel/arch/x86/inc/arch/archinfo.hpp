@@ -7,4 +7,5 @@ namespace arch
 	{
 		paddrT acpiRsdp;
 	};
+	inline arch::kinfo archInfo; // meant to be used by arch specific code
 }

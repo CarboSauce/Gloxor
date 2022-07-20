@@ -1,10 +1,7 @@
 #pragma once
-#include "gloxor/graphics.hpp"
 #include <gloxor/types.hpp>
 #include <glox/util.hpp>
-#include <arch/kinfo.hpp>
 
-namespace arch { struct kinfo; }
 namespace glox
 {
 	struct bootInfo
@@ -38,7 +35,6 @@ namespace glox
 		glox::span<memoryMap> mmapEntries;
 		fbInfo fbInfoEntry;
 		glox::span<u8> kernelCode;
-		arch::kinfo archInfo; // meant to be used by arch specific code
 
 	};
 	inline glox::bootInfo machineInfo;

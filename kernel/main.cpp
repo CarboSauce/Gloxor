@@ -16,7 +16,6 @@ extern ctor_t _moduleDriverEnd[];
 
 extern "C" void callCtorPointers(ctor_t* begin, ctor_t* end)
 {
-
 	for (auto it = begin; it != end; ++it)
 	{
 		(*it)();
@@ -26,7 +25,6 @@ extern "C" void callCtorPointers(ctor_t* begin, ctor_t* end)
 extern "C" void callPreCpuInits()
 {
 	gloxDebugLogln("Pre Cpu Init:");
-
 	callCtorPointers(_modulePreCpuBegin, _moduleDriverCentralBegin);
 }
 

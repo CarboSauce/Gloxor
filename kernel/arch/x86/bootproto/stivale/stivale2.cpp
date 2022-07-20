@@ -1,7 +1,6 @@
 #include "stivale2.h"
 #include "arch/addrspace.hpp"
-#include "arch/kinfo.hpp"
-#include "gloxor/allocator.hpp"
+#include "arch/archinfo.hpp"
 #include "gloxor/kinfo.hpp"
 #include "memory/pmm.hpp"
 #include "protos/egg.h"
@@ -82,7 +81,7 @@ extern "C" void stivale2_main(stivale2_struct* info)
 			}
 			case STIVALE2_STRUCT_TAG_RSDP_ID:
 			{
-				machineInfo.archInfo.acpiRsdp =
+				arch::archInfo.acpiRsdp =
 					 reinterpret_cast<stivale2_struct_tag_rsdp*>(tag)->rsdp;
 			}
 			default:
@@ -155,7 +154,7 @@ inline void setupKernelmemmap(stivale2_struct_tag_memmap* m)
 {
 	const auto* mMap = m->memmap;
 	const auto entryCount = m->entries;
-	auto* memmap = new bootInfo::memoryMap[entryCount];//(bootInfo::memoryMap*)glox::alloc(entryCount * sizeof(bootInfo::memoryMap));
+	auto* memmap = new bootInfo::memoryMap[entryCount];
 	for (size_t i = 0; i != entryCount; ++i)
 	{
 		auto mTemp = mMap[i];
