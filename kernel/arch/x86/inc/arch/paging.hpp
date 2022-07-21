@@ -38,7 +38,7 @@ namespace arch::vmem
 	 * @param from Virtual address to translate
 	 * @return void* Physical Address from translation
 	 */
-	void* translate(vmemCtxT, vaddrT from);
+	paddrT translate(vmemCtxT, vaddrT from);
 	/**
 	 * @brief Initialize Virtual memory context
 	 * @note Possibly allocating, hence we need to return error

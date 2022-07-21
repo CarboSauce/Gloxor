@@ -3,6 +3,7 @@
 #include "arch/paging.hpp"
 #include "asm/asmstubs.hpp"
 #include "asm/msr.hpp"
+#include "glox/assert.hpp"
 #include "gloxor/kinfo.hpp"
 #include "gloxor/types.hpp"
 #include "memory/pmm.hpp"
@@ -79,6 +80,17 @@ inline bool setupPAT()
 	return true;
 }
 
+template <size_t I>
+glox::pair<const pageTable<I - 1>*, bool> translateSingleEntry(const pageTable<I>& ctx, vaddrT from)
+{
+	auto entry = ctx.entry(from);
+	if (!(entry.entry & present))
+		return {nullptr, true};
+	else if (entry.entry & granul)
+		return {(const pageTable<I - 1>*)entry.paddr(), true};
+	return {entry.vaddr(), false};
+}
+
 namespace x86
 {
 vmemCtxT initKernelVirtMem()
@@ -87,13 +99,15 @@ vmemCtxT initKernelVirtMem()
 	gloxDebugLogln("Remapping CR3 to ", (void*)klvl4.entries, " phys address: ", (void*)context);
 	identityMap();
 	auto [fbeg, fend] = glox::term::getUsedMemoryRange();
-	gloxDebugLogln("Mapping framebuffer from: ", fbeg, " to: ", fbeg);
+	gloxDebugLogln("Mapping framebuffer from: ", fbeg, " to: ", fend);
 	mapRegion(context, (vaddrT)fbeg, (paddrT)fend, getRealDataAddr((paddrT)fbeg));
 	mapKernel();
 	if (setupPAT())
 		gloxDebugLogln("PAT supported on boot cpu");
 	setContext(context);
-	map(context, 0x5000, 0x5000);
+	gloxDebugLogln("Trying translation code, from : ", fbeg, " to: ", (void*)translate(context, (u64)fbeg));
+	gloxDebugLogln("Trying translation code, from : ", (u8*)physicalMemBase + 0x200'000, " to: ", (void*)translate(context, physicalMemBase + 0x200'000));
+
 	return context;
 }
 } // namespace x86
@@ -103,63 +117,39 @@ namespace arch::vmem
 /*
 	  TODO: Completely unreadable, reconsider rewritting with member functions
 */
+
+inline bool allocPageIfNeeded(u64& entry, u64 mask)
+{
+	if (entry & present)
+		return true;
+	const auto freshAdr = (u64)glox::pmmAllocZ();
+	if (!freshAdr)
+		return false;
+	entry = maskEntry(getRealDataAddr(freshAdr), mask);
+	return true;
+}
+
 bool mapHugePage(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 {
-	auto* lvl4ptr = (lvl4table*)context;
-	auto& lvl4entry = *getNextPte(lvl4ptr, from, pteShift::lvl4);
-	if (!(lvl4entry & present))
-	{
-		const auto freshAdr = (u64)glox::pmmAllocZ();
-		if (!freshAdr)
-			return false;
-		lvl4entry = maskEntry(getRealDataAddr(freshAdr), mask);
-	}
-	auto* lvl3ptr = (lvl3table*)getPhysical(lvl4entry);
-	auto& lvl3entry = *getNextPte(lvl3ptr, from, pteShift::lvl3);
-	if (!(lvl3entry & present))
-	{
-		auto freshAdr = (u64)glox::pmmAllocZ();
-		if (!freshAdr)
-			return false;
-		lvl3entry = maskEntry(getRealDataAddr(freshAdr), mask);
-	}
-	auto* lvl2ptr = (lvl2table*)getPhysical(lvl3entry);
-	auto& lvl2entry = *getNextPte(lvl2ptr, from, pteShift::lvl2);
-	lvl2entry = maskEntry(to & ~0x100000, mask | granul);
+	auto* ctx = (pageTable<4>*)context;
+	auto& e4 = ctx->entry(from);
+	gloxAssert(allocPageIfNeeded(e4.entry, mask));
+	auto& e3 = e4.vaddr()->entry(from);
+	gloxAssert(allocPageIfNeeded(e3.entry, mask));
+	e3.vaddr()->entry(from).entry = maskEntry(to & ~0x100000, mask | granul);
 	return true;
 }
 
 bool map(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 {
-	auto* lvl4ptr = (lvl4table*)context;
-	auto& lvl4entry = *getNextPte(lvl4ptr, from, pteShift::lvl4);
-	if (!(lvl4entry & present))
-	{
-		const auto freshAdr = (u64)glox::pmmAllocZ();
-		if (!freshAdr)
-			return false;
-		lvl4entry = maskEntry(getRealDataAddr(freshAdr), mask);
-	}
-	auto* lvl3ptr = (lvl3table*)getPhysical(lvl4entry);
-	auto& lvl3entry = *getNextPte(lvl3ptr, from, pteShift::lvl3);
-	if (!(lvl3entry & present))
-	{
-		auto freshAdr = (u64)glox::pmmAllocZ();
-		if (!freshAdr)
-			return false;
-		lvl3entry = maskEntry(getRealDataAddr(freshAdr), mask);
-	}
-	auto* lvl2ptr = (lvl2table*)getPhysical(lvl3entry);
-	auto& lvl2entry = *getNextPte(lvl2ptr, from, pteShift::lvl2);
-	if (!(lvl2entry & present))
-	{
-		auto freshAdr = (u64)glox::pmmAllocZ();
-		if (!freshAdr)
-			return false;
-		lvl2entry = maskEntry(getRealDataAddr(freshAdr), mask);
-	}
-	auto* lvl1ptr = (lvl1table*)getPhysical(lvl2entry);
-	*getNextPte(lvl1ptr, from, pteShift::lvl1) = maskEntry(getPhysical(to), mask);
+	auto* ctx = (pageTable<4>*)context;
+	auto& e4 = ctx->entry(from);
+	gloxAssert(allocPageIfNeeded(e4.entry, mask));
+	auto& e3 = e4.vaddr()->entry(from);
+	gloxAssert(allocPageIfNeeded(e3.entry, mask));
+	auto& e2 = e3.vaddr()->entry(from);
+	gloxAssert(allocPageIfNeeded(e2.entry, mask));
+	e2.vaddr()->entry(from).entry = maskEntry(getPhysical(to), mask);
 	return true;
 }
 
@@ -175,29 +165,24 @@ void setContext(vmemCtxT context)
 	gloxDebugLogln("Setting the cr3 to: ", (void*)maskEntry(realCtx, writeThrough));
 	asm volatile("mov %0, %%cr3" ::"r"(maskEntry(realCtx, writeThrough)));
 }
-void* translate(const vmemCtxT context, vaddrT from)
+paddrT translate(vmemCtxT pt, vaddrT from)
 {
-	auto* lvl4ptr = (lvl4table*)getPhysical(context);
-	auto* lvl3ptr = (lvl3table*)getPhysical(*getNextPte(lvl4ptr, from, pteShift::lvl4));
-	auto lvl3entry = *getNextPte(lvl3ptr, from, pteShift::lvl3);
-	auto* lvl2ptr = (lvl2table*)getPhysical(lvl3entry);
-	if ((lvl3entry & granul) != 0)
-	{
-		const auto offset = from & 0x3fffffff;
-		return (char*)lvl2ptr + offset;
-	}
-	auto lvl2entry = *getNextPte(lvl2ptr, from, pteShift::lvl2);
-	auto* lvl1ptr = (lvl1table*)getPhysical(lvl2entry);
-	if ((lvl2entry & granul) != 0)
-	{
-		const auto offset = from & 0x1fffff;
-		return (char*)lvl1ptr + offset;
-	}
-	gloxDebugLogln("Its lvl1: ", lvl1ptr);
-	const auto lvl1entry = *getNextPte(lvl1ptr, from, pteShift::lvl1);
-	const auto offset = from & 0xfff;
-	return reinterpret_cast<char*>(getPhysical(lvl1entry)) + offset;
+	auto* ctx = (const pageTable<4>*)pt;
+	auto e4 = translateSingleEntry(*ctx, from);
+	if (e4.second)
+		return (paddrT)e4.first;
+	auto e3 = translateSingleEntry(*e4.first, from);
+	if (e3.second)
+		return (paddrT)e3.first;
+	auto e2 = translateSingleEntry(*e3.first, from);
+	if (e2.second)
+		return (paddrT)e2.first;
+	auto e1 = e2.first->entry(from);
+	if (!(e1.entry & present))
+		return 0;
+	return e1.paddr();
 }
+
 bool virtInitContext(vmemCtxT)
 {
 	return false;

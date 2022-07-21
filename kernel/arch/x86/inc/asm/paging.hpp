@@ -1,6 +1,7 @@
 #pragma once
 #include "arch/addrspace.hpp"
 #include "gloxor/types.hpp"
+#include <cstddef>
 
 // TODO: this namespace name is so bad, change it
 namespace x86::vmem
@@ -47,12 +48,12 @@ using lvl1table = pt;
 
 constexpr u64 getPhysical(u64 entry)
 {
-	return entry & 0x000ffffffffff000;
+	return (entry & 0x000f'ffff'ffff'f000);
 }
 
 constexpr u64 maskEntry(u64 physAddr, u64 mask)
 {
-	return (getPhysical(physAddr) /* physAddr & 0xffffff800 */) | mask;
+	return (getPhysical(physAddr)) | mask;
 }
 constexpr size_t pteIndex(u64 addr, pteShift shiftval)
 {
@@ -67,22 +68,22 @@ inline u64* getNextPte(pagetable* table, u64 addr, pteShift shiftval)
 	return &(tab->entries[index]);
 }
 
-enum class pageLevel
+enum pageLevel
 {
 	lvl1 = 1,
-	lvl2,
+	lvl2 ,
 	lvl3,
 	lvl4,
 	lvl5
 };
 
-template <pageLevel I>
+template <size_t I>
 struct alignas(0x1000) pageTable;
 
-template <pageLevel I>
+template <size_t I>
 struct pageEntry
 {
-	constexpr static size_t lvl = (size_t)I;
+	constexpr static size_t lvl = I;
 	u64 entry;
 	void set(paddrT addr, pagingBits mask)
 	{
@@ -92,12 +93,17 @@ struct pageEntry
 	{
 		return entry & 0x000ffffffffff000;
 	}
-	auto vaddr()
+	const auto* vaddr() const
 	{
 		auto realaddr = paddr();
 		if (entry < arch::physicalMemBase)
 			realaddr += arch::physicalMemBase;
 		return reinterpret_cast<pageTable<pageLevel(lvl - 1)>*>(realaddr);
+	}
+	auto vaddr()
+	{
+		// :tf:
+		return const_cast<pageTable<pageLevel(lvl - 1)>*>(static_cast<const pageEntry<I>&>(*this).vaddr());
 	}
 };
 
@@ -105,10 +111,10 @@ struct pageEntry
  * @brief Type used for managing page tables
  * slowly shift towards using this type for all ptable manipulations
  */
-template <pageLevel I>
+template <size_t I>
 struct alignas(0x1000) pageTable
 {
-	static constexpr size_t lvl = static_cast<size_t>(I);
+	static constexpr size_t lvl = I;
 	static_assert(lvl > 0 && lvl < 5, "Page table level must be between 1 and 4");
 	static constexpr size_t shift = lvl * 9 + 3;
 	pageEntry<I> entries[512];
@@ -125,19 +131,29 @@ struct alignas(0x1000) pageTable
 	{
 		return (addr >> shift) & 0x1ff;
 	}
-	auto entry(glox::vaddrT addr)
+	const pageEntry<I>& entry(glox::vaddrT addr) const
 	{
 		return entries[index(addr)];
+	}
+	pageEntry<I>& entry(glox::vaddrT addr)
+	{
+		// :tf:
+		return const_cast<pageEntry<I>&>(static_cast<const pageTable<I>&>(*this).entry(addr));
 	}
 	/**
 	 * @brief Obtains lower level table from the provided addr
 	 * @param addr Address used for retrieving next table
 	 * @return Next table of lower level
 	 */
-	auto next(glox::vaddrT addr)
+	const auto* next(glox::vaddrT addr) const
 	{
 		static_assert(I > pageLevel::lvl1, "Can't get next table from lvl1 page table");
 		return entries[index(addr)].vaddr();
+	}
+	auto next(glox::vaddrT addr)
+	{
+		// :tf:
+		return const_cast<pageEntry<I>&>(static_cast<const pageTable<I>&>(*this).next(addr));
 	}
 };
 
