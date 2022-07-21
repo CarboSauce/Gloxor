@@ -35,8 +35,6 @@ using namespace arch::vmem;
 	 }};
 [[gnu::used]] static idt idt_list[256]{};
 static u64 cpuFeatures;
-static u64 earlyCr3;
-vmemCtxT kernelVirtCtx;
 
 [[gnu::interrupt]] static void DivZeroHandle(interrupt_frame_t*)
 {
@@ -52,7 +50,6 @@ vmemCtxT kernelVirtCtx;
 [[gnu::interrupt]] static void SpurInterrupt(interrupt_frame_t*)
 {
 	gloxFatalLogln("Spurious Interrupt!\n");
-	glox::kernelPanic();
 }
 
 [[gnu::interrupt]] static void GPfault(interrupt_frame_t* frame, size_t /* errc */)
@@ -65,14 +62,10 @@ vmemCtxT kernelVirtCtx;
 {
 	void* errorAdr = (void*)readCr(2);
 	gloxFatalLogln("Page Fault at address: ", errorAdr);
-	/* 	if (errorAdr < (u8*)0x1000)
-		{
-			gloxTraceLog("Null pointer access\n");
-		} */
-	//	if (!vmem::map(kernelVirtCtx,errorAdr,reinterpret_cast<void*>(arch::higherHalf-(u64)errorAdr)))
-	//		arch::haltForever();
-
-	// vmem::setContext(kernelVirtCtx);
+	if (errorAdr < (u8*)0x1000)
+	{
+		gloxTraceLog("Null pointer access\n");
+	}
 	glox::kernelPanic();
 }
 
@@ -106,8 +99,7 @@ void initializeCpu()
 	initializeCpuExtensions();
 
 	gloxTraceLogln("Cpu features:", cpuFeatures);
-	earlyCr3 = readCr(3);
-	kernelVirtCtx = x86::initKernelVirtMem();
+	x86::initKernelVirtMem();
 }
 
 } // namespace arch

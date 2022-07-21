@@ -2,13 +2,13 @@
 #include "arch/irq.hpp"
 namespace glox
 {
-irqMutex::irqMutex()
+void irqMutex::lock()
 {
     irqCtx = arch::saveIrq();
     arch::stopIrq();
 }
 
-irqMutex::~irqMutex()
+void irqMutex::unlock()
 {
     arch::restoreIrq(irqCtx);
 }

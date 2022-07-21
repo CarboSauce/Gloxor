@@ -162,5 +162,5 @@ inline void setupKernelmemmap(stivale2_struct_tag_memmap* m)
 						 .length = mTemp.length,
 						 .type = convertMemTypes(mTemp.type)};
 	}
-	machineInfo.mmapEntries = span<bootInfo::memoryMap>(memmap,memmap+entryCount);
+	machineInfo.mmapEntries = span<bootInfo::memoryMap>(memmap, memmap + entryCount);
 }

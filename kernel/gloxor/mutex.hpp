@@ -1,15 +1,17 @@
 #pragma once
 #include "arch/irq.hpp"
+#include "glox/mutex.hpp"
+
 namespace glox
 {
-	struct irqMutex
+	class irqMutex
 	{
 		arch::irqT irqCtx;
-		irqMutex();
-		~irqMutex();
+		public:
+		irqMutex() = default;
+		void lock();
+		void unlock();
 		irqMutex(const irqMutex&) = delete;
 		irqMutex& operator=(const irqMutex&) = delete;
-		irqMutex(irqMutex&&) = delete;
-		irqMutex& operator=(irqMutex&&) = delete;
 	};
 }; // namespace glox

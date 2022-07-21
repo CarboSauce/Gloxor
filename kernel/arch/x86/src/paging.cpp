@@ -104,7 +104,7 @@ vmemCtxT initKernelVirtMem()
 	mapKernel();
 	if (setupPAT())
 		gloxDebugLogln("PAT supported on boot cpu");
-	setContext(context);
+	virtSetContext(context);
 	gloxDebugLogln("Trying translation code, from : ", fbeg, " to: ", (void*)translate(context, (u64)fbeg));
 	gloxDebugLogln("Trying translation code, from : ", (u8*)physicalMemBase + 0x200'000, " to: ", (void*)translate(context, physicalMemBase + 0x200'000));
 
@@ -159,12 +159,7 @@ bool unmap(vmemCtxT context, const void* whichVirtual)
 	(void)whichVirtual;
 	return false;
 }
-void setContext(vmemCtxT context)
-{
-	auto realCtx = getRealAddress(context);
-	gloxDebugLogln("Setting the cr3 to: ", (void*)maskEntry(realCtx, writeThrough));
-	asm volatile("mov %0, %%cr3" ::"r"(maskEntry(realCtx, writeThrough)));
-}
+
 paddrT translate(vmemCtxT pt, vaddrT from)
 {
 	auto* ctx = (const pageTable<4>*)pt;
@@ -183,20 +178,9 @@ paddrT translate(vmemCtxT pt, vaddrT from)
 	return e1.paddr();
 }
 
-bool virtInitContext(vmemCtxT)
+vmemCtxT virtCreateContext()
 {
-	return false;
-}
-
-void virtFlush(void* addr)
-{
-	asm volatile("invlpg (%0)" ::"r"(addr));
-}
-
-void virtCacheFlush()
-{
-	asm volatile("movq %%cr3, %%rax;mov %%rax,%%cr3" ::
-						  : "rax");
+	return (u64)glox::pmmAllocZ();
 }
 
 } // namespace arch::vmem
