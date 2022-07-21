@@ -17,4 +17,4 @@ set(LOG_LEVEL 3 CACHE STRING "Defines default log level; Fatal = 0, Trace = 1, D
 option(FORCE_DEBUG "Force debug checks, even in Release" ON)
 option(USE_LTO "Compile with LTO" OFF)
 option(COMPILE_TESTS "Compile Tests" ON)
-option(WITH_PIC "Compile kernel with PIC" ON)
+option(WITH_PIC "Compile kernel with PIC" OFF)

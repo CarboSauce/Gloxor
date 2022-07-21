@@ -75,6 +75,11 @@ static u64 cpuFeatures;
 	arch::haltForever();
 }
 
+[[gnu::interrupt]] static void DebugHandler(interrupt_frame_t* frame)
+{
+	gloxPrintln("Debug handler, RIP: ", (void*)frame->ip);
+}
+
 inline void initializeGdt();
 inline void initializeInterrupts();
 inline void initializeCpuExtensions();
@@ -124,7 +129,7 @@ inline void initializeGdt()
 		 "pushfq\n"
 		 "push %1\n"
 #if (__PIE__ > 0) || (__PIC__ > 0)
-		 "leaq 0x2(%%rip), %%rax\n" // 0x2 is the size of pushq and iretq
+		 "leaq 0x3(%%rip), %%rax\n" // 0x3 is the size of pushq and iretq
 		 "pushq %%rax\n"
 #else
 		 "pushq $1f\n"
@@ -146,6 +151,7 @@ inline void initializeInterrupts()
 		 idt_list};
 
 	idt_list[0].registerHandler((u64)DivZeroHandle, 0x8, 0, IDT_INTERRUPTGATE);
+	idt_list[1].registerHandler((u64)SpurInterrupt, 0x8, 0, IDT_INTERRUPTGATE);
 	idt_list[2].registerHandler((u64)SpurInterrupt, 0x8, 0, IDT_INTERRUPTGATE);
 	idt_list[6].registerHandler((u64)IllegalOpcode, 0x8, 0, IDT_INTERRUPTGATE);
 	idt_list[8].registerHandler((u64)DoubleFault, 0x8, 0, IDT_TRAPGATE);

@@ -1,5 +1,4 @@
 #pragma once
-#include "glox/math.hpp"
 #include "gloxor/types.hpp"
 #include "memory/pmm.hpp"
 #if defined(__GNUC__) && !defined(__clang__)
@@ -20,10 +19,11 @@ namespace glox
 	{
 		return glox::pmmAlloc(bytes/pmmChunkSize + 1);
 	}
-
+	
 	struct kallocator
 	{
-		[[nodiscard]] static void* allocate(sizeT size) { return glox::alloc(size); }
-		static void free(void* p, sizeT s) { glox::free(p, s); }
+		[[gnu::always_inline]] [[nodiscard]] static void* allocate(sizeT size) { return glox::alloc(size); }
+		[[gnu::always_inline]] static void free(void* p, sizeT s) { glox::free(p, s); }
 	};
+
 } // namespace glox

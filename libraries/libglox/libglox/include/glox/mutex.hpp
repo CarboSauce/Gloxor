@@ -14,8 +14,8 @@ namespace glox
 		{
 			mutex.unlock();
 		}
-		lockGuard<T>(const lockGuard<T>&) = delete;
-		lockGuard<T>& operator=(const lockGuard<T>&) = delete;
+		lockGuard(const lockGuard&) = delete;
+		lockGuard& operator=(const lockGuard&) = delete;
 	};
 	template<typename T>
 	class scopedLock
@@ -30,7 +30,7 @@ namespace glox
 		{
 			mutex.unlock();
 		}
-		scopedLock<T>(const scopedLock<T>&) = delete;
-		scopedLock<T>& operator=(const scopedLock<T>&) = delete;
+		scopedLock(const scopedLock&) = delete;
+		scopedLock& operator=(const scopedLock&) = delete;
 	};
 }
