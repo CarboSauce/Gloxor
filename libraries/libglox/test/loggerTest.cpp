@@ -4,7 +4,6 @@
 
 #define gloxLog(...) out, __VA_ARGS__
 
-
 struct testest
 {
 };
@@ -36,7 +35,7 @@ testStream out;
 int main()
 {
 	gloxLog("Hello World!\nToday is " __TIME__
-			"\nInt max64 = ",
-			INT64_MAX, "\nInt min64 = ", INT64_MIN,
-			"\n-1 = ", -1, "\n0 = ", 0, "Hopefully\n", testest{});
+			  "\nInt max64 = ",
+			  INT64_MAX, "\nInt min64 = ", INT64_MIN,
+			  "\n-1 = ", -1, "\n0 = ", 0, "Hopefully\n", testest{});
 }

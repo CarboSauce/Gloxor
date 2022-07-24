@@ -26,12 +26,12 @@ extern glox::logStream outStream;
 inline logLevel logLevelCap = logLevel(LOGLEVEL);
 } // namespace glox
 
-using glox::outStream;
 using glox::logLevel;
+using glox::outStream;
 #define gloxPrint(...) glox::outStream, __VA_ARGS__
-#define gloxPrintln(...) glox::outStream, __VA_ARGS__,'\n'
+#define gloxPrintln(...) glox::outStream, __VA_ARGS__, '\n'
 #define gloxLog(level, ...) (glox::logLevelCap < level ? (void)0 : (void)(glox::outStream, __VA_ARGS__))
-#define gloxLogln(level, ...) (glox::logLevelCap < level ? (void)0 : (void)(glox::outStream, __VA_ARGS__,'\n'))
+#define gloxLogln(level, ...) (glox::logLevelCap < level ? (void)0 : (void)(glox::outStream, __VA_ARGS__, '\n'))
 #define gloxFatalLog(...) gloxLog(glox::logLevel::fatal, __VA_ARGS__)
 #define gloxFatalLogln(...) gloxLogln(glox::logLevel::fatal, __VA_ARGS__)
 #define gloxTraceLog(...) gloxLog(glox::logLevel::trace, __VA_ARGS__)

@@ -69,8 +69,6 @@ class span
 };
 // boiler plate for structure bindings
 
-
-
 template <typename T, typename E>
 class result
 {
@@ -106,13 +104,21 @@ namespace std
 {
 template <typename T>
 struct tuple_size;
-template <size_t S,typename T> 
+template <size_t S, typename T>
 struct tuple_element;
 
 template <typename T>
-struct tuple_size<glox::span<T>> : ::std::integral_constant<size_t, 2>{};
-template <typename T> 
-struct tuple_element<0,glox::span<T>> { using type = T*; };
-template <typename T> 
-struct tuple_element<1,glox::span<T>> { using type = T*; };
+struct tuple_size<glox::span<T>> : ::std::integral_constant<size_t, 2>
+{
+};
+template <typename T>
+struct tuple_element<0, glox::span<T>>
+{
+	using type = T*;
+};
+template <typename T>
+struct tuple_element<1, glox::span<T>>
+{
+	using type = T*;
+};
 } // namespace std

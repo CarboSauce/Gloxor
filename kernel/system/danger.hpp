@@ -1,6 +1,6 @@
 #pragma once
 
 namespace glox
-{   
-    [[noreturn]] void kernelPanic();
+{
+[[noreturn]] void kernelPanic();
 }

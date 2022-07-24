@@ -5,44 +5,44 @@
 
 namespace glox
 {
-	// constexpr auto whatever = ([]() constexpr
-	// 						   {
-	// 							   char buf[30];
-	// 							   return glox::unsafe::format(buf, (intmax_t)123);
-	// 						   })();
-	using namespace glox::unsafe;
+// constexpr auto whatever = ([]() constexpr
+// 						   {
+// 							   char buf[30];
+// 							   return glox::unsafe::format(buf, (intmax_t)123);
+// 						   })();
+using namespace glox::unsafe;
 
-	/**
-	 * @brief Base Class used for ADL, derive from that class and implement
-	 * write function
-	 */
-	struct bStream
-	{
-	};
+/**
+ * @brief Base Class used for ADL, derive from that class and implement
+ * write function
+ */
+struct bStream
+{
+};
 
-	template <typename BStream, typename T>
-	inline BStream& operator,(BStream& out, const T& val)
-	{
-		write(out, out.buffer, format(out.buffer, val));
-		return out;
-	}
+template <typename BStream, typename T>
+inline BStream& operator,(BStream& out, const T& val)
+{
+	write(out, out.buffer, format(out.buffer, val));
+	return out;
+}
 
-#define defineComma(x)                                   \
-	template <typename BStream>                          \
-	constexpr BStream& operator,(BStream& out, x val)    \
-	{                                                    \
+#define defineComma(x)                                 \
+	template <typename BStream>                         \
+	constexpr BStream& operator,(BStream& out, x val)   \
+	{                                                   \
 		write(out, out.buffer, format(out.buffer, val)); \
 		return out;                                      \
 	}
 
-#define defineCommaCast(x, to)                               \
-	template <typename BStream>                              \
-	constexpr BStream& operator,(BStream& out, x val)        \
-	{                                                        \
+#define defineCommaCast(x, to)                             \
+	template <typename BStream>                             \
+	constexpr BStream& operator,(BStream& out, x val)       \
+	{                                                       \
 		write(out, out.buffer, format(out.buffer, (to)val)); \
 		return out;                                          \
 	}
-	// clang-format off
+// clang-format off
 		defineComma(char)
 		defineComma(uintmax_t)
 		defineComma(intmax_t)
@@ -70,7 +70,7 @@ namespace glox
 			write(out,str,glox::strlen(str));
 			return out;
 		}
-	// clang-format on
+// clang-format on
 
 #undef defineComma
 #undef defineCommaCast

@@ -4,62 +4,61 @@
 #include <utility>
 // temporary
 
-
 namespace glox
 {
 
-	template <typename iter>
-	constexpr void reverse(iter a, iter b)
+template <typename iter>
+constexpr void reverse(iter a, iter b)
+{
+	while ((a != b) && (a != --b))
 	{
-		while ((a != b) && (a != --b))
-		{
-			std::swap(*a++, *b);
-		}
+		std::swap(*a++, *b);
 	}
+}
 
-	template <typename iter, typename T>
-	constexpr void setRange(iter beg, iter end, const T& val)
+template <typename iter, typename T>
+constexpr void setRange(iter beg, iter end, const T& val)
+{
+	for (; beg != end; ++beg)
 	{
-		for (; beg != end; ++beg)
-		{
-			*beg = val;
-		}
+		*beg = val;
 	}
+}
 
-	template <typename iterIn, typename iterOut>
-	constexpr auto copy(iterIn in, iterIn inEnd, iterOut out)
+template <typename iterIn, typename iterOut>
+constexpr auto copy(iterIn in, iterIn inEnd, iterOut out)
+{
+	while (in != inEnd)
 	{
-		while (in != inEnd)
-		{
-			*out++ = *in++;
-		}
+		*out++ = *in++;
 	}
+}
 
-	template <typename iterIn, typename iterOut>
-	constexpr auto copyBackwards(iterIn first, iterIn last, iterOut d_last)
+template <typename iterIn, typename iterOut>
+constexpr auto copyBackwards(iterIn first, iterIn last, iterOut d_last)
+{
+	while (first != last)
 	{
-		while (first != last)
-		{
-			*(--d_last) = *(--last);
-		}
+		*(--d_last) = *(--last);
 	}
-	template <typename iterIn, typename iterOut>
-	constexpr auto copyOverlapped(iterIn src, iterIn srcLast, iterOut dest)
+}
+template <typename iterIn, typename iterOut>
+constexpr auto copyOverlapped(iterIn src, iterIn srcLast, iterOut dest)
+{
+	if (dest < src)
 	{
-		if (dest < src)
-		{
-			copy(src,srcLast,dest);
-		}
-		else 
-		{
-			copyBackwards(src,srcLast,dest+(srcLast-src));
-		}
+		copy(src, srcLast, dest);
 	}
+	else
+	{
+		copyBackwards(src, srcLast, dest + (srcLast - src));
+	}
+}
 
-	template <typename T, typename... Args>
-	T* construct(T* at, Args&&... args)
-	{
-		return ::new (const_cast<void*>(static_cast<const volatile void*>(at))) T(std::forward<Args>(args)...);
-	}
+template <typename T, typename... Args>
+T* construct(T* at, Args&&... args)
+{
+	return ::new (const_cast<void*>(static_cast<const volatile void*>(at))) T(std::forward<Args>(args)...);
+}
 
 } // namespace glox

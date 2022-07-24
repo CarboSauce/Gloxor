@@ -4,12 +4,12 @@ namespace glox
 {
 void irqMutex::lock()
 {
-    irqCtx = arch::saveIrq();
-    arch::stopIrq();
+	irqCtx = arch::saveIrq();
+	arch::stopIrq();
 }
 
 void irqMutex::unlock()
 {
-    arch::restoreIrq(irqCtx);
+	arch::restoreIrq(irqCtx);
 }
 } // namespace glox

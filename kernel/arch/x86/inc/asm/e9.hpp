@@ -3,7 +3,6 @@
 #include "gloxor/mutex.hpp"
 #include "gloxor/types.hpp"
 
-
 inline void printE9(const char* str)
 {
 	glox::scopedLock<glox::irqMutex> _;

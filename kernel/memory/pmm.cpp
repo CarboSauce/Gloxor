@@ -7,7 +7,6 @@
 
 using namespace glox;
 
-
 /*
 	@TODO: size could perhaps be replaced pointer to end of range
 */
@@ -54,8 +53,8 @@ void pmmAddChunk(void* base, size_t length)
 
 void* pageAlloc(sizeT pageCount)
 {
-    auto mem = allocFromChunk(pmmCtx, glox::pmmChunkSize, pageCount);
-    return mem;
+	auto mem = allocFromChunk(pmmCtx, glox::pmmChunkSize, pageCount);
+	return mem;
 }
 void* pageAllocZ(sizeT pageCount)
 {

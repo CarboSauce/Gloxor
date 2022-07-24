@@ -1,6 +1,6 @@
 #pragma once
-#include "gloxor/types.hpp"
 #include "glox/linkedlist.hpp"
+#include "gloxor/types.hpp"
 /*
 	Both of those functions actually return nullptr on OOM situations
 	Single chunk allocator is seperate for purpouses of optimization.
@@ -8,8 +8,8 @@
 	Loop doesnt need to be there because we can guarantee that if
 	node is present in the list, it has atleast 1 free page
 */
-template<typename T>
-inline void* allocFromChunk(glox::list<T>& chunk,size_t chunkSize)
+template <typename T>
+inline void* allocFromChunk(glox::list<T>& chunk, size_t chunkSize)
 {
 	auto& i = *chunk.front;
 	i.data.size -= chunkSize;
@@ -23,7 +23,7 @@ inline void* allocFromChunk(glox::list<T>& chunk,size_t chunkSize)
 	return reinterpret_cast<void*>(reinterpret_cast<uintptr>(&i) + i.data.size);
 }
 
-template<typename T>
+template <typename T>
 inline void* allocFromChunk(glox::list<T>& chunk, size_t chunkSize, sizeT pageCount)
 {
 	const auto allocSize = chunkSize * pageCount;
@@ -62,7 +62,7 @@ inline void* allocFromChunk(glox::list<T>& chunk, size_t chunkSize, sizeT pageCo
 }
 
 // this functions seems like it could be eliminated and added to insert chunk
-template<typename T>
+template <typename T>
 inline void appendChunk(T*& back, T* chunk, sizeT length)
 {
 	if ((uintptr)back + back->data.size == (uintptr)chunk)
@@ -77,7 +77,7 @@ inline void appendChunk(T*& back, T* chunk, sizeT length)
 	}
 }
 
-template<typename T>
+template <typename T>
 inline void prependChunk(T*& front, T* chunk, sizeT length)
 {
 	if ((uintptr)chunk + length == (uintptr)front)
@@ -95,7 +95,7 @@ inline void prependChunk(T*& front, T* chunk, sizeT length)
 }
 
 // assumes chunk is in the node list range
-template<typename T>
+template <typename T>
 inline void insertChunk(T*& from, T* chunk, sizeT length)
 {
 	auto* it = from;
@@ -141,4 +141,3 @@ inline void insertChunk(T*& from, T* chunk, sizeT length)
 	}
 	chunk->insert(it->prev, it);
 }
-

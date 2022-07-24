@@ -1,13 +1,13 @@
 #include "logging.hpp"
-#include "danger.hpp"
 #include "asm/e9.hpp"
+#include "danger.hpp"
 #include "system/terminal.hpp"
 namespace glox
 {
 void execAssert(const char* message, const char* file, const char* line)
 {
 	glox::outStream, "Assertion failed: \n (", message, ")\n ",
-			  file, ":", line, '\n';
+		 file, ":", line, '\n';
 	glox::kernelPanic();
 }
 

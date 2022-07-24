@@ -2,10 +2,10 @@
 #include "arch/addrspace.hpp"
 #include "arch/archinfo.hpp"
 #include "gloxor/kinfo.hpp"
+#include "memory/alloc.hpp"
 #include "memory/pmm.hpp"
 #include "protos/egg.h"
 #include "system/terminal.hpp"
-#include "memory/alloc.hpp"
 
 using namespace glox;
 using namespace arch;

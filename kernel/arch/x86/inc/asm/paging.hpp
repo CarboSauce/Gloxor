@@ -71,7 +71,7 @@ inline u64* getNextPte(pagetable* table, u64 addr, pteShift shiftval)
 enum pageLevel
 {
 	lvl1 = 1,
-	lvl2 ,
+	lvl2,
 	lvl3,
 	lvl4,
 	lvl5

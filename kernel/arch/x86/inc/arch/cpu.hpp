@@ -3,25 +3,24 @@
 namespace arch
 {
 
-   inline void spinloopHint()
-   {
-      asm("pause");
-   }
+inline void spinloopHint()
+{
+	asm("pause");
+}
 
-   inline void halt()
-   {
-      asm("hlt");
-   }
+inline void halt()
+{
+	asm("hlt");
+}
 
-   void initializeCpu();
+void initializeCpu();
 
-   [[noreturn]] inline void haltForever()
-   {
-	   while (1)
-	   {
-		   asm("cli;hlt");
-	   }
-   }
-
+[[noreturn]] inline void haltForever()
+{
+	while (1)
+	{
+		asm("cli;hlt");
+	}
+}
 
 } // namespace arch
