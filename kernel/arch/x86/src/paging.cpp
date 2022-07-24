@@ -122,7 +122,7 @@ inline bool allocPageIfNeeded(u64& entry, u64 mask)
 {
 	if (entry & present)
 		return true;
-	const auto freshAdr = (u64)glox::pmmAllocZ();
+	const auto freshAdr = (u64)glox::pageAllocZ();
 	if (!freshAdr)
 		return false;
 	entry = maskEntry(getRealDataAddr(freshAdr), mask);
@@ -180,7 +180,7 @@ paddrT translate(vmemCtxT pt, vaddrT from)
 
 vmemCtxT virtCreateContext()
 {
-	return (u64)glox::pmmAllocZ();
+	return (u64)glox::pageAllocZ();
 }
 
 } // namespace arch::vmem

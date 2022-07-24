@@ -1,6 +1,11 @@
 #pragma once
 #include "gloxor/types.hpp"
 #include <compare>
+#if defined(__GNUC__) && !defined(__clang__)
+	#define mallocAttribute(...) malloc(__VA_ARGS__)
+#else
+	#define mallocAttribute(...)
+#endif
 
 namespace glox
 {   
@@ -20,30 +25,22 @@ namespace glox
     * @brief Adds memory chunk to PMM
     */
    void pmmAddChunk(void* base, sizeT length);
-
-   /**
-    * @brief Allocate pageCount amount of pages 
-    * @return pointer to allocated page, nullptr on out of memory
-    */
-   void* pmmAlloc(sizeT pageCount = 1);
-//   /**
-//    * @brief Allocate single page below given address
-//    * @return pointer to allocated page, nullptr on out of memory
-//    */
-//   void* pmmAlloc(void* below);
-//   /**
-//    * @brief Allocate pageCount amount of pages below given address
-//    * @return pointer to allocated page, nullptr on out of memory
-//    */
-//   void* pmmAlloc(void* below, size_t pageCount);
-   /**
-    * @brief Allocate single page and zero it 
-    * @return pointer to allocated page, nullptr on out of memory
-    */
-   void* pmmAllocZ(sizeT pageCount = 1);
    /**
     * @brief Free the allocated page
     * @param ptr Pointer previously obtained from pmm::alloc
     */
-   void pmmFree(void* ptr,sizeT pageCount = 1);
+   void pageDealloc(void* ptr,sizeT pageCount = 1);
+   /**
+    * @brief Allocate pageCount amount of pages 
+    * @return pointer to allocated page, nullptr on out of memory
+    */
+   [[using gnu: malloc, mallocAttribute(glox::pageDealloc, 1), alloc_size(1), aligned(glox::pmmChunkSize)]]
+   void* pageAlloc(sizeT pageCount = 1);
+   /**
+    * @brief Allocate single page and zero it 
+    * @return pointer to allocated page, nullptr on out of memory
+    */
+   [[using gnu: malloc, mallocAttribute(glox::pageDealloc, 1), alloc_size(1), aligned(glox::pmmChunkSize)]]
+   void* pageAllocZ(sizeT pageCount = 1);
+
 }

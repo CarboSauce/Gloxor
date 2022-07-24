@@ -6,7 +6,7 @@ add_executable( kernel
                 system/logging.cpp
                 system/font.cpp
                 system/terminal.cpp
-                gloxor/allocator.cpp
+                memory/alloc.cpp
 )
 
 

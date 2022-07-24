@@ -5,6 +5,7 @@
 #include "memory/pmm.hpp"
 #include "protos/egg.h"
 #include "system/terminal.hpp"
+#include "memory/alloc.hpp"
 
 using namespace glox;
 using namespace arch;
@@ -154,7 +155,7 @@ inline void setupKernelmemmap(stivale2_struct_tag_memmap* m)
 {
 	const auto* mMap = m->memmap;
 	const auto entryCount = m->entries;
-	auto* memmap = new bootInfo::memoryMap[entryCount];
+	auto* memmap = alloc<bootInfo::memoryMap>(entryCount);
 	for (size_t i = 0; i != entryCount; ++i)
 	{
 		auto mTemp = mMap[i];
