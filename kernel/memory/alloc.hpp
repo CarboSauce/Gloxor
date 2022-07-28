@@ -6,15 +6,9 @@
 namespace glox
 {
 
-inline void memdealloc(void* ptr, sizeT size)
-{
-	return glox::pageDealloc(ptr, size / glox::pmmChunkSize + 1);
-}
+void memdealloc(void* ptr, sizeT size);
 
-[[using gnu: malloc, mallocAttribute(glox::memdealloc, 1), alloc_size(1), aligned(glox::pmmChunkSize)]] inline void* memalloc(sizeT bytes)
-{
-	return glox::pageAlloc(bytes / pmmChunkSize + 1);
-}
+[[using gnu: malloc, mallocAttribute(glox::memdealloc, 1), alloc_size(1), aligned(glox::pmmChunkSize)]] void* memalloc(sizeT bytes);
 
 struct kAllocator
 {

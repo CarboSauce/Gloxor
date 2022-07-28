@@ -42,6 +42,22 @@ void operator delete[](void* p, size_t size)
 struct freelist
 {
 	freelist* next;
+	struct iterator
+	{
+		freelist* it;
+		auto operator++() { return it = it->next; }
+		friend auto operator<=>(iterator, iterator) = default;
+		auto& operator*() const { return *it; }
+		auto& operator->() const { return it; }
+	};
+	iterator begin()
+	{
+		return {this};
+	}
+	iterator end()
+	{
+		return {nullptr};
+	}
 };
 struct chunkPtr
 {
@@ -59,15 +75,16 @@ struct metadata
 static_assert(sizeof(metadata) == glox::pmmChunkSize);
 struct metadataCtx
 {
-	sizeT pageCount;
+	sizeT leftover; // how many bytes left
 	metadata* list;
 };
 
-constexpr glox::array<int, 6> tinyBuckets{16, 32, 64, 128, 256, 512};
+constexpr glox::array<int, 8> tinyBuckets{16, 32, 64, 128, 256, 512, 1024, 2048};
 struct heapCtx
 {
 	static constexpr sizeT bucketCount = tinyBuckets.size();
 	sizeT totalPages;
+	freelist* bigAllocList;
 	glox::array<metadataCtx, bucketCount> buckets;
 };
 
@@ -82,8 +99,6 @@ inline auto alignUpPow2(sizeT x)
 inline sizeT size2bucket(sizeT size)
 {
 	gloxAssert(size != 0);
-	if (size > tinyBuckets[tinyBuckets.size() - 1])
-		return tinyBuckets.size();
 	if (size <= 8)
 	{
 		return 0;
@@ -91,7 +106,49 @@ inline sizeT size2bucket(sizeT size)
 	return alignUpPow2(size) - 3;
 }
 
+void* bigAlloc(sizeT size)
+{
+	return nullptr;
+}
+
+void initChunk(chunkPtr& list, sizeT bucket)
+{
+	list.list = (freelist*)glox::pageAllocZ();
+	// initialize free list by looping over N indexes and memsetting pointers
+}
+
 namespace glox
 {
+
+void* memalloc(sizeT size)
+{
+	if (size == 0) return nullptr;
+	if (size > tinyBuckets[tinyBuckets.size() - 1])
+	{
+		return bigAlloc(size);
+	}
+	auto index = size2bucket(size);
+	auto& curList = globalHeap.buckets[index].list;
+	if (curList == nullptr)
+	{
+		curList = (metadata*)pageAllocZ();
+	}
+	for (auto&& it : curList->chunkHeaders)
+	{
+		// completely borked, quickly fix
+		if (it.list == nullptr)
+		{
+			initChunk(it, index);
+			auto freshAddr = it.list;
+			it.list = it.list->next;
+		}
+	}
+}
+
+void memdealloc(void* ptr, sizeT size)
+{
+
+}
+
 
 }

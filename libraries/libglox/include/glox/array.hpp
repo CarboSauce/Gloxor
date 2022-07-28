@@ -24,5 +24,9 @@ struct array
 	{
 		return N;
 	}
+	constexpr auto begin() {return data;}
+	constexpr auto begin() const {return data;}
+	constexpr auto end() {return data + N;}
+	constexpr auto end() const {return data + N;}
 };
 } // namespace glox
