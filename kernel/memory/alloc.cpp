@@ -63,6 +63,10 @@ struct chunkPtr
 {
 	sizeT bytesUsed;
 	freelist* list;
+	constexpr bool isFull() const
+	{
+		return bytesUsed == glox::pmmChunkSize;
+	}
 };
 struct metadata
 {
@@ -100,21 +104,29 @@ inline sizeT size2bucket(sizeT size)
 {
 	gloxAssert(size != 0);
 	if (size <= 8)
-	{
 		return 0;
-	}
 	return alignUpPow2(size) - 3;
 }
 
 void* bigAlloc(sizeT size)
 {
-	return nullptr;
+	return glox::pmmAllocator::alloc(size);
 }
 
-void initChunk(chunkPtr& list, sizeT bucket)
+bool initChunk(chunkPtr& list, sizeT bucketSize)
 {
-	list.list = (freelist*)glox::pageAllocZ();
-	// initialize free list by looping over N indexes and memsetting pointers
+	auto freshAddr = (freelist*)glox::pageAllocZ();
+	if (freshAddr == nullptr) return false; 
+	list.list = freshAddr;
+	auto offset = bucketSize;
+	for (sizeT i = 0; i < glox::pmmChunkSize; i += offset)
+	{
+		freshAddr->next = (freelist*)((uintptr)freshAddr+offset);
+		freshAddr = freshAddr->next;
+	}
+	freshAddr->next = nullptr;
+	list.bytesUsed = 0;
+	return true;
 }
 
 namespace glox
@@ -128,21 +140,34 @@ void* memalloc(sizeT size)
 		return bigAlloc(size);
 	}
 	auto index = size2bucket(size);
+	auto bucketSize = tinyBuckets[index];
 	auto& curList = globalHeap.buckets[index].list;
 	if (curList == nullptr)
 	{
 		curList = (metadata*)pageAllocZ();
 	}
-	for (auto&& it : curList->chunkHeaders)
+	for (auto iter = curList; iter != nullptr; iter = iter->next)
 	{
-		// completely borked, quickly fix
-		if (it.list == nullptr)
+		for (auto&& it : curList->chunkHeaders)
 		{
-			initChunk(it, index);
-			auto freshAddr = it.list;
-			it.list = it.list->next;
+			// completely borked, quickly fix
+			if (it.list == nullptr)
+			{
+				if (!initChunk(it, index)) return nullptr;
+			}
+			// we need tagged pointers to mark if page is full or not
+			// fallthrough from previous branch
+			if (!it.isFull())
+			{
+				auto tmp = it.list;
+				it.list = it.list->next;
+				it.bytesUsed += bucketSize;
+				return tmp;
+			}
 		}
 	}
+	//TODO: Expand list when not empty
+	return nullptr;
 }
 
 void memdealloc(void* ptr, sizeT size)
