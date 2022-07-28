@@ -9,13 +9,10 @@
 
 namespace glox
 {
-
 /**
  * @brief use this incase you need access to internals of pmm,
  * its temporary workaround of not having proper initilalization functions
  */
-// extern pmmHeader* pmmCtx;
-
 constexpr sizeT pmmChunkSize = 0x1000;
 /**
  * @brief use this after adding all memory chunks with pmmAddChunk
@@ -34,11 +31,13 @@ void pageDealloc(void* ptr, sizeT pageCount = 1);
  * @brief Allocate pageCount amount of pages
  * @return pointer to allocated page, nullptr on out of memory
  */
-[[using gnu: malloc, mallocAttribute(glox::pageDealloc, 1), alloc_size(1), aligned(glox::pmmChunkSize)]] void* pageAlloc(sizeT pageCount = 1);
+[[using gnu: malloc, mallocAttribute(glox::pageDealloc, 1), alloc_size(1), aligned(glox::pmmChunkSize)]]
+void* pageAlloc(sizeT pageCount = 1);
 /**
  * @brief Allocate single page and zero it
  * @return pointer to allocated page, nullptr on out of memory
  */
-[[using gnu: malloc, mallocAttribute(glox::pageDealloc, 1), alloc_size(1), aligned(glox::pmmChunkSize)]] void* pageAllocZ(sizeT pageCount = 1);
+[[using gnu: malloc, mallocAttribute(glox::pageDealloc, 1), alloc_size(1), aligned(glox::pmmChunkSize)]]
+void* pageAllocZ(sizeT pageCount = 1);
 
 } // namespace glox

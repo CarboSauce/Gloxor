@@ -1,11 +1,10 @@
 #pragma once
 namespace glox
 {
-
+	
 template <typename T>
-struct node
+struct node : public T
 {
-	T data;
 	node<T>* prev;
 	node<T>* next;
 	struct iterator
@@ -27,7 +26,7 @@ struct node
 	}
 	friend auto operator<=>(const node<T>& l, const node<T>& r)
 	{
-		return l.data <=> r.data;
+		return static_cast<T>(l) <=> static_cast<T>(r);
 	}
 	void remove()
 	{

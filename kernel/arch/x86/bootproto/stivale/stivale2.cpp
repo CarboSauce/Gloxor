@@ -23,6 +23,7 @@ struct stivale2_header_tag_framebuffer framebuffer_request = {
 	 .framebuffer_width = 0,
 	 .framebuffer_height = 0,
 	 .framebuffer_bpp = 0,
+	 .unused = 0
 };
 
 inline void initializePmm(stivale2_struct_tag_memmap*);
@@ -155,7 +156,8 @@ inline void setupKernelmemmap(stivale2_struct_tag_memmap* m)
 {
 	const auto* mMap = m->memmap;
 	const auto entryCount = m->entries;
-	auto* memmap = alloc<bootInfo::memoryMap>(entryCount);
+	auto* memmap = (bootInfo::memoryMap*)glox::pmmAllocator::alloc(sizeof(bootInfo::memoryMap)*entryCount);
+	glox::uninitDefConstruct(memmap, memmap+entryCount);
 	for (size_t i = 0; i != entryCount; ++i)
 	{
 		auto mTemp = mMap[i];

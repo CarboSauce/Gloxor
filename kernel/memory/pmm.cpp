@@ -35,7 +35,7 @@ void pmmAddChunk(void* base, size_t length)
 	auto& pmmStart = pmmCtx.front;
 	auto& pmmEnd = pmmCtx.back;
 	chunk->next = nullptr;
-	chunk->data.size = length;
+	chunk->size = length;
 	memorySize += length;
 	if (pmmStart == nullptr)
 	{
@@ -80,7 +80,7 @@ static void test()
 	gloxDebugLog("Memory size: ", memorySize, " pmm test\nBefore:\n");
 	for (const auto& it : pmmCtx)
 	{
-		gloxDebugLogln(&it, '-', (char*)&it + it.data.size);
+		gloxDebugLogln(&it, '-', (char*)&it + it.size);
 	}
 
 	constexpr auto size = 200;
@@ -90,7 +90,7 @@ static void test()
 	gloxDebugLog("\nAfter allocations:\n");
 	for (const auto& it : pmmCtx)
 	{
-		gloxDebugLogln(&it, '-', (char*)&it + it.data.size);
+		gloxDebugLogln(&it, '-', (char*)&it + it.size);
 	}
 	for (int i = 0; i < size; i++)
 		pageDealloc(ptrs[i]);
@@ -98,7 +98,7 @@ static void test()
 	gloxDebugLog("\nAfter freeing:\n");
 	for (const auto& it : pmmCtx)
 	{
-		gloxDebugLogln(&it, '-', (char*)&it + it.data.size);
+		gloxDebugLogln(&it, '-', (char*)&it + it.size);
 	}
 }
 

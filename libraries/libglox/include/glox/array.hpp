@@ -6,11 +6,9 @@
 namespace glox
 {
 template <typename T, size_t N>
-class array
+struct array
 {
 	T data[N];
-
- public:
 	constexpr const T& operator[](size_t i) const
 	{
 		gloxAssert(i < N, "Out of bounds access");
@@ -22,7 +20,7 @@ class array
 	}
 	constexpr explicit operator T*() { return data; }
 	constexpr explicit operator const T*() const { return data; }
-	constexpr size_t size()
+	constexpr size_t size() const
 	{
 		return N;
 	}

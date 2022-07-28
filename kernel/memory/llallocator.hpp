@@ -12,15 +12,15 @@ template <typename T>
 inline void* allocFromChunk(glox::list<T>& chunk, size_t chunkSize)
 {
 	auto& i = *chunk.front;
-	i.data.size -= chunkSize;
-	if (i.data.size == 0)
+	i.size -= chunkSize;
+	if (i.size == 0)
 	{
 		i = *i.next;
 		if (i.next != nullptr)
 			i.next->prev = nullptr;
 		return &i;
 	}
-	return reinterpret_cast<void*>(reinterpret_cast<uintptr>(&i) + i.data.size);
+	return reinterpret_cast<void*>(reinterpret_cast<uintptr>(&i) + i.size);
 }
 
 template <typename T>
@@ -29,10 +29,10 @@ inline void* allocFromChunk(glox::list<T>& chunk, size_t chunkSize, sizeT pageCo
 	const auto allocSize = chunkSize * pageCount;
 	for (auto& it : chunk)
 	{
-		if (it.data.size < allocSize)
+		if (it.size < allocSize)
 			continue;
-		it.data.size -= allocSize;
-		if (it.data.size == 0)
+		it.size -= allocSize;
+		if (it.size == 0)
 		{
 			if (it.next == nullptr)
 			{
@@ -55,7 +55,7 @@ inline void* allocFromChunk(glox::list<T>& chunk, size_t chunkSize, sizeT pageCo
 				chunk.back = it.prev;
 			return &it;
 		}
-		return reinterpret_cast<void*>(reinterpret_cast<uintptr>(&it) + it.data.size);
+		return reinterpret_cast<void*>(reinterpret_cast<uintptr>(&it) + it.size);
 	}
 
 	return nullptr;
@@ -65,9 +65,9 @@ inline void* allocFromChunk(glox::list<T>& chunk, size_t chunkSize, sizeT pageCo
 template <typename T>
 inline void appendChunk(T*& back, T* chunk, sizeT length)
 {
-	if ((uintptr)back + back->data.size == (uintptr)chunk)
+	if ((uintptr)back + back->size == (uintptr)chunk)
 	{
-		back->data.size += length;
+		back->size += length;
 	}
 	else
 	{
@@ -82,7 +82,7 @@ inline void prependChunk(T*& front, T* chunk, sizeT length)
 {
 	if ((uintptr)chunk + length == (uintptr)front)
 	{
-		chunk->data.size = front->data.size + length;
+		chunk->size = front->size + length;
 		chunk->next = front->next;
 		front = chunk;
 	}
@@ -103,7 +103,7 @@ inline void insertChunk(T*& from, T* chunk, sizeT length)
 	{
 		if ((uintptr)chunk + length == (uintptr)it)
 		{
-			chunk->data.size += it->data.size;
+			chunk->size += it->size;
 			it->next->prev = chunk;
 			chunk->next = it->next;
 			from = chunk;
@@ -116,13 +116,13 @@ inline void insertChunk(T*& from, T* chunk, sizeT length)
 	}
 	for (; it < chunk; it = it->next)
 	{
-		if ((uintptr)it + it->data.size == (uintptr)chunk)
+		if ((uintptr)it + it->size == (uintptr)chunk)
 		{
-			it->data.size += length;
+			it->size += length;
 			auto nextChunk = it->next;
-			if ((uintptr)it + it->data.size == (uintptr)nextChunk)
+			if ((uintptr)it + it->size == (uintptr)nextChunk)
 			{
-				it->data.size += nextChunk->data.size;
+				it->size += nextChunk->size;
 				auto farAhead = nextChunk->next;
 				farAhead->prev = it;
 				it->next = farAhead;
@@ -132,7 +132,7 @@ inline void insertChunk(T*& from, T* chunk, sizeT length)
 	}
 	if ((uintptr)chunk + length == (uintptr)it)
 	{
-		chunk->data.size += it->data.size;
+		chunk->size += it->size;
 		it->next->prev = chunk;
 		chunk->next = it->next;
 		chunk->prev = it->prev;
