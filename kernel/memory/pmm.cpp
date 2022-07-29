@@ -102,4 +102,4 @@ static void test()
 	}
 }
 
-registerTest(test);
+//registerTest(test);

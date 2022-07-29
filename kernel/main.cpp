@@ -60,7 +60,7 @@ extern "C" void gloxorMain()
 	gloxTraceLog("Testing ctors: ");
 	callCtorPointers(_moduleTesting, _moduleTestingEnd);
 #endif
-	gloxUnreachable();
+	for(;;) arch::halt();
 }
 
 static void gogole_test()

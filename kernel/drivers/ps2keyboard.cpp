@@ -10,7 +10,7 @@
 	auto val = inb(0x60);
 	if (val == 185)
 	{
-		glox::term::clearScreen(0);
+		glox::term::clearScreen(0); // i think this basically can crash kernel, too complex in irq
 	}
 	else if (val == 158)
 	{
