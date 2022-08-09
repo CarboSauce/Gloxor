@@ -35,7 +35,7 @@ T* alloc(size_t size = 1)
 	return ptr;
 }
 template <typename T>
-void dealloc(T* ptr, size_t size = 1)
+void dealloc(T* ptr, size_t size)
 {
 	if (ptr == nullptr)
 		return;

@@ -75,7 +75,7 @@ void pageDealloc(void* ptr, sizeT pageCount)
 }
 } // namespace glox
 
-static void test()
+[[maybe_unused]] static void test()
 {
 	gloxDebugLog("Memory size: ", memorySize, " pmm test\nBefore:\n");
 	for (const auto& it : pmmCtx)

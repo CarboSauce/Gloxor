@@ -1,9 +1,8 @@
 #pragma once
 #include "types.hpp"
 
-#define ALLIGNUP(val, to) ((val + to) & to)
-#define ALIGN(val, to) (val & to)
-
+#define ALLIGNUP(val, to) ALIGN(val+to,to)
+#define ALIGN(val, to) ((val) & (~(to-1)))
 namespace glox
 {
 /**

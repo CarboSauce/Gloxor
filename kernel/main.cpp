@@ -60,6 +60,7 @@ extern "C" void gloxorMain()
 	gloxTraceLog("Testing ctors: ");
 	callCtorPointers(_moduleTesting, _moduleTestingEnd);
 #endif
+	gloxPrint("Initialization Completed.\n");
 	for(;;) arch::halt();
 }
 

@@ -7,9 +7,9 @@
 #include "system/logging.hpp"
 #include <glox/array.hpp>
 #include <glox/math.hpp>
+#include <glox/mutex.hpp>
 #include <glox/util.hpp>
 #include <gloxor/modules.hpp>
-#include <glox/mutex.hpp>
 
 /*
 	Allocator idea is pretty simple, its similar in idea to slab
@@ -96,7 +96,7 @@ struct heapCtx
 {
 	static constexpr sizeT bucketCount = tinyBuckets.size();
 	sizeT totalPages;
-	freelist* bigAllocList;
+	//	freelist* bigAllocList;
 	glox::array<metadataCtx, bucketCount> buckets;
 };
 
@@ -123,7 +123,6 @@ void* bigAlloc(sizeT size)
 
 inline bool initChunk(chunkPtr& list, sizeT bucketSize)
 {
-	// gloxDebugLog("initChunk(", &list, ", ", bucketSize, ")\n");
 	auto freshAddr = (freelist*)glox::pageAlloc();
 	if (freshAddr == nullptr)
 		return false;
@@ -147,7 +146,7 @@ inline glox::pair<void*, bool> allocFromChunk(metadata::chunkHeadersT& chunks, s
 		if (it.list == nullptr)
 		{
 			if (!initChunk(it, bucketSize))
-				return {nullptr,true};
+				return {nullptr, true};
 		}
 		// we need tagged pointers to mark if page is full or not
 		// fallthrough from previous branch
@@ -156,10 +155,49 @@ inline glox::pair<void*, bool> allocFromChunk(metadata::chunkHeadersT& chunks, s
 			auto tmp = it.list;
 			it.list = it.list->next;
 			it.bytesUsed += bucketSize;
-			return {tmp,true};
+			return {tmp, true};
 		}
 	}
-	return {nullptr,false};
+	return {nullptr, false};
+}
+
+inline bool freeChunk(chunkPtr& it, void* ptr, sizeT size)
+{
+	auto newentry = (freelist*)ptr;
+	it.bytesUsed -= size;
+	if (it.bytesUsed == 0)
+	{
+		glox::pageDealloc((void*)ALIGN((uintptr)it.list, glox::pmmChunkSize));
+		return true;
+	}
+	newentry->next = it.list;
+	it.list = newentry;
+	return true;
+}
+
+inline bool freeMem(void* ptr, sizeT size)
+{
+	if (ptr == nullptr or size == 0)
+	{
+		return false;
+	}
+	if (size > tinyBuckets[tinyBuckets.size() - 1])
+	{
+		return glox::pmmAllocator::dealloc(ptr, size), true;
+	}
+	auto tbindex = size2bucket(size);
+	auto realsize = tinyBuckets[tbindex];
+	auto* curlist = globalHeap.buckets[tbindex].list;
+	auto allignedptr = ALIGN((uintptr)ptr, glox::pmmChunkSize);
+	for (auto iter = curlist; iter; iter = iter->next)
+	{
+		for (auto& it : iter->chunkHeaders)
+		{
+			if (allignedptr == ALIGN((uintptr)it.list, glox::pmmChunkSize))
+				return freeChunk(it, ptr, realsize);
+		}
+	}
+	return false;
 }
 
 inline void* allocMem(sizeT size)
@@ -173,28 +211,31 @@ inline void* allocMem(sizeT size)
 	auto index = size2bucket(size);
 	auto bucketSize = tinyBuckets[index];
 	auto& curList = globalHeap.buckets[index].list;
-	gloxDebugLog("Memalloc(", bucketSize, ")\n");
+	// gloxDebugLog("Memalloc(", bucketSize, ")\n");
 	auto* iter = curList;
+	// TODO: Rewrite into inf loop, as its probably clearer
 	if (iter == nullptr)
 	{
 		iter = (metadata*)glox::pageAllocZ();
-		if (iter == nullptr) return nullptr;
+		if (iter == nullptr)
+			return nullptr;
 		curList = iter;
 	}
 	auto iterNext = iter;
 	do
 	{
 		iter = iterNext;
-		if(auto val = allocFromChunk(iter->chunkHeaders, bucketSize); val.second)
+		if (auto val = allocFromChunk(iter->chunkHeaders, bucketSize); val.second)
 		{
 			return val.first;
 		}
 		iterNext = iter->next;
-	}while(iterNext);
+	} while (iterNext);
 	iterNext = (metadata*)glox::pageAllocZ();
-	if (iterNext == nullptr) return nullptr;
+	if (iterNext == nullptr)
+		return nullptr;
 	iter->next = iterNext;
-	return allocFromChunk(iter->chunkHeaders,bucketSize).first;
+	return allocFromChunk(iter->chunkHeaders, bucketSize).first;
 }
 
 namespace glox
@@ -202,42 +243,45 @@ namespace glox
 
 void* memalloc(sizeT size)
 {
-	glox::scopedLock<irqMutex> _;
+	glox::scopedLock<irqLock> _;
 	return allocMem(size);
 }
 
 void memdealloc(void* ptr, sizeT size)
 {
-	gloxPrint("TODO, memdealloc\n");
-
+	glox::scopedLock<irqLock> _;
+	if (!freeMem(ptr, size))
+	{
+		// TODO: Add debuging capabilities
+		gloxDebugLogln("Failed to free addr: ", ptr, " of size: ", size);
+	}
 }
 
 } // namespace glox
-
-void test()
+[[maybe_unused]] void test()
 {
 	struct list
 	{
 		int x;
 		list* next;
 	};
-	list head{},*iter = &head;
+	list *head = new list{.x = 21, .next = nullptr}, *iter = head;
 	for (int i = 1; i < 20; ++i)
 	{
 		iter->next = new list{.x = i, .next = nullptr};
 		iter = iter->next;
 	}
 	gloxPrint("List:\n");
-	for (auto it = &head; it;it = it->next)
+	for (auto it = head; it; it = it->next)
 	{
-		gloxPrint(it->x,' ');
+		gloxPrint(it->x, ' ');
 	}
 	gloxPrint("\nEndlist\n");
-	for (auto it = &head; it;)
+	for (auto it = head; it;)
 	{
 		auto tmp = it;
 		it = it->next;
-		glox::dealloc(tmp);
+		glox::dealloc(tmp, 1);
 	}
 }
 registerTest(test);

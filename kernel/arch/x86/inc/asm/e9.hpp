@@ -5,7 +5,7 @@
 
 inline void printE9(const char* str)
 {
-	glox::scopedLock<glox::irqMutex> _;
+	glox::scopedLock<glox::irqLock> _;
 	while (char c = *str++)
 	{
 		outb(0xE9, c);
@@ -14,7 +14,7 @@ inline void printE9(const char* str)
 
 inline void printE9(const char* str, size_t size)
 {
-	glox::scopedLock<glox::irqMutex> _;
+	glox::scopedLock<glox::irqLock> _;
 	for (size_t i = 0; i != size; ++i)
 	{
 		outb(0xE9, str[i]);

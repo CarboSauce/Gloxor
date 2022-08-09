@@ -4,15 +4,15 @@
 
 namespace glox
 {
-class irqMutex
+class irqLock
 {
 	arch::irqT irqCtx;
 
  public:
-	irqMutex() = default;
+	irqLock() = default;
 	void lock();
 	void unlock();
-	irqMutex(const irqMutex&) = delete;
-	irqMutex& operator=(const irqMutex&) = delete;
+	irqLock(const irqLock&) = delete;
+	irqLock& operator=(const irqLock&) = delete;
 };
 }; // namespace glox
