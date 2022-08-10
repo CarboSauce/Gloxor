@@ -41,22 +41,22 @@ struct [[gnu::packed]] idt
 	}
 };
 
-struct [[gnu::packed]] idt_pointer
+struct [[gnu::packed]] idtPointer
 {
 	uint16_t size;
 	idt* base;
 };
 
-inline void loadIdt(const idt_pointer& ptr)
+inline void loadIdt(const idtPointer& ptr)
 {
 	asm("lidt %0"
 		 :
 		 : "m"(ptr));
 }
 
-inline idt_pointer getIdt()
+inline idtPointer getIdt()
 {
-	idt_pointer ptr;
+	idtPointer ptr;
 	asm("sidt %0"
 		 : "=m"(ptr));
 	return ptr;

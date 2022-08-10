@@ -10,7 +10,7 @@ list(APPEND CMMN_FLAGS
 # red zone is x86_64 abi thing, in kernel code it needs to be disabled because of interrupts
 -mno-red-zone
 -fno-stack-protector
--fno-exceptions -fno-rtti -ffreestanding -fbuiltin -fno-threadsafe-statics -mgeneral-regs-only -mno-mmx -mno-sse -mno-sse2 -nostdlib)
+-fno-exceptions -fno-rtti -ffreestanding -fbuiltin -fno-threadsafe-statics -mgeneral-regs-only -mno-mmx -mno-sse -mno-sse2 -nostdlib -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=/)
 list(APPEND KERNEL_LINK_FLAGS -ffreestanding -nostdlib)
 
 set(LOG_LEVEL 3 CACHE STRING "Defines default log level; Fatal = 0, Trace = 1, Debug = 2")

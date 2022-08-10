@@ -37,7 +37,7 @@ target_link_options(kernel PRIVATE
 )
 
 target_link_libraries(kernel PRIVATE
-libc libglox libgloxor
+	library_deps
 )
 
 install(TARGETS kernel 

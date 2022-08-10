@@ -34,12 +34,11 @@ SECTIONS
     {
         PROVIDE(_modulePreCpuBegin = .);
         KEEP(*(.module.precpu*))
-        PROVIDE(_moduleDriverCentralBegin = .);
-        KEEP(*(.module.central*))
-        KEEP(*(.module.driver*))
+        PROVIDE(_moduleDriverBegin = .);
+        KEEP(*(SORT_BY_INIT_PRIORITY(.module.driver.*)))
         PROVIDE(_moduleDriverEnd = .);
         PROVIDE(_moduleTesting = .);
-        KEEP(*(.module.testing*))
+        KEEP(*(.module.test*))
         PROVIDE(_moduleTestingEnd = .);
     } :rodata
 

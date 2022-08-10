@@ -4,7 +4,7 @@
 #include "asm/asmstubs.hpp"
 #include "asm/gdt.hpp"
 #include "asm/idt.hpp"
-#include "gloxor/modules.hpp"
+#include "gloxor/test.hpp"
 #include "memory/virtmem.hpp"
 #include "system/danger.hpp"
 #include "system/logging.hpp"
@@ -146,7 +146,7 @@ inline void initializeGdt()
 inline void initializeInterrupts()
 {
 
-	idt_pointer idt_ptr = {
+	idtPointer idt_ptr = {
 		 sizeof(idt_list),
 		 idt_list};
 
@@ -192,7 +192,8 @@ inline void initializeCpuExtensions()
 	}
 }
 
-static void testing()
+#ifdef TEST
+static bool testing()
 {
 	u32 eax, ebx, ecx, edx;
 	__cpuid(0x1, eax, ebx, ecx, edx);
@@ -202,6 +203,8 @@ static void testing()
 	gloxTraceLogln("Is OSXSAVE supported? ", (ecx & (1 << 27)) != 0);
 	gloxTraceLogln("Is RDRAND supported? ", ((ecx >> 30) & 1));
 	gloxTraceLogln("Is AVX supported? ", (ecx & (1 << 28)) != 0);
+	return true;
 }
 
-registerTest(testing);
+registerTest("Cpu flags",testing);
+#endif

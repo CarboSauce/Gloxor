@@ -9,7 +9,7 @@
 #include <glox/math.hpp>
 #include <glox/mutex.hpp>
 #include <glox/util.hpp>
-#include <gloxor/modules.hpp>
+#include <gloxor/test.hpp>
 
 /*
 	Allocator idea is pretty simple, its similar in idea to slab
@@ -258,7 +258,8 @@ void memdealloc(void* ptr, sizeT size)
 }
 
 } // namespace glox
-[[maybe_unused]] void test()
+#ifdef TEST
+[[maybe_unused]] static bool test()
 {
 	struct list
 	{
@@ -283,5 +284,7 @@ void memdealloc(void* ptr, sizeT size)
 		it = it->next;
 		glox::dealloc(tmp, 1);
 	}
+	return true;
 }
-registerTest(test);
+registerTest("Allocator test",test);
+#endif

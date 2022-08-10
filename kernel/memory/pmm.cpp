@@ -2,7 +2,7 @@
 #include "arch/addrspace.hpp"
 #include "system/logging.hpp"
 #include <glox/assert.hpp>
-#include <gloxor/modules.hpp>
+#include <gloxor/test.hpp>
 #include <memory/llallocator.hpp>
 
 using namespace glox;
@@ -53,8 +53,7 @@ void pmmAddChunk(void* base, size_t length)
 
 void* pageAlloc(sizeT pageCount)
 {
-	auto mem = allocFromChunk(pmmCtx, glox::pmmChunkSize, pageCount);
-	return mem;
+	return allocFromChunk(pmmCtx, glox::pmmChunkSize, pageCount);
 }
 void* pageAllocZ(sizeT pageCount)
 {
@@ -63,10 +62,6 @@ void* pageAllocZ(sizeT pageCount)
 	return addr;
 }
 
-// void pmmFree(void* ptr)
-// {
-// 	glox::pmmAddChunk(ptr, glox::pmmChunkSize);
-// }
 void pageDealloc(void* ptr, sizeT pageCount)
 {
 	if (ptr == nullptr)
@@ -75,31 +70,19 @@ void pageDealloc(void* ptr, sizeT pageCount)
 }
 } // namespace glox
 
-[[maybe_unused]] static void test()
+#ifdef TEST
+[[maybe_unused]] static bool test()
 {
-	gloxDebugLog("Memory size: ", memorySize, " pmm test\nBefore:\n");
-	for (const auto& it : pmmCtx)
-	{
-		gloxDebugLogln(&it, '-', (char*)&it + it.size);
-	}
-
-	constexpr auto size = 200;
-	static glox::array<void*, size> ptrs;
-	for (int i = 0; i < size; ++i)
-		ptrs[i] = pageAlloc();
-	gloxDebugLog("\nAfter allocations:\n");
-	for (const auto& it : pmmCtx)
-	{
-		gloxDebugLogln(&it, '-', (char*)&it + it.size);
-	}
-	for (int i = 0; i < size; i++)
-		pageDealloc(ptrs[i]);
-
-	gloxDebugLog("\nAfter freeing:\n");
-	for (const auto& it : pmmCtx)
-	{
-		gloxDebugLogln(&it, '-', (char*)&it + it.size);
-	}
+	auto startSize = pmmCtx.front->size;
+	void* p = pageAlloc();
+	void* p2 = pageAlloc();
+	pageDealloc(p);
+	auto nextH = pmmCtx.front->next;
+	KTEST_EXPECT(pmmCtx.front->next->size == 0x1000);
+	pageDealloc(p2);
+	KTEST_EXPECT(pmmCtx.front->size == startSize);
+	KTEST_EXPECT(pmmCtx.front->next > nextH);
+	return true;
 }
-
-//registerTest(test);
+registerTest("Page allocator", test);
+#endif
