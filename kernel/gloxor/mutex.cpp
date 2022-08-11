@@ -2,14 +2,14 @@
 #include "arch/irq.hpp"
 namespace glox
 {
-void irqLock::lock()
+void IrqLock::lock()
 {
-	irqCtx = arch::saveIrq();
-	arch::stopIrq();
+	irqCtx = arch::save_irq();
+	arch::stop_irq();
 }
 
-void irqLock::unlock()
+void IrqLock::unlock()
 {
-	arch::restoreIrq(irqCtx);
+	arch::restore_irq(irqCtx);
 }
 } // namespace glox

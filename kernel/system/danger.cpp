@@ -1,13 +1,13 @@
 #include "system/danger.hpp"
 #include "arch/cpu.hpp"
 #include "system/logging.hpp"
-static inline void drawPanic()
+static inline void draw_panic()
 {
 	glox::outStream, "\nKernel Panic moment";
 }
 
-void glox::kernelPanic()
+void glox::kernel_panic()
 {
-	drawPanic();
-	arch::haltForever();
+	draw_panic();
+	arch::halt_forever();
 }

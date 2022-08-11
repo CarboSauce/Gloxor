@@ -2,37 +2,37 @@
 namespace glox
 {
 template <typename T>
-class lockGuard
+class lock_guard
 {
 	T& mutex;
 
  public:
-	lockGuard(T& mutex) : mutex(mutex)
+	lock_guard(T& mutex) : mutex(mutex)
 	{
 		mutex.lock();
 	}
-	~lockGuard()
+	~lock_guard()
 	{
 		mutex.unlock();
 	}
-	lockGuard(const lockGuard&) = delete;
-	lockGuard& operator=(const lockGuard&) = delete;
+	lock_guard(const lock_guard&) = delete;
+	lock_guard& operator=(const lock_guard&) = delete;
 };
 template <typename T>
-class scopedLock
+class scoped_lock
 {
 	T mutex;
 
  public:
-	scopedLock()
+	scoped_lock()
 	{
 		mutex.lock();
 	}
-	~scopedLock()
+	~scoped_lock()
 	{
 		mutex.unlock();
 	}
-	scopedLock(const scopedLock&) = delete;
-	scopedLock& operator=(const scopedLock&) = delete;
+	scoped_lock(const scoped_lock&) = delete;
+	scoped_lock& operator=(const scoped_lock&) = delete;
 };
 } // namespace glox

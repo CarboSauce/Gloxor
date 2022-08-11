@@ -16,7 +16,7 @@ using namespace glox::unsafe;
  * @brief Base Class used for ADL, derive from that class and implement
  * write function
  */
-struct bStream
+struct b_stream
 {
 };
 

@@ -3,7 +3,7 @@
 
 namespace acpi
 {
-struct [[gnu::packed]] rsdp
+struct [[gnu::packed]] Rsdp
 {
 	char signature[8];
 	u8 checksum;
@@ -11,14 +11,14 @@ struct [[gnu::packed]] rsdp
 	u8 revision;
 	u32 rsdtAddr;
 };
-struct [[gnu::packed]] xsdp : rsdp
+struct [[gnu::packed]] Xsdp : Rsdp
 {
 	u32 len;
 	u64 xsdtAddr;
 	u8 exChecksum;
 	u8 reserved[3];
 };
-struct [[gnu::packed]] sdtHeader
+struct [[gnu::packed]] SdtHeader
 {
 	char signature[4];
 	u32 len;
@@ -30,21 +30,21 @@ struct [[gnu::packed]] sdtHeader
 	u32 creatorid;
 	u32 creatorRevision;
 };
-struct [[gnu::packed]] rsdt : sdtHeader
+struct [[gnu::packed]] Rsdt : SdtHeader
 {
 	u32 sdtTable[];
 };
-struct [[gnu::packed]] madt : sdtHeader
+struct [[gnu::packed]] Madt : SdtHeader
 {
 	constexpr static u32 magic = 0x41435049; // ACPI
 	u32 lapicAddr;
 	u32 flags;
-	struct [[gnu::packed]] entry
+	struct [[gnu::packed]] Entry
 	{
 		u8 type;
 		u8 len;
 	} entries[];
-	enum class type : u8
+	enum class Type : u8
 	{
 		lapic = 0,
 		ioapic = 1,
@@ -53,56 +53,56 @@ struct [[gnu::packed]] madt : sdtHeader
 		lapicOverride = 5,
 		x2lapic = 9
 	};
-	struct [[gnu::packed]] lapic : entry
+	struct [[gnu::packed]] Lapic : Entry
 	{
 		u8 processorId;
 		u8 acpiId;
 		u32 flags;
 	};
-	struct [[gnu::packed]] ioapic : entry
+	struct [[gnu::packed]] Ioapic : Entry
 	{
 		u8 ioapicId;
 		u8 reserved;
 		u32 ioapicAddr;
 		u32 interruptBase;
 	};
-	struct [[gnu::packed]] ioapicOverride : entry
+	struct [[gnu::packed]] IoapicOverride : Entry
 	{
 		u8 bus;
 		u8 irq;
 		u32 sysInterrupt;
 		u16 flags;
 	};
-	struct [[gnu::packed]] ioapicNmi : entry
+	struct [[gnu::packed]] IoapicNmi : Entry
 	{
 		u8 nmi;
 		u8 reserved;
 		u16 flags;
 		u32 sysInterrupt;
 	};
-	struct [[gnu::packed]] lapicNmi : entry
+	struct [[gnu::packed]] LapicNmi : Entry
 	{
 		u8 id;
 		u16 flags;
 		u8 lint;
 	};
-	struct [[gnu::packed]] lapicOverride : entry
+	struct [[gnu::packed]] LapicOverride : Entry
 	{
 		u16 reserved;
 		u64 lapicAddr;
 	};
-	struct [[gnu::packed]] x2lapic : entry
+	struct [[gnu::packed]] X2lapic : Entry
 	{
 		u16 reserved;
 		u32 id;
 		u32 flags;
 		u32 acpiId;
 	};
-	struct [[gnu::packed]] mcfg : sdtHeader
+	struct [[gnu::packed]] Mcfg : SdtHeader
 	{
 		constexpr static u32 magic = 0x4d434647; // MCFG
 		u64 reserved;
-		struct entry
+		struct Entry
 		{
 			u64 addr;
 			u16 pciSegGroup;
@@ -111,7 +111,7 @@ struct [[gnu::packed]] madt : sdtHeader
 			u32 reserved;
 		} entires[];
 	};
-	struct [[gnu::packed]] hpet : sdtHeader
+	struct [[gnu::packed]] Hpet : SdtHeader
 	{
 		constexpr static u32 magic = 0x48504554; // HPET
 		u8 hwRevId;

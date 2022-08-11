@@ -4,9 +4,9 @@
 
 namespace glox
 {
-struct bootInfo
+struct BootInfo
 {
-	enum class memTypes
+	enum class MemTypes
 	{
 		usable,
 		reserved,
@@ -17,13 +17,13 @@ struct bootInfo
 		kernel,
 		framebuffer
 	};
-	struct memoryMap
+	struct MemoryMap
 	{
 		paddrT base;
 		sizeT length;
-		memTypes type;
+		MemTypes type;
 	};
-	struct fbInfo
+	struct FbInfo
 	{
 		paddrT begin;
 		paddrT end;
@@ -32,9 +32,9 @@ struct bootInfo
 		sizeT width;
 	};
 
-	glox::span<memoryMap> mmapEntries;
-	fbInfo fbInfoEntry;
+	glox::span<MemoryMap> mmapEntries;
+	FbInfo fbInfoEntry;
 	glox::span<u8> kernelCode;
 };
-inline glox::bootInfo machineInfo;
+inline glox::BootInfo machineInfo;
 } // namespace glox

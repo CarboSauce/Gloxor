@@ -3,7 +3,7 @@
 
 namespace msr
 {
-enum msr : uint32_t
+enum Msr : uint32_t
 {
 	ia32PAT = 0x00000277,  // Page Attribute Table
 	ia32EFER = 0xC0000080, // EFER register, the non model specific one

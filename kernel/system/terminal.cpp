@@ -9,26 +9,26 @@ constexpr int scaleX = 1;
 constexpr int scaleY = 1;
 constexpr int fontWidth = 8 * scaleX;
 constexpr int fontHeight = 16 * scaleY;
-static glox::framebuffer con;
+static glox::Framebuffer con;
 // TEEECHNICALLY we can storage optimize those
 // to be able to set both of values (or maybe 4) in same operation,
 // but it comes at a cost of making sure compiler wont break stuff,
 // and LTO will most likely elide most of those, and overall notworth
-static vec2<colorT> fgbg{0xFFFFFF, 0};
+static vec2<color_t> fgbg{0xFFFFFF, 0};
 static vec2<u32> at{0, 0};
 static u8 cursorShape = '_';
 namespace glox::term
 {
-glox::span<u8> getUsedMemoryRange()
+glox::span<u8> get_used_memory_range()
 {
 	return {(u8*)con.fbBeg, (u8*)con.fbEnd};
 }
-inline void putPixel(int x, int y, colorT color)
+inline void put_pixel(int x, int y, color_t color)
 {
-	const_cast<volatile colorT*>(con.fbBeg)[y * con.pitch + x] = color;
+	const_cast<volatile color_t*>(con.fbBeg)[y * con.pitch + x] = color;
 }
 
-inline void writeChar(char ch, glox::vec2<u32> at, glox::vec2<colorT> fgbg)
+inline void write_char(char ch, glox::vec2<u32> at, glox::vec2<color_t> fgbg)
 {
 	int index = ((uint8_t)ch /* - 32 */) * 16;
 	/*
@@ -57,11 +57,11 @@ inline void writeChar(char ch, glox::vec2<u32> at, glox::vec2<colorT> fgbg)
 		{
 			auto fontBit = 0b10000000 >> (j1);
 			auto fontMask = fontBitmap[index + i1];
-			putPixel(at.x + j2, at.y + i2, fontMask & fontBit ? fgbg.x : fgbg.y);
+			put_pixel(at.x + j2, at.y + i2, fontMask & fontBit ? fgbg.x : fgbg.y);
 		}
 	}
 }
-inline void execNewline()
+inline void exec_newline()
 {
 	/**
 	 * @todo this code is broken incase font height isnt divisible by fb height
@@ -69,18 +69,18 @@ inline void execNewline()
 	 */
 	auto lineOffset = con.pitch * fontHeight;
 	auto endpos = con.fbBeg + con.pitch * (fontHeight + at.y);
-	glox::copyOverlapped(con.fbBeg + lineOffset, endpos, con.fbBeg);
+	glox::copy_overlapped(con.fbBeg + lineOffset, endpos, con.fbBeg);
 	at.x = 0;
-	glox::setRange(con.fbBeg + con.pitch * at.y, con.fbEnd, fgbg.y);
+	glox::set_range(con.fbBeg + con.pitch * at.y, con.fbEnd, fgbg.y);
 }
 
-inline void parseChar(char c)
+inline void parse_char(char c)
 {
 	// total hack, we scroll the buffer incase next write would overflow
 	if (at.y + fontHeight > con.height)
 	{
 		at.y -= fontHeight;
-		execNewline();
+		exec_newline();
 	}
 	switch (c)
 	{
@@ -89,7 +89,7 @@ inline void parseChar(char c)
 			auto yoffset = at.y + fontHeight;
 			if (con.fbBeg + con.pitch * yoffset >= con.fbEnd)
 			{
-				execNewline();
+				exec_newline();
 			}
 			else
 			{
@@ -99,7 +99,7 @@ inline void parseChar(char c)
 			break;
 		}
 		default:
-			writeChar(c, at, fgbg);
+			write_char(c, at, fgbg);
 			at.x += fontWidth;
 			break;
 	}
@@ -111,7 +111,7 @@ inline void parseChar(char c)
 	}
 }
 
-void initTerm(colorT* begin, colorT* end, size_t pitch, size_t width, size_t height)
+void init_term(color_t* begin, color_t* end, size_t pitch, size_t width, size_t height)
 {
 	con =
 		 {
@@ -122,41 +122,41 @@ void initTerm(colorT* begin, colorT* end, size_t pitch, size_t width, size_t hei
 			  .pitch = pitch};
 }
 
-void clearScreen(colorT color)
+void clear_screen(color_t color)
 {
 	// glox::drawRectangle(fbBeg,pitch,{0,0},{(colorT)width,(colorT)height},color);
-	glox::setRange(con.fbBeg, con.fbEnd, color);
+	glox::set_range(con.fbBeg, con.fbEnd, color);
 	at = {0, 0};
 }
-inline void printCursor()
+inline void print_cursor()
 {
 	/* 	auto temp = at;
 	temp.x+=1;
 	writeChar(cursorShape,temp,{0xffc0cb,fgbg.y}); */
 }
-inline void eraseCursor()
+inline void erase_cursor()
 {
 }
-void writeStr(const char* str, size_t size)
+void write_str(const char* str, size_t size)
 {
-	eraseCursor();
+	erase_cursor();
 	for (size_t s = 0; s != size; ++s)
 	{
 		char c = str[s];
-		parseChar(c);
+		parse_char(c);
 	}
-	printCursor();
+	print_cursor();
 }
 
-void setFgColor(colorT fg)
+void set_fg_color(color_t fg)
 {
 	fgbg.x = fg;
 }
-void setBgColor(colorT bg)
+void set_bg_color(color_t bg)
 {
 	fgbg.y = bg;
 }
-void setCursorLook(u8 ascii)
+void set_cursor_look(u8 ascii)
 {
 	cursorShape = ascii;
 }

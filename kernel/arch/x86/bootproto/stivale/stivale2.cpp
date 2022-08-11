@@ -14,7 +14,7 @@ using namespace arch;
 typedef uint8_t stack[4096];
 alignas(16) static stack stacks[10] = {};
 extern "C" void stivale2_main(struct stivale2_struct* info);
-extern "C" void gloxorMain();
+extern "C" void gloxor_main();
 
 struct stivale2_header_tag_framebuffer framebuffer_request = {
 	 .tag = {
@@ -26,8 +26,8 @@ struct stivale2_header_tag_framebuffer framebuffer_request = {
 	 .unused = 0
 };
 
-inline void initializePmm(stivale2_struct_tag_memmap*);
-inline void setupKernelmemmap(stivale2_struct_tag_memmap*);
+inline void initialize_pmm(stivale2_struct_tag_memmap*);
+inline void setup_kernelmemmap(stivale2_struct_tag_memmap*);
 
 __attribute__((section(".stivale2hdr"), used)) struct stivale2_header header2 = {
 	 .entry_point = (uint64_t)stivale2_main,
@@ -63,13 +63,13 @@ extern "C" void stivale2_main(stivale2_struct* info)
 				machineInfo.fbInfoEntry.height = height;
 				machineInfo.fbInfoEntry.pitch = pitch;
 				machineInfo.fbInfoEntry.width = width;
-				glox::term::initTerm((colorT*)fb_start, (colorT*)fb_end, pitch, width, height);
+				glox::term::init_term((color_t*)fb_start, (color_t*)fb_end, pitch, width, height);
 				break;
 			}
 			case STIVALE2_STRUCT_TAG_MEMMAP_ID:
 			{
 				m = (stivale2_struct_tag_memmap*)tag;
-				initializePmm(m);
+				initialize_pmm(m);
 				break;
 			}
 			case STIVALE2_STRUCT_TAG_KERNEL_BASE_ADDRESS_ID:
@@ -100,12 +100,12 @@ extern "C" void stivale2_main(stivale2_struct* info)
 		kernelMappingOffset = -arch::kernelMemBase;
 	}
 	machineInfo.kernelCode = span(kernelFileBegin, kernelFileEnd);
-	setupKernelmemmap(m);
+	setup_kernelmemmap(m);
 
-	gloxorMain();
+	gloxor_main();
 }
 
-inline void initializePmm(stivale2_struct_tag_memmap* m)
+inline void initialize_pmm(stivale2_struct_tag_memmap* m)
 {
 	const auto* mMap = m->memmap;
 	const auto entryCount = m->entries;
@@ -116,7 +116,7 @@ inline void initializePmm(stivale2_struct_tag_memmap* m)
 		if (auto mTemp = mMap[curIndex];
 			 mTemp.type == STIVALE2_MMAP_USABLE) //|| mTemp.type == STIVALE2_MMAP_BOOTLOADER_RECLAIMABLE)
 		{
-			glox::pmmAddChunk(reinterpret_cast<void*>(mTemp.base + arch::physicalMemBase), mTemp.length);
+			glox::pmm_add_chunk(reinterpret_cast<void*>(mTemp.base + arch::physicalMemBase), mTemp.length);
 		}
 		/*else if (mMap[curIndex].type == STIVALE2_MMAP_FRAMEBUFFER)
 		{
@@ -126,9 +126,9 @@ inline void initializePmm(stivale2_struct_tag_memmap* m)
 	}
 }
 
-inline bootInfo::memTypes convertMemTypes(u32 type)
+inline BootInfo::MemTypes convert_mem_types(u32 type)
 {
-	using mtype = bootInfo::memTypes;
+	using mtype = BootInfo::MemTypes;
 	switch (type)
 	{
 		case STIVALE2_MMAP_USABLE:
@@ -152,18 +152,18 @@ inline bootInfo::memTypes convertMemTypes(u32 type)
 	}
 }
 
-inline void setupKernelmemmap(stivale2_struct_tag_memmap* m)
+inline void setup_kernelmemmap(stivale2_struct_tag_memmap* m)
 {
 	const auto* mMap = m->memmap;
 	const auto entryCount = m->entries;
-	auto* memmap = (bootInfo::memoryMap*)glox::pmmAllocator::alloc(sizeof(bootInfo::memoryMap)*entryCount);
-	glox::uninitDefConstruct(memmap, memmap+entryCount);
+	auto* memmap = (BootInfo::MemoryMap*)glox::PmmAllocator::alloc(sizeof(BootInfo::MemoryMap)*entryCount);
+	glox::uninit_def_construct(memmap, memmap+entryCount);
 	for (size_t i = 0; i != entryCount; ++i)
 	{
 		auto mTemp = mMap[i];
 		memmap[i] = {.base = mTemp.base,
 						 .length = mTemp.length,
-						 .type = convertMemTypes(mTemp.type)};
+						 .type = convert_mem_types(mTemp.type)};
 	}
-	machineInfo.mmapEntries = span<bootInfo::memoryMap>(memmap, memmap + entryCount);
+	machineInfo.mmapEntries = span<BootInfo::MemoryMap>(memmap, memmap + entryCount);
 }

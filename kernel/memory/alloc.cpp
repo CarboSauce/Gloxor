@@ -46,64 +46,64 @@ void operator delete[](void* p, size_t size)
 	glox::memdealloc(p, size);
 }
 
-struct freelist
+struct Freelist
 {
-	freelist* next;
-	struct iterator
+	Freelist* next;
+	struct Iterator
 	{
-		freelist* it;
+		Freelist* it;
 		auto operator++() { return it = it->next; }
-		friend auto operator<=>(iterator, iterator) = default;
+		friend auto operator<=>(Iterator, Iterator) = default;
 		auto& operator*() const { return *it; }
 		auto& operator->() const { return it; }
 	};
-	iterator begin()
+	Iterator begin()
 	{
 		return {this};
 	}
-	iterator end()
+	Iterator end()
 	{
 		return {nullptr};
 	}
 };
-struct chunkPtr
+struct ChunkPtr
 {
 	sizeT bytesUsed;
-	freelist* list;
-	constexpr bool isFull() const
+	Freelist* list;
+	constexpr bool is_full() const
 	{
 		return bytesUsed == glox::pmmChunkSize;
 	}
 };
-struct metadata
+struct Metadata
 {
-	static constexpr sizeT chunkCount = (glox::pmmChunkSize - (sizeof(metadata*) + sizeof(sizeT))) / sizeof(chunkPtr);
-	using chunkHeadersT = glox::array<chunkPtr, chunkCount>;
-	metadata* next;
+	static constexpr sizeT chunkCount = (glox::pmmChunkSize - (sizeof(Metadata*) + sizeof(sizeT))) / sizeof(ChunkPtr);
+	using chunkHeadersT = glox::array<ChunkPtr, chunkCount>;
+	Metadata* next;
 	sizeT usedChunks;
 	chunkHeadersT chunkHeaders;
 };
 
-static_assert(sizeof(metadata) == glox::pmmChunkSize);
-struct metadataCtx
+static_assert(sizeof(Metadata) == glox::pmmChunkSize);
+struct MetadataCtx
 {
 	sizeT leftover; // how many bytes left
-	metadata* list;
+	Metadata* list;
 };
 
 constexpr glox::array<int, 8> tinyBuckets{16, 32, 64, 128, 256, 512, 1024, 2048};
-struct heapCtx
+struct HeapCtx
 {
 	static constexpr sizeT bucketCount = tinyBuckets.size();
 	sizeT totalPages;
 	//	freelist* bigAllocList;
-	glox::array<metadataCtx, bucketCount> buckets;
+	glox::array<MetadataCtx, bucketCount> buckets;
 };
 
-static heapCtx globalHeap;
+static HeapCtx globalHeap;
 // alligns number upwards to next power of 2
 // if one uses it for bucket index calculation, make sure to offset it
-inline auto alignUpPow2(sizeT x)
+inline auto align_up_pow2(sizeT x)
 {
 	return x == 1 ? 1 : sizeof(sizeT) * 8 - glox::clz(x - 1);
 }
@@ -113,24 +113,24 @@ inline sizeT size2bucket(sizeT size)
 	gloxAssert(size != 0);
 	if (size <= tinyBuckets[0])
 		return 0;
-	return alignUpPow2(size) - 4;
+	return align_up_pow2(size) - 4;
 }
 
-void* bigAlloc(sizeT size)
+void* big_alloc(sizeT size)
 {
-	return glox::pmmAllocator::alloc(size);
+	return glox::PmmAllocator::alloc(size);
 }
 
-inline bool initChunk(chunkPtr& list, sizeT bucketSize)
+inline bool init_chunk(ChunkPtr& list, sizeT bucketSize)
 {
-	auto freshAddr = (freelist*)glox::pageAlloc();
+	auto freshAddr = (Freelist*)glox::page_alloc();
 	if (freshAddr == nullptr)
 		return false;
 	list.list = freshAddr;
 	auto offset = bucketSize;
 	for (sizeT i = 0; i < glox::pmmChunkSize; i += offset)
 	{
-		*freshAddr = {(freelist*)((uintptr)freshAddr + offset)};
+		*freshAddr = {(Freelist*)((uintptr)freshAddr + offset)};
 		freshAddr = freshAddr->next;
 	}
 	freshAddr->next = nullptr;
@@ -138,19 +138,19 @@ inline bool initChunk(chunkPtr& list, sizeT bucketSize)
 	return true;
 }
 
-inline glox::pair<void*, bool> allocFromChunk(metadata::chunkHeadersT& chunks, sizeT bucketSize)
+inline glox::pair<void*, bool> alloc_from_chunk(Metadata::chunkHeadersT& chunks, sizeT bucketSize)
 {
 	for (auto&& it : chunks)
 	{
 		// completely borked, quickly fix
 		if (it.list == nullptr)
 		{
-			if (!initChunk(it, bucketSize))
+			if (!init_chunk(it, bucketSize))
 				return {nullptr, true};
 		}
 		// we need tagged pointers to mark if page is full or not
 		// fallthrough from previous branch
-		if (!it.isFull())
+		if (!it.is_full())
 		{
 			auto tmp = it.list;
 			it.list = it.list->next;
@@ -161,13 +161,13 @@ inline glox::pair<void*, bool> allocFromChunk(metadata::chunkHeadersT& chunks, s
 	return {nullptr, false};
 }
 
-inline bool freeChunk(chunkPtr& it, void* ptr, sizeT size)
+inline bool free_chunk(ChunkPtr& it, void* ptr, sizeT size)
 {
-	auto newentry = (freelist*)ptr;
+	auto newentry = (Freelist*)ptr;
 	it.bytesUsed -= size;
 	if (it.bytesUsed == 0)
 	{
-		glox::pageDealloc((void*)ALIGN((uintptr)it.list, glox::pmmChunkSize));
+		glox::page_dealloc((void*)ALIGN((uintptr)it.list, glox::pmmChunkSize));
 		return true;
 	}
 	newentry->next = it.list;
@@ -175,7 +175,7 @@ inline bool freeChunk(chunkPtr& it, void* ptr, sizeT size)
 	return true;
 }
 
-inline bool freeMem(void* ptr, sizeT size)
+inline bool free_mem(void* ptr, sizeT size)
 {
 	if (ptr == nullptr or size == 0)
 	{
@@ -183,7 +183,7 @@ inline bool freeMem(void* ptr, sizeT size)
 	}
 	if (size > tinyBuckets[tinyBuckets.size() - 1])
 	{
-		return glox::pmmAllocator::dealloc(ptr, size), true;
+		return glox::PmmAllocator::dealloc(ptr, size), true;
 	}
 	auto tbindex = size2bucket(size);
 	auto realsize = tinyBuckets[tbindex];
@@ -194,19 +194,19 @@ inline bool freeMem(void* ptr, sizeT size)
 		for (auto& it : iter->chunkHeaders)
 		{
 			if (allignedptr == ALIGN((uintptr)it.list, glox::pmmChunkSize))
-				return freeChunk(it, ptr, realsize);
+				return free_chunk(it, ptr, realsize);
 		}
 	}
 	return false;
 }
 
-inline void* allocMem(sizeT size)
+inline void* alloc_mem(sizeT size)
 {
 	if (size == 0)
 		return nullptr;
 	if (size > tinyBuckets[tinyBuckets.size() - 1])
 	{
-		return bigAlloc(size);
+		return big_alloc(size);
 	}
 	auto index = size2bucket(size);
 	auto bucketSize = tinyBuckets[index];
@@ -216,7 +216,7 @@ inline void* allocMem(sizeT size)
 	// TODO: Rewrite into inf loop, as its probably clearer
 	if (iter == nullptr)
 	{
-		iter = (metadata*)glox::pageAllocZ();
+		iter = (Metadata*)glox::page_alloc();
 		if (iter == nullptr)
 			return nullptr;
 		curList = iter;
@@ -225,17 +225,17 @@ inline void* allocMem(sizeT size)
 	do
 	{
 		iter = iterNext;
-		if (auto val = allocFromChunk(iter->chunkHeaders, bucketSize); val.second)
+		if (auto val = alloc_from_chunk(iter->chunkHeaders, bucketSize); val.second)
 		{
 			return val.first;
 		}
 		iterNext = iter->next;
 	} while (iterNext);
-	iterNext = (metadata*)glox::pageAllocZ();
+	iterNext = (Metadata*)glox::page_alloc();
 	if (iterNext == nullptr)
 		return nullptr;
 	iter->next = iterNext;
-	return allocFromChunk(iter->chunkHeaders, bucketSize).first;
+	return alloc_from_chunk(iter->chunkHeaders, bucketSize).first;
 }
 
 namespace glox
@@ -243,14 +243,14 @@ namespace glox
 
 void* memalloc(sizeT size)
 {
-	glox::scopedLock<irqLock> _;
-	return allocMem(size);
+	glox::scoped_lock<IrqLock> _;
+	return alloc_mem(size);
 }
 
 void memdealloc(void* ptr, sizeT size)
 {
-	glox::scopedLock<irqLock> _;
-	if (!freeMem(ptr, size))
+	glox::scoped_lock<IrqLock> _;
+	if (!free_mem(ptr, size))
 	{
 		// TODO: Add debuging capabilities
 		gloxDebugLogln("Failed to free addr: ", ptr, " of size: ", size);
@@ -261,15 +261,15 @@ void memdealloc(void* ptr, sizeT size)
 #ifdef TEST
 [[maybe_unused]] static bool test()
 {
-	struct list
+	struct List
 	{
 		int x;
-		list* next;
+		List* next;
 	};
-	list *head = new list{.x = 21, .next = nullptr}, *iter = head;
+	List *head = new List{.x = 21, .next = nullptr}, *iter = head;
 	for (int i = 1; i < 20; ++i)
 	{
-		iter->next = new list{.x = i, .next = nullptr};
+		iter->next = new List{.x = i, .next = nullptr};
 		iter = iter->next;
 	}
 	gloxPrint("List:\n");

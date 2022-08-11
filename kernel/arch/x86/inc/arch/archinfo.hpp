@@ -3,9 +3,9 @@
 
 namespace arch
 {
-struct kinfo
+struct Kinfo
 {
 	paddrT acpiRsdp;
 };
-inline arch::kinfo archInfo; // meant to be used by arch specific code
+inline arch::Kinfo archInfo; // meant to be used by arch specific code
 } // namespace arch

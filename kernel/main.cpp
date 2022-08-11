@@ -15,7 +15,7 @@ extern ctor_t _modulePreCpuBegin[];
 extern ctor_t _moduleDriverBegin[];
 extern ctor_t _moduleDriverEnd[];
 
-extern "C" void callCtorPointers(ctor_t* begin, ctor_t* end)
+extern "C" void call_ctor_pointers(ctor_t* begin, ctor_t* end)
 {
 	for (auto it = begin; it != end; ++it)
 	{
@@ -23,58 +23,58 @@ extern "C" void callCtorPointers(ctor_t* begin, ctor_t* end)
 	}
 }
 
-extern "C" void callPreCpuInits()
+extern "C" void call_pre_cpu_inits()
 {
 	gloxDebugLogln("Pre Cpu Init:");
-	callCtorPointers(_modulePreCpuBegin, _moduleDriverBegin);
+	call_ctor_pointers(_modulePreCpuBegin, _moduleDriverBegin);
 }
 
-extern "C" void callDriverInits()
+extern "C" void call_driver_inits()
 {
 	gloxDebugLogln("Driver Init:");
-	callCtorPointers(_moduleDriverBegin, _moduleDriverEnd);
+	call_ctor_pointers(_moduleDriverBegin, _moduleDriverEnd);
 	// We assume that Drivers havent enabled interrupts hopefully
 	gloxDebugLog("Starting Interrupts after driver initialization\n");
-	arch::startIrq();
+	arch::start_irq();
 }
 
-extern "C" void callGlobalCtors()
+extern "C" void call_global_ctors()
 {
 	gloxDebugLogln("Global ctors :");
-	callCtorPointers(_ctorArrayStart, _ctorArrayEnd);
+	call_ctor_pointers(_ctorArrayStart, _ctorArrayEnd);
 }
 
 // extern void sleep(u64 ticks, u64 ms);
 // extern u64 getTicks();
-extern "C" void gloxorMain()
+extern "C" void gloxor_main()
 {
-	auto fbrange = glox::term::getUsedMemoryRange();
+	auto fbrange = glox::term::get_used_memory_range();
 	gloxDebugLogln("Con begin: ", fbrange.begin());
 	gloxDebugLogln("Con end: ", fbrange.end());
-	callPreCpuInits();
-	initializeCpu();
-	callDriverInits();
-	callGlobalCtors();
+	call_pre_cpu_inits();
+	initialize_cpu();
+	call_driver_inits();
+	call_global_ctors();
 #ifdef GLOXTESTING
-	extern glox::ktest _moduleTesting[];
-	extern glox::ktest _moduleTestingEnd[];
-	glox::term::setFgColor(0xadd8e6);
-	gloxPrint("Unit tests:\n");
-	glox::term::setFgColor(0xFFFFFF);
+	extern glox::Ktest _moduleTesting[];
+	extern glox::Ktest _moduleTestingEnd[];
+	glox::term::set_fg_color(0xadd8e6);
+	gloxPrint("Unit tests:\nThere are ",_moduleTestingEnd-_moduleTesting," tests\n");
+	glox::term::set_fg_color(0xFFFFFF);
 	for (auto it = _moduleTesting; it != _moduleTestingEnd; ++it)
 	{
 		gloxPrintln("Test case ", it->name);
 		if (it->init())
 		{
-			glox::term::setFgColor(0x00FF00);
+			glox::term::set_fg_color(0x00FF00);
 			gloxPrint("Test passed\n");
 		}
 		else
 		{
-			glox::term::setFgColor(0xFF0000);
+			glox::term::set_fg_color(0xFF0000);
 			gloxPrint("Test failed\n");
 		}
-		glox::term::setFgColor(0xFFFFFF);
+		glox::term::set_fg_color(0xFFFFFF);
 	}
 #endif
 	gloxPrint("Initialization Completed.\n");
@@ -89,10 +89,10 @@ static bool gogole_test()
 	__get_cpuid(0x80000002, brand + 0x0, brand + 0x1, brand + 0x2, brand + 0x3);
 	__get_cpuid(0x80000003, brand + 0x4, brand + 0x5, brand + 0x6, brand + 0x7);
 	__get_cpuid(0x80000004, brand + 0x8, brand + 0x9, brand + 0xa, brand + 0xb);
-	glox::term::setFgColor(0x80c000);
-	glox::term::writeStr((const char*)brand, 12 * sizeof(u32));
-	glox::term::writeStr("\n", 1);
-	glox::term::setFgColor(0xFFFFFF);
+	glox::term::set_fg_color(0x80c000);
+	glox::term::write_str((const char*)brand, 12 * sizeof(u32));
+	glox::term::write_str("\n", 1);
+	glox::term::set_fg_color(0xFFFFFF);
 	return true;
 }
 

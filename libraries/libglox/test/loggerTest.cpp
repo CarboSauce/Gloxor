@@ -15,22 +15,22 @@ inline auto format(char* buffer, testest a)
 	return (size_t)18;
 }
 
-struct testStream : glox::bStream
+struct test_stream : glox::bStream
 {
 	char buffer[256];
 };
 
-void write(testStream& st, size_t s)
+void write(test_stream& st, size_t s)
 {
 	std::fwrite(st.buffer, 1, s, stdout);
 }
 
-void write(testStream&, const char* str, size_t s)
+void write(test_stream&, const char* str, size_t s)
 {
 	std::fwrite(str, 1, s, stdout);
 }
 
-testStream out;
+test_stream out;
 
 int main()
 {

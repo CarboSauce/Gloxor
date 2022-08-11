@@ -5,7 +5,7 @@
 #define IDT_CALLGATE 0b10001100
 #define IDT_TRAPGATE 0b10001111
 
-struct interrupt_frame_t
+struct InterruptFrame
 {
 	size_t ip;
 	size_t cs;
@@ -14,7 +14,7 @@ struct interrupt_frame_t
 	size_t ss;
 };
 
-struct [[gnu::packed]] idt
+struct [[gnu::packed]] Idt
 {
 	uint16_t offset_1; // offset bits 0..15
 	uint16_t selector; // a code segment selector in GDT or LDT
@@ -26,37 +26,37 @@ struct [[gnu::packed]] idt
 	uint32_t zero = 0; // reserved
 #endif
 
-	constexpr void setOffset(uint64_t offset)
+	constexpr void set_offset(uint64_t offset)
 	{
 		offset_1 = offset & 0xFFFF;
 		offset_2 = (offset & 0xFFFF0000) >> 16;
 		offset_3 = (offset & 0xFFFFFFFF00000000) >> 32;
 	}
-	constexpr void registerHandler(uint64_t offset, uint16_t selector, uint8_t ist, uint8_t type_attr)
+	constexpr void register_handler(uint64_t offset, uint16_t selector, uint8_t ist, uint8_t type_attr)
 	{
 		this->selector = selector;
 		this->type_attr = type_attr;
 		this->ist = ist;
-		setOffset(offset);
+		set_offset(offset);
 	}
 };
 
-struct [[gnu::packed]] idtPointer
+struct [[gnu::packed]] IdtPointer
 {
 	uint16_t size;
-	idt* base;
+	Idt* base;
 };
 
-inline void loadIdt(const idtPointer& ptr)
+inline void load_idt(const IdtPointer& ptr)
 {
 	asm("lidt %0"
 		 :
 		 : "m"(ptr));
 }
 
-inline idtPointer getIdt()
+inline IdtPointer get_idt()
 {
-	idtPointer ptr;
+	IdtPointer ptr;
 	asm("sidt %0"
 		 : "=m"(ptr));
 	return ptr;

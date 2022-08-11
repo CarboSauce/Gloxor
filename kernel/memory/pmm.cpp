@@ -10,27 +10,27 @@ using namespace glox;
 /*
 	@TODO: size could perhaps be replaced pointer to end of range
 */
-struct pmmChunk
+struct PmmChunk
 {
 	size_t size;
-	friend auto operator<=>(const pmmChunk& l, const pmmChunk& r)
+	friend auto operator<=>(const PmmChunk& l, const PmmChunk& r)
 	{
 		return &l <=> &r;
 	};
 };
-using pmmHeader = node<pmmChunk>;
-using pmmList = list<pmmChunk>;
+using pmmHeader = node<PmmChunk>;
+using pmmList = list<PmmChunk>;
 
-static list<pmmChunk> pmmCtx;
+static list<PmmChunk> pmmCtx;
 static u64 memorySize;
 
 namespace glox
 {
 
-void pmmAddChunk(void* base, size_t length)
+void pmm_add_chunk(void* base, size_t length)
 {
 	gloxAssert(length % glox::pmmChunkSize == 0, "Pmm chunk length must be multiple of pmmChunkSize");
-	const auto realBase = arch::toVirt((glox::vaddrT)base);
+	const auto realBase = arch::to_virt((glox::vaddrT)base);
 	auto* chunk = reinterpret_cast<pmmHeader*>(realBase);
 	auto& pmmStart = pmmCtx.front;
 	auto& pmmEnd = pmmCtx.back;
@@ -44,29 +44,29 @@ void pmmAddChunk(void* base, size_t length)
 		pmmEnd = chunk;
 	}
 	else if (pmmEnd < chunk)
-		appendChunk(pmmEnd, chunk, length);
+		append_chunk(pmmEnd, chunk, length);
 	else if (pmmStart > chunk)
-		prependChunk(pmmStart, chunk, length);
+		prepend_chunk(pmmStart, chunk, length);
 	else
-		insertChunk(pmmStart, chunk, length);
+		insert_chunk(pmmStart, chunk, length);
 }
 
-void* pageAlloc(sizeT pageCount)
+void* page_alloc(sizeT pageCount)
 {
-	return allocFromChunk(pmmCtx, glox::pmmChunkSize, pageCount);
+	return alloc_from_chunk(pmmCtx, glox::pmmChunkSize, pageCount);
 }
-void* pageAllocZ(sizeT pageCount)
+void* page_alloc_z(sizeT pageCount)
 {
-	auto addr = pageAlloc(pageCount);
+	auto addr = page_alloc(pageCount);
 	memset(addr, 0, pageCount * glox::pmmChunkSize);
 	return addr;
 }
 
-void pageDealloc(void* ptr, sizeT pageCount)
+void page_dealloc(void* ptr, sizeT pageCount)
 {
 	if (ptr == nullptr)
 		return;
-	glox::pmmAddChunk(ptr, glox::pmmChunkSize * pageCount);
+	glox::pmm_add_chunk(ptr, glox::pmmChunkSize * pageCount);
 }
 } // namespace glox
 
@@ -74,12 +74,12 @@ void pageDealloc(void* ptr, sizeT pageCount)
 [[maybe_unused]] static bool test()
 {
 	auto startSize = pmmCtx.front->size;
-	void* p = pageAlloc();
-	void* p2 = pageAlloc();
-	pageDealloc(p);
+	void* p = page_alloc();
+	void* p2 = page_alloc();
+	page_dealloc(p);
 	auto nextH = pmmCtx.front->next;
 	KTEST_EXPECT(pmmCtx.front->next->size == 0x1000);
-	pageDealloc(p2);
+	page_dealloc(p2);
 	KTEST_EXPECT(pmmCtx.front->size == startSize);
 	KTEST_EXPECT(pmmCtx.front->next > nextH);
 	return true;

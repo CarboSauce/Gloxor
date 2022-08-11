@@ -4,20 +4,20 @@
 #include "system/terminal.hpp"
 namespace glox
 {
-void execAssert(const char* message, const char* file, const char* line)
+void exec_assert(const char* message, const char* file, const char* line)
 {
 	glox::outStream, "Assertion failed: \n (", message, ")\n ",
 		 file, ":", line, '\n';
-	glox::kernelPanic();
+	glox::kernel_panic();
 }
 
-void write(glox::logStream& out, const char* str, size_t s)
+void write(glox::LogStream& out, const char* str, size_t s)
 {
-	glox::term::writeStr(str, s);
-	printE9(str, s);
+	glox::term::write_str(str, s);
+	print_e9(str, s);
 	(void)out;
 }
 
-logStream outStream;
+LogStream outStream;
 
 } // namespace glox

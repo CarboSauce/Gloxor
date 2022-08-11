@@ -18,9 +18,9 @@ using namespace arch;
 using namespace x86::vmem;
 using namespace glox;
 
-static lvl4table klvl4{};
+static PageTable<PageLevel::lvl4> klvl4{};
 
-inline void mapRegion(vmemCtxT ctx, vaddrT from, vaddrT to, paddrT start)
+inline void map_region(vmemCtxT ctx, vaddrT from, vaddrT to, paddrT start)
 {
 	auto isalign = [](auto a, auto b)
 	{ return a % b == 0; };
@@ -30,7 +30,7 @@ inline void mapRegion(vmemCtxT ctx, vaddrT from, vaddrT to, paddrT start)
 
 		if (to - from > 0x200'000 && isalign(from, 0x200'000))
 		{
-			mapHugePage(ctx, from, start);
+			map_huge_page(ctx, from, start);
 			from += 0x200'000;
 			start += 0x200'000;
 		}
@@ -43,7 +43,7 @@ inline void mapRegion(vmemCtxT ctx, vaddrT from, vaddrT to, paddrT start)
 	}
 }
 
-inline void mapKernel()
+inline void map_kernel()
 {
 	auto ctx = (vmemCtxT)klvl4.entries;
 	size_t size = (kernelFileEnd - kernelFileBegin);
@@ -54,19 +54,19 @@ inline void mapKernel()
 	}
 }
 
-static void identityMap()
+static void identity_map()
 {
 	for (const auto& it : glox::machineInfo.mmapEntries)
 	{
-		if (it.type == bootInfo::memTypes::usable || it.type == bootInfo::memTypes::reclaimable)
+		if (it.type == BootInfo::MemTypes::usable || it.type == BootInfo::MemTypes::reclaimable)
 		{
 			const auto from = it.base + physicalMemBase;
 			const auto to = it.base;
-			mapRegion((u64)klvl4.entries, from, from + it.length, to);
+			map_region((u64)klvl4.entries, from, from + it.length, to);
 		}
 	}
 }
-inline bool setupPAT()
+inline bool setup_pat()
 {
 	auto info = cpuid(1);
 	if (!(info.edx & (1 << 16)))
@@ -81,30 +81,30 @@ inline bool setupPAT()
 }
 
 template <size_t I>
-glox::pair<const pageTable<I - 1>*, bool> translateSingleEntry(const pageTable<I>& ctx, vaddrT from)
+glox::pair<const PageTable<I - 1>*, bool> translate_single_entry(const PageTable<I>& ctx, vaddrT from)
 {
 	auto entry = ctx.entry(from);
 	if (!(entry.entry & present))
 		return {nullptr, true};
 	else if (entry.entry & granul)
-		return {(const pageTable<I - 1>*)entry.paddr(), true};
+		return {(const PageTable<I - 1>*)entry.paddr(), true};
 	return {entry.vaddr(), false};
 }
 
 namespace x86
 {
-vmemCtxT initKernelVirtMem()
+vmemCtxT init_kernel_virt_mem()
 {
 	auto context = (vmemCtxT)klvl4.entries;
 	gloxDebugLogln("Remapping CR3 to ", (void*)klvl4.entries, " phys address: ", (void*)context);
-	identityMap();
-	auto [fbeg, fend] = glox::term::getUsedMemoryRange();
+	identity_map();
+	auto [fbeg, fend] = glox::term::get_used_memory_range();
 	gloxDebugLogln("Mapping framebuffer from: ", fbeg, " to: ", fend);
-	mapRegion(context, (vaddrT)fbeg, (paddrT)fend, getRealDataAddr((paddrT)fbeg));
-	mapKernel();
-	if (setupPAT())
+	map_region(context, (vaddrT)fbeg, (paddrT)fend, get_real_data_addr((paddrT)fbeg));
+	map_kernel();
+	if (setup_pat())
 		gloxDebugLogln("PAT supported on boot cpu");
-	virtSetContext(context);
+	virt_set_context(context);
 	gloxDebugLogln("Trying translation code, from : ", fbeg, " to: ", (void*)translate(context, (u64)fbeg));
 	gloxDebugLogln("Trying translation code, from : ", (u8*)physicalMemBase + 0x200'000, " to: ", (void*)translate(context, physicalMemBase + 0x200'000));
 
@@ -118,38 +118,38 @@ namespace arch::vmem
 	  TODO: Completely unreadable, reconsider rewritting with member functions
 */
 
-inline bool allocPageIfNeeded(u64& entry, u64 mask)
+inline bool alloc_page_if_needed(u64& entry, u64 mask)
 {
 	if (entry & present)
 		return true;
-	const auto freshAdr = (u64)glox::pageAllocZ();
+	const auto freshAdr = (u64)glox::page_alloc();
 	if (!freshAdr)
 		return false;
-	entry = maskEntry(getRealDataAddr(freshAdr), mask);
+	entry = mask_entry(get_real_address(freshAdr), mask);
 	return true;
 }
 
-bool mapHugePage(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
+bool map_huge_page(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 {
-	auto* ctx = (pageTable<4>*)context;
+	auto* ctx = (PageTable<4>*)context;
 	auto& e4 = ctx->entry(from);
-	gloxAssert(allocPageIfNeeded(e4.entry, mask));
+	gloxAssert(alloc_page_if_needed(e4.entry, mask));
 	auto& e3 = e4.vaddr()->entry(from);
-	gloxAssert(allocPageIfNeeded(e3.entry, mask));
-	e3.vaddr()->entry(from).entry = maskEntry(to & ~0x100000, mask | granul);
+	gloxAssert(alloc_page_if_needed(e3.entry, mask));
+	e3.vaddr()->entry(from).entry = mask_entry(to & ~0x100000, mask | granul);
 	return true;
 }
 
 bool map(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 {
-	auto* ctx = (pageTable<4>*)context;
+	auto* ctx = (PageTable<4>*)context;
 	auto& e4 = ctx->entry(from);
-	gloxAssert(allocPageIfNeeded(e4.entry, mask));
+	gloxAssert(alloc_page_if_needed(e4.entry, mask));
 	auto& e3 = e4.vaddr()->entry(from);
-	gloxAssert(allocPageIfNeeded(e3.entry, mask));
+	gloxAssert(alloc_page_if_needed(e3.entry, mask));
 	auto& e2 = e3.vaddr()->entry(from);
-	gloxAssert(allocPageIfNeeded(e2.entry, mask));
-	e2.vaddr()->entry(from).entry = maskEntry(getPhysical(to), mask);
+	gloxAssert(alloc_page_if_needed(e2.entry, mask));
+	e2.vaddr()->entry(from).entry = mask_entry(get_physical(to), mask);
 	return true;
 }
 
@@ -162,14 +162,14 @@ bool unmap(vmemCtxT context, const void* whichVirtual)
 
 paddrT translate(vmemCtxT pt, vaddrT from)
 {
-	auto* ctx = (const pageTable<4>*)pt;
-	auto e4 = translateSingleEntry(*ctx, from);
+	auto* ctx = (const PageTable<4>*)pt;
+	auto e4 = translate_single_entry(*ctx, from);
 	if (e4.second)
 		return (paddrT)e4.first;
-	auto e3 = translateSingleEntry(*e4.first, from);
+	auto e3 = translate_single_entry(*e4.first, from);
 	if (e3.second)
 		return (paddrT)e3.first;
-	auto e2 = translateSingleEntry(*e3.first, from);
+	auto e2 = translate_single_entry(*e3.first, from);
 	if (e2.second)
 		return (paddrT)e2.first;
 	auto e1 = e2.first->entry(from);
@@ -178,9 +178,9 @@ paddrT translate(vmemCtxT pt, vaddrT from)
 	return e1.paddr();
 }
 
-vmemCtxT virtCreateContext()
+vmemCtxT virt_create_context()
 {
-	return (u64)glox::pageAllocZ();
+	return (u64)glox::page_alloc();
 }
 
 } // namespace arch::vmem

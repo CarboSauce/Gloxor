@@ -6,7 +6,7 @@ namespace arch
 
 using irqT = u64;
 
-inline irqT saveIrq()
+inline irqT save_irq()
 {
 	irqT flags;
 	asm volatile("pushf;pop %0"
@@ -16,20 +16,20 @@ inline irqT saveIrq()
 	return flags;
 }
 
-inline void restoreIrq(irqT flags)
+inline void restore_irq(irqT flags)
 {
 	asm("push %0;popf"
 		 :
 		 : "rm"(flags)
 		 : "memory", "cc");
 }
-inline void stopIrq()
+inline void stop_irq()
 {
 	asm volatile("cli" ::
 						  : "memory");
 }
 
-inline void startIrq()
+inline void start_irq()
 {
 	asm volatile("sti" ::
 						  : "memory");

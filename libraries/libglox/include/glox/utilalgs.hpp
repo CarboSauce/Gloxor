@@ -17,7 +17,7 @@ constexpr void reverse(iter a, iter b)
 }
 
 template <typename iter, typename T>
-constexpr void setRange(iter beg, iter end, const T& val)
+constexpr void set_range(iter beg, iter end, const T& val)
 {
 	for (; beg != end; ++beg)
 	{
@@ -35,7 +35,7 @@ constexpr auto copy(iterIn in, iterIn inEnd, iterOut out)
 }
 
 template <typename iterIn, typename iterOut>
-constexpr auto copyBackwards(iterIn first, iterIn last, iterOut d_last)
+constexpr auto copy_backwards(iterIn first, iterIn last, iterOut d_last)
 {
 	while (first != last)
 	{
@@ -43,7 +43,7 @@ constexpr auto copyBackwards(iterIn first, iterIn last, iterOut d_last)
 	}
 }
 template <typename iterIn, typename iterOut>
-constexpr auto copyOverlapped(iterIn src, iterIn srcLast, iterOut dest)
+constexpr auto copy_overlapped(iterIn src, iterIn srcLast, iterOut dest)
 {
 	if (dest < src)
 	{
@@ -51,7 +51,7 @@ constexpr auto copyOverlapped(iterIn src, iterIn srcLast, iterOut dest)
 	}
 	else
 	{
-		copyBackwards(src, srcLast, dest + (srcLast - src));
+		copy_backwards(src, srcLast, dest + (srcLast - src));
 	}
 }
 

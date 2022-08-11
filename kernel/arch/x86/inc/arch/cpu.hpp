@@ -3,7 +3,7 @@
 namespace arch
 {
 
-inline void spinloopHint()
+inline void spinloop_hint()
 {
 	asm("pause");
 }
@@ -13,9 +13,9 @@ inline void halt()
 	asm("hlt");
 }
 
-void initializeCpu();
+void initialize_cpu();
 
-[[noreturn]] inline void haltForever()
+[[noreturn]] inline void halt_forever()
 {
 	while (1)
 	{

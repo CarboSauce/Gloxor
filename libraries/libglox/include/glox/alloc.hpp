@@ -7,13 +7,13 @@
 namespace glox
 {
 template <typename T>
-void uninitDefConstruct(T first, T last)
+void uninit_def_construct(T first, T last)
 {
 	for (; first != last; first++)
 		::new (first) T;
 }
 template <typename T>
-void uninitValConstruct(T first, T last)
+void uninit_val_construct(T first, T last)
 {
 	for (; first != last; first++)
 		::new (first) T();

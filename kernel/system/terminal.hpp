@@ -6,18 +6,18 @@
 
 namespace glox::term
 {
-void initTerm(colorT* begin, colorT* end, size_t pitch, size_t width, size_t height);
-void writeStr(const char* str, size_t size);
-inline void writeStr(const char* str) { writeStr(str, strlen(str)); }
-void setFgColor(colorT);
-void setBgColor(colorT);
-void clearScreen(colorT);
+void init_term(color_t* begin, color_t* end, size_t pitch, size_t width, size_t height);
+void write_str(const char* str, size_t size);
+inline void write_str(const char* str) { write_str(str, strlen(str)); }
+void set_fg_color(color_t);
+void set_bg_color(color_t);
+void clear_screen(color_t);
 /**
  * @brief Sets the cursor look to the parameter, value of 0 implies no cursor
  */
-void setCursorLook(u8 ascii);
-glox::span<u8> getUsedMemoryRange();
-constexpr colorT rgb(u8 r, u8 g, u8 b)
+void set_cursor_look(u8 ascii);
+glox::span<u8> get_used_memory_range();
+constexpr color_t rgb(u8 r, u8 g, u8 b)
 {
 	return r << 16 | g << 8 | b;
 }

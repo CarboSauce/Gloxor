@@ -21,17 +21,17 @@
 
 namespace glox
 {
-struct picContext
+struct PicContext
 {
 	u8 masterMask;
 	u8 slaveMask;
 };
 namespace pic
 {
-	void setMasterMask(u8 mask);
-	void setSlaveMask(u8 mask);
-	void sendEoiMaster();
-	void sendEoiSlave();
+	void set_master_mask(u8 mask);
+	void set_slave_mask(u8 mask);
+	void send_eoi_master();
+	void send_eoi_slave();
 	void remap(u8 masterOffst, u8 slaveOffst);
 } // namespace pic
 } // namespace glox

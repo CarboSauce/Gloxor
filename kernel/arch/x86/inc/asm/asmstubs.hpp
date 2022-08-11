@@ -5,7 +5,7 @@
 
 namespace statusFlags
 { // clang-format off
-	enum eflags
+	enum Eflags
 	{ 
 		carry       = 0x00000001,
 		parity      = 0x00000004,
@@ -26,7 +26,7 @@ namespace statusFlags
 	};
 } // clang-format on
 
-inline void ioWait()
+inline void io_wait()
 {
 	/* Port 0x80 is used for 'checkpoints' during POST. */
 	/* The Linux kernel seems to think it is free for use :-/ */
@@ -56,9 +56,9 @@ inline uint8_t inb(uint16_t port)
 	return ret;
 }
 
-inline statusFlags::eflags getStatusFlags()
+inline statusFlags::Eflags get_status_flags()
 {
-	statusFlags::eflags flags;
+	statusFlags::Eflags flags;
 	__asm__ volatile("pushf;pop %0"
 						  : "=rm"(flags)
 						  :
@@ -66,13 +66,13 @@ inline statusFlags::eflags getStatusFlags()
 	return flags;
 }
 
-struct registerPair
+struct RegisterPair
 {
 	size_t edx;
 	size_t eax;
 };
 
-inline void setStatusFlags(statusFlags::eflags flags)
+inline void set_status_flags(statusFlags::Eflags flags)
 {
 	__asm__ volatile("push %0;popf"
 						  :
@@ -86,7 +86,7 @@ inline void setStatusFlags(statusFlags::eflags flags)
  * @param ecx XCR branch to read from, only 0 and 1 supported rest are reserved
  * @return glox::pair<uint32_t,uint32_t>
  */
-inline registerPair xgetbv(size_t ecx)
+inline RegisterPair xgetbv(size_t ecx)
 {
 	size_t eax, edx;
 	__asm__("xgetbv"
@@ -102,7 +102,7 @@ inline void xsetbv(size_t ecx, size_t edx, size_t eax)
 
 inline auto cpuid(uint32_t code)
 {
-	struct cpuidT
+	struct CpuidT
 	{
 		uint32_t eax, ebx, ecx, edx;
 	} val;

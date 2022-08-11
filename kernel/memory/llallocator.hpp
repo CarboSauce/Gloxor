@@ -9,7 +9,7 @@
 	node is present in the list, it has atleast 1 free page
 */
 template <typename T>
-inline void* allocFromChunk(glox::list<T>& chunk, size_t chunkSize)
+inline void* alloc_from_chunk(glox::list<T>& chunk, size_t chunkSize)
 {
 	auto& i = *chunk.front;
 	i.size -= chunkSize;
@@ -24,7 +24,7 @@ inline void* allocFromChunk(glox::list<T>& chunk, size_t chunkSize)
 }
 
 template <typename T>
-inline void* allocFromChunk(glox::list<T>& chunk, size_t chunkSize, sizeT pageCount)
+inline void* alloc_from_chunk(glox::list<T>& chunk, size_t chunkSize, sizeT pageCount)
 {
 	const auto allocSize = chunkSize * pageCount;
 	for (auto& it : chunk)
@@ -63,7 +63,7 @@ inline void* allocFromChunk(glox::list<T>& chunk, size_t chunkSize, sizeT pageCo
 
 // this functions seems like it could be eliminated and added to insert chunk
 template <typename T>
-inline void appendChunk(T*& back, T* chunk, sizeT length)
+inline void append_chunk(T*& back, T* chunk, sizeT length)
 {
 	if ((uintptr)back + back->size == (uintptr)chunk)
 	{
@@ -78,7 +78,7 @@ inline void appendChunk(T*& back, T* chunk, sizeT length)
 }
 
 template <typename T>
-inline void prependChunk(T*& front, T* chunk, sizeT length)
+inline void prepend_chunk(T*& front, T* chunk, sizeT length)
 {
 	if ((uintptr)chunk + length == (uintptr)front)
 	{
@@ -96,7 +96,7 @@ inline void prependChunk(T*& front, T* chunk, sizeT length)
 
 // assumes chunk is in the node list range
 template <typename T>
-inline void insertChunk(T*& from, T* chunk, sizeT length)
+inline void insert_chunk(T*& from, T* chunk, sizeT length)
 {
 	auto* it = from;
 	if (it > chunk)

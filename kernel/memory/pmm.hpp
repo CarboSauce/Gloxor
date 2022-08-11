@@ -21,23 +21,23 @@ constexpr sizeT pmmChunkSize = 0x1000;
 /**
  * @brief Adds memory chunk to PMM
  */
-void pmmAddChunk(void* base, sizeT length);
+void pmm_add_chunk(void* base, sizeT length);
 /**
  * @brief Free the allocated page
  * @param ptr Pointer previously obtained from pmm::alloc
  */
-void pageDealloc(void* ptr, sizeT pageCount = 1);
+void page_dealloc(void* ptr, sizeT pageCount = 1);
 /**
  * @brief Allocate pageCount amount of pages
  * @return pointer to allocated page, nullptr on out of memory
  */
 [[using gnu: malloc, mallocAttribute(glox::pageDealloc, 1), alloc_size(1), aligned(glox::pmmChunkSize)]]
-void* pageAlloc(sizeT pageCount = 1);
+void* page_alloc(sizeT pageCount = 1);
 /**
  * @brief Allocate single page and zero it
  * @return pointer to allocated page, nullptr on out of memory
  */
 [[using gnu: malloc, mallocAttribute(glox::pageDealloc, 1), alloc_size(1), aligned(glox::pmmChunkSize)]]
-void* pageAllocZ(sizeT pageCount = 1);
+void* page_alloc_z(sizeT pageCount = 1);
 
 } // namespace glox

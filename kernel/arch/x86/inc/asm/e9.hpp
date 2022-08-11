@@ -3,18 +3,18 @@
 #include "gloxor/mutex.hpp"
 #include "gloxor/types.hpp"
 
-inline void printE9(const char* str)
+inline void print_e9(const char* str)
 {
-	glox::scopedLock<glox::irqLock> _;
+	glox::scoped_lock<glox::IrqLock> _;
 	while (char c = *str++)
 	{
 		outb(0xE9, c);
 	}
 }
 
-inline void printE9(const char* str, size_t size)
+inline void print_e9(const char* str, size_t size)
 {
-	glox::scopedLock<glox::irqLock> _;
+	glox::scoped_lock<glox::IrqLock> _;
 	for (size_t i = 0; i != size; ++i)
 	{
 		outb(0xE9, str[i]);

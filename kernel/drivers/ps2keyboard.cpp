@@ -5,12 +5,12 @@
 #include "system/logging.hpp"
 #include "system/terminal.hpp"
 
-[[gnu::interrupt]] static void kbdHandler(interrupt_frame_t* frame)
+[[gnu::interrupt]] static void kbd_handler(InterruptFrame* frame)
 {
 	auto val = inb(0x60);
 	if (val == 185)
 	{
-		glox::term::clearScreen(0); // i think this basically can crash kernel, too complex in irq
+		glox::term::clear_screen(0); // i think this basically can crash kernel, too complex in irq
 	}
 	else if (val == 158)
 	{
@@ -22,18 +22,18 @@
 		gloxTraceLog("gar");
 	else
 		gloxTraceLogln("Kbval = ", val);
-	glox::pic::sendEoiMaster();
+	glox::pic::send_eoi_master();
 }
 
-static void initKeyboard()
+static void init_keyboard()
 {
-	auto idt = getIdt();
+	auto idt = get_idt();
 	gloxDebugLog("Mapping Keyboard handler\n");
-	idt.base[0x21].registerHandler((uint64_t)kbdHandler, 0x8, 0, IDT_INTERRUPTGATE);
+	idt.base[0x21].register_handler((uint64_t)kbd_handler, 0x8, 0, IDT_INTERRUPTGATE);
 
 	// This should be generic, seperated drivers might have trouble to
 	// unmask the controller
-	glox::pic::setMasterMask(0b11111101);
+	glox::pic::set_master_mask(0b11111101);
 }
 
-initDriverModule(initKeyboard);
+initDriverModule(init_keyboard);

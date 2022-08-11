@@ -24,7 +24,7 @@ else()
 	list(APPEND KERNEL_LINK_FLAGS -no-pie)
 endif()
 
-add_compile_definitions(LOGLEVEL=${LOG_LEVEL})
+add_compile_definitions(LOG_LEVEL=${LOG_LEVEL})
 if (COMPILE_TESTS)
    add_compile_definitions(GLOXTESTING)
 endif()

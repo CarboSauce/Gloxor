@@ -11,37 +11,37 @@ inline paddrT kernelPhysOffset;
 inline vaddrT kernelVirtOffset;
 inline sizeT kernelMappingOffset;
 
-inline paddrT getRealKernelAddr(vaddrT virt)
+inline paddrT get_real_kernel_addr(vaddrT virt)
 {
 	gloxAssert(virt >= arch::kernelMemBase);
 	return virt + kernelMappingOffset;
 }
-inline paddrT getRealKernelAddr(const void* virt)
+inline paddrT get_real_kernel_addr(const void* virt)
 {
-	return getRealKernelAddr((u64)virt);
+	return get_real_kernel_addr((u64)virt);
 }
-inline paddrT getRealDataAddr(vaddrT virt)
+inline paddrT get_real_data_addr(vaddrT virt)
 {
 	gloxAssert(virt >= arch::physicalMemBase);
 	return virt - arch::physicalMemBase;
 }
-inline vaddrT toVirt(paddrT addr)
+inline vaddrT to_virt(paddrT addr)
 {
 	if (addr < arch::physicalMemBase)
 		return addr + arch::physicalMemBase;
 	return addr;
 }
 
-inline paddrT getRealDataAddr(const void* virt)
+inline paddrT get_real_data_addr(const void* virt)
 {
-	return getRealDataAddr((u64)virt);
+	return get_real_data_addr((u64)virt);
 }
-inline paddrT getRealAddress(vaddrT virt)
+inline paddrT get_real_address(vaddrT virt)
 {
 	if (virt >= arch::kernelMemBase)
-		return getRealKernelAddr(virt);
+		return get_real_kernel_addr(virt);
 	if (virt >= arch::physicalMemBase)
-		return getRealDataAddr(virt);
+		return get_real_data_addr(virt);
 	return virt;
 }
 } // namespace arch

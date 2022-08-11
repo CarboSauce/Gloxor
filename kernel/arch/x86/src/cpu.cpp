@@ -15,7 +15,7 @@ using namespace arch;
 using namespace glox;
 using namespace arch::vmem;
 
-[[gnu::used]] static gdt code_data[3]{
+[[gnu::used]] static Gdt code_data[3]{
 	 {},
 	 {
 		  0x0000,	  // limit
@@ -33,32 +33,32 @@ using namespace arch::vmem;
 		  0b00000000, // gran
 		  0x00		  // base
 	 }};
-[[gnu::used]] static idt idt_list[256]{};
+[[gnu::used]] static Idt idt_list[256]{};
 static u64 cpuFeatures;
 
-[[gnu::interrupt]] static void DivZeroHandle(interrupt_frame_t*)
+[[gnu::interrupt]] static void div_zero_handle(InterruptFrame*)
 {
 	gloxFatalLogln("You Fool Divided By Zero!\n");
-	glox::kernelPanic();
+	glox::kernel_panic();
 }
 
-[[gnu::interrupt]] static void DoubleFault(interrupt_frame_t*)
+[[gnu::interrupt]] static void double_fault(InterruptFrame*)
 {
 	gloxFatalLogln("Double fault!\n");
-	glox::kernelPanic();
+	glox::kernel_panic();
 }
-[[gnu::interrupt]] static void SpurInterrupt(interrupt_frame_t*)
+[[gnu::interrupt]] static void spur_interrupt(InterruptFrame*)
 {
 	gloxFatalLogln("Spurious Interrupt!\n");
 }
 
-[[gnu::interrupt]] static void GPfault(interrupt_frame_t* frame, size_t /* errc */)
+[[gnu::interrupt]] static void g_pfault(InterruptFrame* frame, size_t /* errc */)
 {
 	gloxFatalLogln("General Protection Fault!\nRIP = ", (void*)frame->ip);
-	glox::kernelPanic();
+	glox::kernel_panic();
 }
 
-[[gnu::interrupt]] static void PageFault(interrupt_frame_t*, size_t /* errc */)
+[[gnu::interrupt]] static void page_fault(InterruptFrame*, size_t /* errc */)
 {
 	void* errorAdr = (void*)readCr(2);
 	gloxFatalLogln("Page Fault at address: ", errorAdr);
@@ -66,54 +66,54 @@ static u64 cpuFeatures;
 	{
 		gloxTraceLog("Null pointer access\n");
 	}
-	glox::kernelPanic();
+	glox::kernel_panic();
 }
 
-[[gnu::interrupt]] static void IllegalOpcode(interrupt_frame_t* frame)
+[[gnu::interrupt]] static void illegal_opcode(InterruptFrame* frame)
 {
 	gloxFatalLogln("Illegal opcode! RIP = ", (void*)frame->ip);
-	arch::haltForever();
+	arch::halt_forever();
 }
 
-[[gnu::interrupt]] static void DebugHandler(interrupt_frame_t* frame)
+[[gnu::interrupt]] static void debug_handler(InterruptFrame* frame)
 {
 	gloxPrintln("Debug handler, RIP: ", (void*)frame->ip);
 }
 
-inline void initializeGdt();
-inline void initializeInterrupts();
-inline void initializeCpuExtensions();
+inline void initialize_gdt();
+inline void initialize_interrupts();
+inline void initialize_cpu_extensions();
 
 namespace x86
 {
-vmemCtxT initKernelVirtMem();
+vmemCtxT init_kernel_virt_mem();
 }
 
 namespace arch
 {
 
-bool isFeatureSupported(featureBit features)
+bool is_feature_supported(FeatureBit features)
 {
 	return cpuFeatures & static_cast<u64>(features);
 }
 
-void initializeCpu()
+void initialize_cpu()
 {
-	initializeGdt();
-	initializeInterrupts();
-	initializeCpuExtensions();
+	initialize_gdt();
+	initialize_interrupts();
+	initialize_cpu_extensions();
 
 	gloxTraceLogln("Cpu features:", cpuFeatures);
-	x86::initKernelVirtMem();
+	x86::init_kernel_virt_mem();
 }
 
 } // namespace arch
 
-inline void initializeGdt()
+inline void initialize_gdt()
 {
-	stopIrq();
+	stop_irq();
 
-	gdt_pointer gdt_ptr = {
+	GdtPointer gdt_ptr = {
 		 sizeof(code_data),
 		 code_data};
 
@@ -143,24 +143,24 @@ inline void initializeGdt()
 		 : "memory", "%rax");
 }
 
-inline void initializeInterrupts()
+inline void initialize_interrupts()
 {
 
-	idtPointer idt_ptr = {
+	IdtPointer idt_ptr = {
 		 sizeof(idt_list),
 		 idt_list};
 
-	idt_list[0].registerHandler((u64)DivZeroHandle, 0x8, 0, IDT_INTERRUPTGATE);
-	idt_list[1].registerHandler((u64)SpurInterrupt, 0x8, 0, IDT_INTERRUPTGATE);
-	idt_list[2].registerHandler((u64)SpurInterrupt, 0x8, 0, IDT_INTERRUPTGATE);
-	idt_list[6].registerHandler((u64)IllegalOpcode, 0x8, 0, IDT_INTERRUPTGATE);
-	idt_list[8].registerHandler((u64)DoubleFault, 0x8, 0, IDT_TRAPGATE);
-	idt_list[13].registerHandler((u64)GPfault, 0x8, 0, IDT_INTERRUPTGATE);
-	idt_list[14].registerHandler((u64)PageFault, 0x8, 0, IDT_INTERRUPTGATE);
-	loadIdt(idt_ptr);
+	idt_list[0].register_handler((u64)div_zero_handle, 0x8, 0, IDT_INTERRUPTGATE);
+	idt_list[1].register_handler((u64)spur_interrupt, 0x8, 0, IDT_INTERRUPTGATE);
+	idt_list[2].register_handler((u64)spur_interrupt, 0x8, 0, IDT_INTERRUPTGATE);
+	idt_list[6].register_handler((u64)illegal_opcode, 0x8, 0, IDT_INTERRUPTGATE);
+	idt_list[8].register_handler((u64)double_fault, 0x8, 0, IDT_TRAPGATE);
+	idt_list[13].register_handler((u64)g_pfault, 0x8, 0, IDT_INTERRUPTGATE);
+	idt_list[14].register_handler((u64)page_fault, 0x8, 0, IDT_INTERRUPTGATE);
+	load_idt(idt_ptr);
 }
 
-inline void initializeCpuExtensions()
+inline void initialize_cpu_extensions()
 {
 	u32 eax, ebx, ecx, edx;
 	__cpuid(0x1, eax, ebx, ecx, edx);

@@ -23,7 +23,7 @@ constexpr uint64_t clz(uint64_t x)
  * @brief Rounds input to next power of 2
  * @param x Number to round up, must be above 0
  */
-constexpr uint32_t nextPow2(uint32_t x)
+constexpr uint32_t next_pow2(uint32_t x)
 {
 	if (x == 1)
 		return 1;
@@ -33,7 +33,7 @@ constexpr uint32_t nextPow2(uint32_t x)
  * @brief Rounds input to next power of 2
  * @param x Number to round up, must be above 0
  */
-constexpr uint64_t nextPow2(uint64_t x)
+constexpr uint64_t next_pow2(uint64_t x)
 {
 	if (x == 1)
 		return 1;

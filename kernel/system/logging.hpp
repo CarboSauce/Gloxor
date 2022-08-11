@@ -3,7 +3,7 @@
 #include "system/logging.hpp"
 namespace glox
 {
-struct logStream : glox::bStream
+struct LogStream : glox::b_stream
 {
 	char buffer[512];
 	uint32_t curLogLevel;
@@ -13,28 +13,28 @@ struct logStream : glox::bStream
 		((void)(*this, Args), ...);
 	}
 };
-enum class logLevel
+enum class LogLevel
 {
 	fatal,
 	trace,
 	debug,
 };
 
-void write(logStream&, const char* str, size_t s);
+void write(LogStream&, const char* str, size_t s);
 // void write(logStream&, const char* str);
-extern glox::logStream outStream;
-inline logLevel logLevelCap = logLevel(LOGLEVEL);
+extern glox::LogStream outStream;
+inline LogLevel LogLevelCap = LogLevel(LOG_LEVEL);
 } // namespace glox
 
-using glox::logLevel;
+using glox::LogLevel;
 using glox::outStream;
 #define gloxPrint(...) glox::outStream, __VA_ARGS__
 #define gloxPrintln(...) glox::outStream, __VA_ARGS__, '\n'
-#define gloxLog(level, ...) (glox::logLevelCap < level ? (void)0 : (void)(glox::outStream, __VA_ARGS__))
-#define gloxLogln(level, ...) (glox::logLevelCap < level ? (void)0 : (void)(glox::outStream, __VA_ARGS__, '\n'))
-#define gloxFatalLog(...) gloxLog(glox::logLevel::fatal, __VA_ARGS__)
-#define gloxFatalLogln(...) gloxLogln(glox::logLevel::fatal, __VA_ARGS__)
-#define gloxTraceLog(...) gloxLog(glox::logLevel::trace, __VA_ARGS__)
-#define gloxTraceLogln(...) gloxLogln(glox::logLevel::trace, __VA_ARGS__)
-#define gloxDebugLog(...) gloxLog(glox::logLevel::debug, __VA_ARGS__)
-#define gloxDebugLogln(...) gloxLogln(glox::logLevel::debug, __VA_ARGS__)
+#define gloxLog(level, ...) (glox::LogLevelCap < level ? (void)0 : (void)(glox::outStream, __VA_ARGS__))
+#define gloxLogln(level, ...) (glox::LogLevelCap < level ? (void)0 : (void)(glox::outStream, __VA_ARGS__, '\n'))
+#define gloxFatalLog(...) gloxLog(glox::LogLevel::fatal, __VA_ARGS__)
+#define gloxFatalLogln(...) gloxLogln(glox::LogLevel::fatal, __VA_ARGS__)
+#define gloxTraceLog(...) gloxLog(glox::LogLevel::trace, __VA_ARGS__)
+#define gloxTraceLogln(...) gloxLogln(glox::LogLevel::trace, __VA_ARGS__)
+#define gloxDebugLog(...) gloxLog(glox::LogLevel::debug, __VA_ARGS__)
+#define gloxDebugLogln(...) gloxLogln(glox::LogLevel::debug, __VA_ARGS__)

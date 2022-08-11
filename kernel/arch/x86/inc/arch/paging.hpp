@@ -22,7 +22,7 @@ using vmemCtxT = arch::vmem::pagingT;
  * @return false Mapping failed
  */
 
-bool mapHugePage(vmemCtxT, vaddrT from, paddrT to, vpageFlags flags = arch::vmem::defFlags);
+bool map_huge_page(vmemCtxT, vaddrT from, paddrT to, vpageFlags flags = arch::vmem::defFlags);
 bool map(vmemCtxT, vaddrT from, paddrT to, vpageFlags flags = arch::vmem::defFlags);
 /**
  * @brief Unmap virtual address from current context
@@ -46,27 +46,27 @@ paddrT translate(vmemCtxT, vaddrT from);
  * @return true Success
  * @return false Allocation failure
  */
-vmemCtxT virtCreateContext();
+vmemCtxT virt_create_context();
 
-vmemCtxT virtDestroyContext(vmemCtxT context);
+vmemCtxT virt_destroy_context(vmemCtxT context);
 
-inline vmemCtxT virtGetCotext()
+inline vmemCtxT virt_get_cotext()
 {
 	vmemCtxT ctx;
 	asm volatile("mov %%cr3,%0"
 					 : "=r"(ctx));
 	return ctx;
 }
-inline void virtSetContext(vmemCtxT context)
+inline void virt_set_context(vmemCtxT context)
 {
-	asm volatile("mov %0, %%cr3" ::"r"(maskEntry(getRealAddress(context), x86::vmem::writeThrough)));
+	asm volatile("mov %0, %%cr3" ::"r"(mask_entry(get_real_address(context), x86::vmem::writeThrough)));
 }
-inline void virtFlush(void* addr)
+inline void virt_flush(void* addr)
 {
 	asm volatile("invlpg (%0)" ::"r"(addr)
 					 : "memory");
 }
-inline void virtCacheFlush()
+inline void virt_cache_flush()
 {
 	asm volatile("movq %%cr3, %%rax;mov %%rax,%%cr3" ::
 						  : "rax", "memory");
