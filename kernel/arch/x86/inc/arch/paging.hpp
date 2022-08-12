@@ -1,6 +1,7 @@
 #pragma once
 #include <asm/paging.hpp>
 #include <gloxor/types.hpp>
+#include <glox/util.hpp> 
 namespace arch::vmem
 {
 using pagingT = u64;
@@ -8,6 +9,12 @@ using vpageFlags = u64;
 
 constexpr u64 pageSize = 0x1000;
 static constexpr vpageFlags defFlags = x86::vmem::writable | x86::vmem::present;
+// enum class CacheMode
+// {
+// 	cacheDisabled,
+// 	writeThrough,
+// 	writeCombine
+// };
 /**
  * @brief class for managing virtual memory context
  *
