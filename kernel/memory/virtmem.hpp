@@ -18,7 +18,7 @@ class VSpace
 		writeThrough,
 		writeCombine,
 		writeBack,
-	}
+	};
 	bool map(vaddrT from, paddrT to, attributes attrib, size_t count = 1)
 	{
 		/*
@@ -39,7 +39,7 @@ class VSpace
 	void destroy();
 	VSpace(const VSpace&) = delete;
 	VSpace& operator=(const VSpace&) = delete;
-}
+};
 
 extern VSpace kAddrSpace;
 void* vmap_iomem(paddrT base, size_t len);

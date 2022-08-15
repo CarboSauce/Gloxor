@@ -1,9 +1,8 @@
 #pragma once
 #include "glox/types.hpp"
 
-[[nodiscard]] inline void* operator new(size_t, void* p) { return p; }
-[[nodiscard]] inline void* operator new[](size_t, void* p) { return p; }
-
+[[gnu::always_inline, nodiscard]] inline void* operator new(size_t, void* p) noexcept { return p; }
+[[gnu::always_inline, nodiscard]] inline void* operator new[](size_t, void* p) noexcept { return p; }
 namespace glox
 {
 template <typename T>
@@ -41,5 +40,21 @@ void dealloc(Allocator a, T* ptr, size_t size = 1)
 	}
 	a.dealloc(ptr, sizeof(T) * size);
 }
-
 } // namespace glox
+
+#ifdef LIBGLOX_DEFAULT_ALLOCATOR_PATH
+#include LIBGLOX_DEFAULT_ALLOCATOR_PATH
+#else
+struct default_allocator
+{
+	void* alloc(size_t s)
+	{	
+		return ::operator new(s);
+	}
+	void dealloc(void* p, size_t s)
+	{
+		return ::operator delete(p);
+	}
+};
+#endif 
+

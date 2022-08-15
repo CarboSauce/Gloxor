@@ -1,7 +1,7 @@
 #pragma once
 namespace glox
 {
-	
+// keep for now, remove and replace legacy code once intrusive_list is tested
 template <typename T>
 struct node : public T
 {
@@ -47,7 +47,63 @@ struct node : public T
 		this->prev = left;
 	}
 };
+template<typename T>
+struct intrusive_list_node
+{
+	T* next = nullptr, *prev = nullptr;
+};
 
+template<typename T>
+class intrusive_list
+{
+	T* first_node, *last_node;
+	public:
+	class iterator
+	{
+		T* it;
+		public:
+		auto operator++() { return it = it->list_node.next; }
+		auto operator--() { return it = it->list_node.prev; }
+		friend auto operator<=>(iterator, iterator) = default;
+		auto& operator*() const { return *it; }
+		auto& operator->() const { return it; }
+	};
+	iterator begin() { return {first_node}; }
+	iterator end() { return {nullptr}; }
+	T& back() { return *last_node; }
+	T& front() { return *first_node; }
+	const iterator begin() const { return {first_node}; }
+	const iterator end() const { return {nullptr}; }
+	const T& back() const { return {last_node}; }
+	const T& front() const { return *first_node; }
+
+	void push_back(T* node)
+	{
+		last_node->list_node.next = node;
+		node->list_node.prev = last_node;
+		last_node = node;
+	};
+	void push_front(T* node)
+	{
+		first_node->list_node.prev = node;
+		node->list_node.next = first_node;
+		first_node = node;
+	}
+	iterator insert(iterator iter, T* node)
+	{
+		node->list_node.prev = iter->list_node.prev;
+		node->list_node.next = iter;
+		iter->list_node.prev = node;
+		iter->list_node.prev->list_node.next = node;
+		return node;
+	}
+	iterator erase(iterator iter)
+	{
+		iter->list_node.next->list_node.prev = iter->list_node.prev;
+		iter->list_node.prev->list_node.next = iter->list_node.next;
+		return iter->list_node.next;
+	}
+};
 template <typename T>
 struct list
 {

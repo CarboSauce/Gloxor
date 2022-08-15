@@ -1,33 +1,28 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.18)
 project(libglox VERSION 1.0 LANGUAGES CXX)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
 
-
 option(USE_LTO "Should we use Link time optimizations" ON)
 option(COMPILE_TESTS "Enable tests?" ON)
 option(SET_INSTALL_TARGETS "Should we attach installation targets?" OFF)
+set(DEFAULT_ALLOCATOR_PATH "" CACHE STRING 
+	"Header file path with default allocator that will be included in glox/alloc.hpp
+and used as default allocator for containers that require them")
 
-# set_property(GLOBAL PROPERTY 
-#              CXX_STANDARD 20
-# )
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
-add_library(libglox STATIC
+add_library(libglox INTERFACE 
 )
 
 set_target_properties(libglox PROPERTIES
 	PREFIX ""
 )
 
-
-target_include_directories(libglox PUBLIC
- ./include
+target_include_directories(libglox INTERFACE 
+	${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-
-
-
 
 if (NOT DEFINED WARNING_FLAGS)
 	set(WARNING_FLAGS
@@ -39,12 +34,15 @@ if (NOT DEFINED LIBGLOX_COMPILE_OPTIONS)
 	message(TRACE "No additional libglox options specified")
 endif()
 
-target_compile_options(libglox PRIVATE 
+if (DEFAULT_ALLOCATOR_PATH)
+	target_compile_definitions(libglox INTERFACE 
+		LIBGLOX_DEFAULT_ALLOCATOR_PATH="${DEFAULT_ALLOCATOR_PATH}"
+		)
+endif()
+target_compile_options(libglox INTERFACE 
 	${WARNING_FLAGS}
 	${LIBGLOX_COMPILE_OPTIONS}
 )
-
-
 
 # Install config
 if (${SET_INSTALL_TARGETS})
@@ -69,6 +67,3 @@ if (COMPILE_TESTS)
 endif()
 
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${USE_LTO})
-
-
-
