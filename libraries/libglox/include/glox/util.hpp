@@ -1,14 +1,25 @@
 #pragma once
 #include "assert.hpp"
 #include "type_traits"
-//#include <utility>
 #include "types.hpp"
 #include "metaprog.hpp"
 
-
 namespace glox
 {
-
+template<typename T>
+void swap(T& l, T& r)
+{
+	auto tmp = RVALUE(l);
+	l = RVALUE(r);
+	r = RVALUE(tmp);
+}
+template<typename T, typename U = T>
+T exchange(T& l, U&& r)
+{
+	auto tmp = RVALUE(l);
+	l = r;
+	return tmp;
+}
 template <typename T, typename U>
 struct pair
 {

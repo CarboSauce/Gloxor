@@ -1,5 +1,6 @@
 #pragma once
 #include "glox/iterator.hpp"
+#include <glox/assert.hpp>
 namespace glox
 {
 // keep for now, remove and replace legacy code once intrusive_list is tested
@@ -100,6 +101,7 @@ class intrusive_list
 	}
 	intrusive_list& operator=(intrusive_list&& other)
 	{
+		gloxAssert(first_node && last_node);
 		first_node = other.first_node; other.first_node = nullptr;
 		last_node  = other.last_node ; other.last_node  = nullptr;
 		return *this;
@@ -217,6 +219,7 @@ class intrusive_fwd_list
 	}
 	intrusive_fwd_list& operator=(intrusive_fwd_list&& other)
 	{
+		gloxAssert(first_node);
 		first_node = other.first_node; other.first_node = nullptr;
 		return *this;
 	}
