@@ -71,9 +71,9 @@ inline bool setup_pat()
 	auto info = cpuid(1);
 	if (!(info.edx & (1 << 16)))
 		return false;
-	// UC UC- WT WB the CPU default
+	// UC WC WT WB the CPU default
 	gloxDebugLogln("Current ia32PAT is: ", (void*)rdmsr(msr::ia32PAT));
-	u32 patlow = 0x00070406;
+	u32 patlow = 0x00010406;
 	// UC UC- WP WC
 	u32 pathigh = 0x00070105;
 	wrmsr(msr::ia32PAT, patlow, pathigh);

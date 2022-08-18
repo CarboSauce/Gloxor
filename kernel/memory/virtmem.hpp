@@ -9,16 +9,7 @@ class VSpace
 	// arch defined handle 
 	void* ptable;
 	public:
-	enum attributes
-	{
-		readOnly,
-		userPage,
-		noExec,
-		uncached,
-		writeThrough,
-		writeCombine,
-		writeBack,
-	};
+	using attributes = arch::vmem::VSpaceAttributes; 
 	bool map(vaddrT from, paddrT to, attributes attrib, size_t count = 1)
 	{
 		/*

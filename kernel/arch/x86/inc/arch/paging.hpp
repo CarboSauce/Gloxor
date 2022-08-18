@@ -6,6 +6,16 @@ namespace arch::vmem
 {
 using pagingT = u64;
 using vpageFlags = u64;
+enum VSpaceAttributes 
+{
+	readOnly,
+	userPage,
+	noExec,
+	uncached,
+	writeThrough,
+	writeCombine,
+	writeBack,
+};
 
 constexpr u64 pageSize = 0x1000;
 static constexpr vpageFlags defFlags = x86::vmem::writable | x86::vmem::present;
