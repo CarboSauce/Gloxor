@@ -31,6 +31,6 @@ struct array
 	constexpr auto& back() { return data[N-1];}
 	constexpr auto& back() const { return data[N-1];}
 	constexpr auto& front() const { return data[0];}
-	constexpr auto& front() const { return data[0];}
+	constexpr auto& front() { return data[0];}
 };
 } // namespace glox

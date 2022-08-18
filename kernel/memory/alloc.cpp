@@ -91,7 +91,7 @@ struct MetadataCtx
 	Metadata* list;
 };
 
-constexpr glox::array<int, 8> tinyBuckets{16, 32, 64, 128, 256, 512, 1024, 2048};
+constexpr glox::array<size_t, 8> tinyBuckets{16, 32, 64, 128, 256, 512, 1024, 2048};
 struct HeapCtx
 {
 	static constexpr sizeT bucketCount = tinyBuckets.size();
@@ -259,7 +259,7 @@ void memdealloc(void* ptr, sizeT size)
 
 } // namespace glox
 #ifdef TEST
-[[maybe_unused]] static bool test()
+static bool test()
 {
 	struct List
 	{

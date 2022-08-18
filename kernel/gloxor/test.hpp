@@ -11,7 +11,13 @@ struct Ktest
 };
 } // namespace glox
 
-#define registerTest(name,fnc) [[maybe_unused, gnu::used, gnu::section(".module.test")]] \
-											 static glox::Ktest _testptr_##fnc {name,&fnc}
+#ifdef GLOXTESTING
+#define registerTest(name,fnc) [[gnu::used, gnu::section(".module.test")]] \
+                               static glox::Ktest _testptr_##fnc {name,&fnc}
 #define KTEST_EXPECT(expr) do { gloxPrintln("EXPECT(" #expr ") = ",(expr)?"Success":"Failure");}while(0)
 #define KTEST_ASSERT(expr) do { if (!(expr)){gloxPrintln("KTEST_ASSERT("#expr ") failed");return false;}}while(0)
+#else
+#define registerTest(name,fnc) 
+#define KTEST_EXPECT(expr)
+#define KTEST_ASSERT(expr)
+#endif

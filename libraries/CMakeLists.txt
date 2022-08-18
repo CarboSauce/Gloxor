@@ -10,7 +10,8 @@ function(readgloxsubdir status)
          "\n\tMake sure that everything is correctly set up."
          )
       endif()
-      target_link_libraries(libglox PUBLIC libc)
+	   target_link_libraries(libglox INTERFACE libc)
+      #set_target_properties(libglox PROPERTIES INTERFACE_LINK_DEPENDS "$<LINK_ONLY:libc>")
       set(${status} TRUE PARENT_SCOPE)
    else()
       message(DEBUG "\tLibglox directory does not exist.")
@@ -30,7 +31,7 @@ else()
    if (GLOX_FOUND)
       message(DEBUG "\tLibglox has been found!")
       add_library(libglox INTERFACE)
-      target_link_libraries(libglox INTERFACE libc Glox::Glox)
+      target_link_libraries(libglox INTERFACE Glox::Glox)
       return()
    endif()
    message(FATAL_ERROR "LibGlox subdirectory failed to process")
@@ -38,11 +39,9 @@ endif()
 
 add_subdirectory(libc)
 
-add_library(library_deps INTERFACE)
+#add_library(library_deps INTERFACE)
 
 # link all the libraries with all the headers and dependencies
 # interface seems to be broken with handling dependencies
-target_link_libraries(library_deps INTERFACE libc libglox)
-target_include_directories(library_deps INTERFACE 
-    ${PROJECT_SOURCE_DIR}/libraries
-)
+#target_link_libraries(library_deps INTERFACE libglox libc)
+set(LIBRARY_DEPS libglox libc PARENT_SCOPE)

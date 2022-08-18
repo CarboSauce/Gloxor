@@ -37,6 +37,7 @@ SECTIONS
         PROVIDE(_moduleDriverBegin = .);
         KEEP(*(SORT_BY_INIT_PRIORITY(.module.driver.*)))
         PROVIDE(_moduleDriverEnd = .);
+        . = ALIGN(16); /* gcc wants allignment of 16 for whatever reason */
         PROVIDE(_moduleTesting = .);
         KEEP(*(.module.test*))
         PROVIDE(_moduleTestingEnd = .);

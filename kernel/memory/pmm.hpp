@@ -31,13 +31,13 @@ void page_dealloc(void* ptr, sizeT pageCount = 1);
  * @brief Allocate pageCount amount of pages
  * @return pointer to allocated page, nullptr on out of memory
  */
-[[using gnu: malloc, mallocAttribute(glox::pageDealloc, 1), alloc_size(1), aligned(glox::pmmChunkSize)]]
+[[using gnu: malloc, mallocAttribute(glox::page_dealloc, 1), alloc_size(1), aligned(glox::pmmChunkSize)]]
 void* page_alloc(sizeT pageCount = 1);
 /**
  * @brief Allocate single page and zero it
  * @return pointer to allocated page, nullptr on out of memory
  */
-[[using gnu: malloc, mallocAttribute(glox::pageDealloc, 1), alloc_size(1), aligned(glox::pmmChunkSize)]]
+[[using gnu: malloc, mallocAttribute(glox::page_dealloc, 1), alloc_size(1), aligned(glox::pmmChunkSize)]]
 void* page_alloc_z(sizeT pageCount = 1);
 
 } // namespace glox

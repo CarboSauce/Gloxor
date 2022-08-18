@@ -15,6 +15,7 @@ struct KAllocator
 	[[gnu::always_inline]] [[nodiscard]] static void* alloc(sizeT size) { return glox::memalloc(size); }
 	[[gnu::always_inline]] static void dealloc(void* p, sizeT s) { glox::memdealloc(p, s); }
 };
+using default_allocator = KAllocator;
 
 struct PmmAllocator
 {

@@ -71,7 +71,7 @@ void page_dealloc(void* ptr, sizeT pageCount)
 } // namespace glox
 
 #ifdef TEST
-[[maybe_unused]] static bool test()
+static bool test()
 {
 	auto startSize = pmmCtx.front->size;
 	void* p = page_alloc();

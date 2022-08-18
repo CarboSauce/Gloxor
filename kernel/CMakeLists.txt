@@ -20,6 +20,9 @@ set_target_properties(kernel PROPERTIES
                        SUFFIX .img
                        RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}
 )
+target_compile_definitions(kernel PRIVATE
+	LIBGLOX_DEFAULT_ALLOCATOR_PATH="${CMAKE_CURRENT_SOURCE_DIR}/memory/alloc.hpp"
+)
 
 target_compile_options(kernel PRIVATE 
     $<$<COMPILE_LANGUAGE:ASM_NASM>:${CMMN_ASM_FLAGS}>
@@ -35,12 +38,10 @@ target_include_directories(kernel PRIVATE
 target_link_options(kernel PRIVATE
     ${KERNEL_LINK_FLAGS}
 )
-
 target_link_libraries(kernel PRIVATE
-	library_deps
+	${LIBRARY_DEPS}
 )
 
 install(TARGETS kernel 
     DESTINATION ${CMAKE_INSTALL_PREFIX}
 )
-

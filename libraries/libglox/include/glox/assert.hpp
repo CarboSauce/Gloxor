@@ -13,8 +13,6 @@ namespace glox
 	#define gloxUnreachable()                      \
 		gloxAssert(false, "unreachable() invoked"); \
 		__builtin_unreachable()
-	#undef _mSTRINGIFY
-	#undef _implSTRINGIFY
 #else
 	#define gloxAssert(cond, ...) ((void)0)
 	#define gloxUnreachable() __builtin_unreachable();
