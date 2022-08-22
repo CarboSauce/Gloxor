@@ -7,12 +7,12 @@
 #include "gloxor/kinfo.hpp"
 #include "gloxor/types.hpp"
 #include "memory/pmm.hpp"
+#include "memory/virtmem.hpp"
 #include "system/logging.hpp"
 #include "system/terminal.hpp"
 /*
 	on x86, paging looks like a tree, so we need to traverse the tree of height 5
 */
-
 using namespace arch::vmem;
 using namespace arch;
 using namespace x86::vmem;
@@ -71,9 +71,9 @@ inline bool setup_pat()
 	auto info = cpuid(1);
 	if (!(info.edx & (1 << 16)))
 		return false;
-	// UC WC WT WB the CPU default
+	// WC UC WT WB the CPU default
 	gloxDebugLogln("Current ia32PAT is: ", (void*)rdmsr(msr::ia32PAT));
-	u32 patlow = 0x00010406;
+	u32 patlow = 0x01000406;
 	// UC UC- WP WC
 	u32 pathigh = 0x00070105;
 	wrmsr(msr::ia32PAT, patlow, pathigh);

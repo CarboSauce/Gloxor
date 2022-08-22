@@ -6,30 +6,29 @@ namespace arch::vmem
 {
 using pagingT = u64;
 using vpageFlags = u64;
-enum VSpaceAttributes 
+enum class PagePrivileges : u64
 {
-	readOnly,
-	userPage,
-	noExec,
-	uncached,
-	writeThrough,
-	writeCombine,
-	writeBack,
+	readOnly = x86::vmem::noexec, // read
+	writeOnly = x86::vmem::noexec | x86::vmem::writable, // write, on x86 implies readable
+	execOnly = 0,  // exec, on x86 exec implies readable
+	readWrite = writeOnly, // read+write
+	readExec = execOnly, // read+exec
+	all = x86::vmem::writable, // read+write+exec
 };
-
+enum class PageCaching
+{
+	writeBack    = 0,
+	writeThrough = 1,
+	cacheDisable = 2,
+	writeCombine = 3
+};
 constexpr u64 pageSize = 0x1000;
 static constexpr vpageFlags defFlags = x86::vmem::writable | x86::vmem::present;
-// enum class CacheMode
-// {
-// 	cacheDisabled,
-// 	writeThrough,
-// 	writeCombine
-// };
 /**
  * @brief class for managing virtual memory context
  *
  */
-using vmemCtxT = arch::vmem::pagingT;
+using vmemCtxT = u64[512];
 /**
  * @brief Map virtual address to physical address
  *

@@ -20,7 +20,7 @@ enum PagingBits
 	ptePAT = 1 << 7,
 	pdePAT = 1 << 12,
 	pdptePAT = 1 << 12,
-	execDisable = size_t(1) << 63
+	noexec = size_t(1) << 63
 };
 enum class PteShift
 {
@@ -30,21 +30,6 @@ enum class PteShift
 	lvl4 = 39,
 	lvl5 = 48
 };
-
-// struct alignas(0x1000) PageTable
-// {
-// 	u64 entries[512];
-// };
-// using pml5t = PageTable;
-// using pml4t = PageTable;
-// using pdpt = PageTable;
-// using pdt = PageTable;
-// using pt = PageTable;
-// using lvl5table = pml5t;
-// using lvl4table = pml4t;
-// using lvl3table = pdpt;
-// using lvl2table = pdt;
-// using lvl1table = pt;
 
 constexpr u64 get_physical(u64 entry)
 {
@@ -59,14 +44,6 @@ constexpr size_t pte_index(u64 addr, PteShift shiftval)
 {
 	return (addr >> static_cast<int>(shiftval)) & 0x1ff;
 }
-
-// inline u64* get_next_pte(PageTable* table, u64 addr, PteShift shiftval)
-// {
-// 	gloxAssert(table != nullptr);
-// 	const auto tab = (PageTable*)arch::to_virt((u64)table);
-// 	const auto index = pte_index(addr, shiftval);
-// 	return &(tab->entries[index]);
-// }
 
 enum PageLevel
 {

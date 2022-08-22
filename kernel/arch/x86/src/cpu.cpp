@@ -47,12 +47,12 @@ static u64 cpuFeatures;
 	gloxFatalLogln("Double fault!\n");
 	glox::kernel_panic();
 }
-[[gnu::interrupt]] static void spur_interrupt(InterruptFrame*)
+[[gnu::interrupt]] static void nmi_handler(InterruptFrame*)
 {
-	gloxFatalLogln("Spurious Interrupt!\n");
+	gloxFatalLogln("Non Maskable Interrupt!\n");
 }
 
-[[gnu::interrupt]] static void g_pfault(InterruptFrame* frame, size_t /* errc */)
+[[gnu::interrupt]] static void gp_fault(InterruptFrame* frame, size_t /* errc */)
 {
 	gloxFatalLogln("General Protection Fault!\nRIP = ", (void*)frame->ip);
 	glox::kernel_panic();
@@ -151,11 +151,11 @@ inline void initialize_interrupts()
 		 idt_list};
 
 	idt_list[0].register_handler((u64)div_zero_handle, 0x8, 0, IDT_INTERRUPTGATE);
-	idt_list[1].register_handler((u64)spur_interrupt, 0x8, 0, IDT_INTERRUPTGATE);
-	idt_list[2].register_handler((u64)spur_interrupt, 0x8, 0, IDT_INTERRUPTGATE);
+	idt_list[1].register_handler((u64)debug_handler, 0x8, 0, IDT_INTERRUPTGATE);
+	idt_list[2].register_handler((u64)nmi_handler, 0x8, 0, IDT_INTERRUPTGATE);
 	idt_list[6].register_handler((u64)illegal_opcode, 0x8, 0, IDT_INTERRUPTGATE);
 	idt_list[8].register_handler((u64)double_fault, 0x8, 0, IDT_TRAPGATE);
-	idt_list[13].register_handler((u64)g_pfault, 0x8, 0, IDT_INTERRUPTGATE);
+	idt_list[13].register_handler((u64)gp_fault, 0x8, 0, IDT_INTERRUPTGATE);
 	idt_list[14].register_handler((u64)page_fault, 0x8, 0, IDT_INTERRUPTGATE);
 	load_idt(idt_ptr);
 }

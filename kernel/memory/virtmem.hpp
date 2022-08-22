@@ -7,17 +7,18 @@ namespace glox
 class VSpace
 {
 	// arch defined handle 
-	void* ptable;
+	arch::vmem::vmemCtxT ptable;
 	public:
-	using attributes = arch::vmem::VSpaceAttributes; 
-	bool map(vaddrT from, paddrT to, attributes attrib, size_t count = 1)
+	using CacheMode  = arch::vmem::PageCaching;
+	using Privileges = arch::vmem::PagePrivileges;
+	bool map(vaddrT from, paddrT to, Privileges, CacheMode, size_t count = 1)
 	{
 		/*
 		 * define them as calling arch specific function that translates
 		 * Attributes to paging structure
 		*/
 	}
-	bool map_huge(vaddrT from, paddrT to, attributes attrib, size_t count = 1)
+	bool map_huge(vaddrT from, paddrT to, Privileges, CacheMode, size_t count = 1)
 	{
 		/*
 		 * define them as calling arch specific function that translates
@@ -26,6 +27,7 @@ class VSpace
 	}
 	bool unmap(vaddrT whichVirtual);
 	paddrT translate(vaddrT from);
+	VSpace(arch::vmem::vmemCtxT handle) : ptable(handle) {}
 	static glox::optional<VSpace> create();
 	void destroy();
 	VSpace(const VSpace&) = delete;
@@ -33,5 +35,5 @@ class VSpace
 };
 
 extern VSpace kAddrSpace;
-void* vmap_iomem(paddrT base, size_t len);
+void* vmap_iomem(paddrT base, size_t len, arch::vmem::PageCaching);
 } // namespace glox
