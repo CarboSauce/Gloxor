@@ -216,5 +216,5 @@ static bool testing()
 	return true;
 }
 
-registerTest("Cpu flags",testing);
+registerTest("Cpu flags", testing);
 #endif

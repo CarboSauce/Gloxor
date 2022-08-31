@@ -49,6 +49,10 @@ struct node : public T
 		this->prev = left;
 	}
 };
+/*
+ * @brief List node type, if used for intrusive_list
+ * 		  define it as 'list_node'
+ */
 template<typename T>
 struct list_node
 {

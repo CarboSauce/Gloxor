@@ -6,10 +6,11 @@ namespace glox
 {
 class alignas(arch::vmem::pageSize) VSpace
 {
-	// arch defined handle 
+	// arch defined handle
 	arch::vmem::vmemCtxT ptable;
-	public:
-	using CacheMode  = arch::vmem::PageCaching;
+
+ public:
+	using CacheMode = arch::vmem::PageCaching;
 	using Privileges = arch::vmem::PagePrivileges;
 	bool map(vaddrT from, paddrT to, Privileges, CacheMode);
 	bool map_huge(vaddrT from, paddrT to, Privileges, CacheMode);

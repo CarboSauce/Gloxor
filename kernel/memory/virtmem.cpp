@@ -1,91 +1,97 @@
 #include "virtmem.hpp"
-#include "arch/addrspace.hpp"
-#include "system/logging.hpp"
+#include "memory/alloc.hpp"
 #include "gloxor/kinfo.hpp"
 #include "glox/linkedlist.hpp"
+#include "system/logging.hpp"
 #include "system/terminal.hpp"
+#include "arch/addrspace.hpp"
 using namespace arch::vmem;
 using namespace glox;
 using namespace arch;
+
+struct VmapRegion
+{
+	paddrT phys_base;
+	vaddrT virt_base;
+	size_t len;
+	size_t flags;
+	glox::list_node<VmapRegion> list_node;
+};
+
+intrusive_list<VmapRegion> vmapList;
+inline bool is_overlapping(uintptr base, uintptr back, uintptr obase, uintptr oback)
+{
+	return base <= oback && obase <= back;
+}
+inline bool is_there_dup(uintptr base,size_t len)
+{
+	for (const auto& it : vmapList)
+	{
+		if (is_overlapping(it.phys_base,it.phys_base+it.len,base,base+len))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+inline VmapRegion* find_room(size_t len)
+{
+	for (auto& it : vmapList)
+	{
+		// TODO: Api wise libglox cant easilly get next entry
+		// gotta fix
+		if (it.virt_base+it.len+len < it.list_node.next.virt_base)
+		{
+			return &it;
+		}
+	}
+	return nullptr;
+}
 namespace glox
 {
 VSpace kAddrSpace{};
+void* vmap_iomem(paddrT base, size_t len, arch::vmem::PageCaching pc)
+{
+	auto nvmap = find_room(len);
+	auto newptr = glox::alloc<VmapRegion>();
+	if (newptr == nullptr) return nullptr;
+	newptr->virt_base = nvmap->virt_base+nvmap->len;
+	newptr->phys_base = base;
+	newptr->len = len;
+	newptr->flags = (size_t)pc; 
+	if (nvmap == nullptr)
+	{
+		vmapList.push_back(newptr);
+	}
+	else
+	{
+		vmapList.insert(intrusive_list<VmapRegion>::iterator(nvmap), newptr);
+	}
+
+	(void)base;
+	(void)len;
+	(void)pc;
+	return nullptr;
+}
 inline auto to_mask(PagePrivileges p, PageCaching c)
 {
 	return (u64)p | (u64)c;
 }
 bool glox::VSpace::map(vaddrT from, paddrT to, Privileges pv, CacheMode cm)
 {
-	return arch::vmem::map(kAddrSpace.ptable,from,to,to_mask(pv,cm));
+	return arch::vmem::map(kAddrSpace.ptable, from, to, to_mask(pv, cm));
 }
 bool glox::VSpace::map_huge(vaddrT from, paddrT to, Privileges pv, CacheMode cm)
 {
-	return arch::vmem::map(kAddrSpace.ptable,from,to,to_mask(pv,cm));
+	return arch::vmem::map(kAddrSpace.ptable, from, to, to_mask(pv, cm));
 }
 void glox::VSpace::make_current()
 {
-	virt_set_context(ptable);
-}	
+	arch::vmem::set_context(ptable);
+}
 paddrT glox::VSpace::translate(vaddrT from)
 {
-	return arch::vmem::translate(ptable,from);
+	return arch::vmem::translate(ptable, from);
 }
+} // namespace glox
 
-}
-
-inline void map_region(vaddrT from, vaddrT to, paddrT start,PagePrivileges pp,PageCaching pc)
-{
-	auto isalign = [](auto a, auto b)
-	{ return a % b == 0; };
-
-	while (from < to)
-	{
-
-		if (to - from > 0x200'000 && isalign(from, 0x200'000))
-		{
-			kAddrSpace.map_huge(from, start,pp,pc);
-			from += 0x200'000;
-			start += 0x200'000;
-		}
-		else
-		{
-			kAddrSpace.map(from, start,pp,pc);
-			from += 0x1000;
-			start += 0x1000;
-		}
-	}
-}
-inline void map_kernel()
-{	
-	size_t size = (kernelFileEnd - kernelFileBegin);
-	gloxDebugLogln("kernelPhysOffset: ", kernelPhysOffset);
-	for (size_t i = 0; i < size; i += pageSize)
-	{
-		kAddrSpace.map((vaddrT)kernelFileBegin + i, kernelPhysOffset + i, PagePrivileges::all, PageCaching::writeThrough);
-	}
-}
-inline void identity_map()
-{
-	for (const auto& it : glox::machineInfo.mmapEntries)
-	{
-		if (it.type == BootInfo::MemTypes::usable || it.type == BootInfo::MemTypes::reclaimable)
-		{
-			const auto from = it.base + physicalMemBase;
-			const auto to = it.base;
-			map_region(from, from + it.length, to,PagePrivileges::all,PageCaching::writeThrough);
-		}
-	}
-}
-
-void init_addr_space()
-{
-	gloxDebugLogln("Remapping CR3 to ", (void*)&kAddrSpace);
-	identity_map();
-	auto [fbeg, fend] = glox::term::get_used_memory_range();
-	gloxDebugLogln("Mapping framebuffer from: ", fbeg, " to: ", fend);
-	map_region((vaddrT)fbeg, (paddrT)fend, get_real_data_addr((paddrT)fbeg),PagePrivileges::readWrite,PageCaching::writeCombine);
-	map_kernel();
-	gloxDebugLogln("Trying translation code, from : ", fbeg, " to: ", (void*)kAddrSpace.translate((u64)fbeg));
-	gloxDebugLogln("Trying translation code, from : ", (u8*)physicalMemBase + 0x200'000, " to: ", (void*)kAddrSpace.translate(physicalMemBase + 0x200'000));
-	//lets goo
-}

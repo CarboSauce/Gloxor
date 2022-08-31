@@ -1,14 +1,18 @@
 #include "arch/cpu.hpp"
 #include "arch/irq.hpp"
-#include "cpuid.h"
-#include "gloxor/modules.hpp"
+#include "arch/addrspace.hpp"
 #include "system/logging.hpp"
 #include "system/terminal.hpp"
+#include "gloxor/modules.hpp"
 #include "gloxor/test.hpp"
+#include "gloxor/kinfo.hpp"
+#include "memory/virtmem.hpp"
+#include "cpuid.h"
 
 using ctor_t = void (*)();
 using namespace arch;
 using namespace glox;
+using namespace arch::vmem;
 extern ctor_t _ctorArrayStart[];
 extern ctor_t _ctorArrayEnd[];
 extern ctor_t _modulePreCpuBegin[];
@@ -46,7 +50,62 @@ extern "C" void call_global_ctors()
 
 // extern void sleep(u64 ticks, u64 ms);
 // extern u64 getTicks();
-extern void init_addr_space();
+inline void map_region(vaddrT from, vaddrT to, paddrT start, arch::vmem::PagePrivileges pp, arch::vmem::PageCaching pc)
+{
+	auto isalign = [](auto a, auto b)
+	{ return a % b == 0; };
+
+	while (from < to)
+	{
+
+		if (to - from > 0x200'000 && isalign(from, 0x200'000))
+		{
+			kAddrSpace.map_huge(from, start, pp, pc);
+			from += 0x200'000;
+			start += 0x200'000;
+		}
+		else
+		{
+			kAddrSpace.map(from, start, pp, pc);
+			from += 0x1000;
+			start += 0x1000;
+		}
+	}
+}
+inline void map_kernel()
+{
+	size_t size = (kernelFileEnd - kernelFileBegin);
+	gloxDebugLogln("kernelPhysOffset: ", kernelPhysOffset);
+	for (size_t i = 0; i < size; i += pageSize)
+	{
+		kAddrSpace.map((vaddrT)kernelFileBegin + i, kernelPhysOffset + i, PagePrivileges::all, PageCaching::writeThrough);
+	}
+}
+inline void identity_map()
+{
+	for (const auto& it : glox::machineInfo.mmapEntries)
+	{
+		if (it.type == BootInfo::MemTypes::usable || it.type == BootInfo::MemTypes::reclaimable)
+		{
+			const auto from = it.base + physicalMemBase;
+			const auto to = it.base;
+			map_region(from, from + it.length, to, PagePrivileges::all, PageCaching::writeThrough);
+		}
+	}
+}
+
+void init_addr_space()
+{
+	gloxDebugLogln("Remapping CR3 to ", (void*)&kAddrSpace);
+	identity_map();
+	auto [fbeg, fend] = glox::term::get_used_memory_range();
+	gloxDebugLogln("Mapping framebuffer from: ", fbeg, " to: ", fend);
+	map_region((vaddrT)fbeg, (paddrT)fend, get_real_data_addr((paddrT)fbeg), PagePrivileges::readWrite, PageCaching::writeCombine);
+	map_kernel();
+	gloxDebugLogln("Trying translation code, from : ", fbeg, " to: ", (void*)kAddrSpace.translate((u64)fbeg));
+	gloxDebugLogln("Trying translation code, from : ", (u8*)physicalMemBase + 0x200'000, " to: ", (void*)kAddrSpace.translate(physicalMemBase + 0x200'000));
+	// lets goo
+}
 extern "C" void gloxor_main()
 {
 	auto fbrange = glox::term::get_used_memory_range();
@@ -61,7 +120,7 @@ extern "C" void gloxor_main()
 	extern glox::Ktest _moduleTesting[];
 	extern glox::Ktest _moduleTestingEnd[];
 	glox::term::set_fg_color(0xadd8e6);
-	gloxPrint("Unit tests:\nThere are ",_moduleTestingEnd-_moduleTesting," tests\n");
+	gloxPrint("Unit tests:\nThere are ", _moduleTestingEnd - _moduleTesting, " tests\n");
 	glox::term::set_fg_color(0xFFFFFF);
 	for (auto it = _moduleTesting; it != _moduleTestingEnd; ++it)
 	{
