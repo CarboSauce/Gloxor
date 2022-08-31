@@ -4,8 +4,8 @@
 #include <glox/util.hpp> 
 namespace arch::vmem
 {
-using pagingT = u64;
-using vpageFlags = u64;
+using paging_t = u64;
+using vpage_flags = u64;
 enum class PagePrivileges : u64
 {
 	readOnly = x86::vmem::noexec, // read
@@ -23,7 +23,7 @@ enum class PageCaching
 	writeCombine = 3
 };
 constexpr u64 pageSize = 0x1000;
-static constexpr vpageFlags defFlags = x86::vmem::writable | x86::vmem::present;
+static constexpr vpage_flags defFlags = x86::vmem::writable | x86::vmem::present;
 /**
  * @brief class for managing virtual memory context
  *
@@ -37,9 +37,8 @@ using vmemCtxT = u64[512];
  * @return true Success
  * @return false Mapping failed
  */
-
-bool map_huge_page(vmemCtxT, vaddrT from, paddrT to, vpageFlags flags = arch::vmem::defFlags);
-bool map(vmemCtxT, vaddrT from, paddrT to, vpageFlags flags = arch::vmem::defFlags);
+bool map_huge_page(vmemCtxT, vaddrT from, paddrT to, vpage_flags flags = arch::vmem::defFlags);
+bool map(vmemCtxT, vaddrT from, paddrT to, vpage_flags flags = arch::vmem::defFlags);
 /**
  * @brief Unmap virtual address from current context
  *
@@ -62,27 +61,25 @@ paddrT translate(vmemCtxT, vaddrT from);
  * @return true Success
  * @return false Allocation failure
  */
-vmemCtxT virt_create_context();
-
-vmemCtxT virt_destroy_context(vmemCtxT context);
-
-inline vmemCtxT virt_get_cotext()
+inline void virt_set_context(vmemCtxT context)
 {
-	vmemCtxT ctx;
+	asm volatile("mov %0, %%cr3" ::"r"(mask_entry(get_real_address((u64)context), x86::vmem::writeThrough)));
+}
+void virt_destroy_context(vmemCtxT context);
+
+inline vmemCtxT* virt_get_context()
+{
+	vmemCtxT* ctx;
 	asm volatile("mov %%cr3,%0"
 					 : "=r"(ctx));
 	return ctx;
-}
-inline void virt_set_context(vmemCtxT context)
-{
-	asm volatile("mov %0, %%cr3" ::"r"(mask_entry(get_real_address(context), x86::vmem::writeThrough)));
 }
 inline void virt_flush(void* addr)
 {
 	asm volatile("invlpg (%0)" ::"r"(addr)
 					 : "memory");
 }
-inline void virt_cache_flush()
+inline void virt_flush_all()
 {
 	asm volatile("movq %%cr3, %%rax;mov %%rax,%%cr3" ::
 						  : "rax", "memory");

@@ -1,6 +1,7 @@
 #include "arch/cpu.hpp"
 #include "arch/feature.hpp"
 #include "arch/irq.hpp"
+#include "asm/msr.hpp"
 #include "asm/asmstubs.hpp"
 #include "asm/gdt.hpp"
 #include "asm/idt.hpp"
@@ -84,11 +85,6 @@ inline void initialize_gdt();
 inline void initialize_interrupts();
 inline void initialize_cpu_extensions();
 
-namespace x86
-{
-vmemCtxT init_kernel_virt_mem();
-}
-
 namespace arch
 {
 
@@ -97,14 +93,28 @@ bool is_feature_supported(FeatureBit features)
 	return cpuFeatures & static_cast<u64>(features);
 }
 
+inline bool setup_pat()
+{
+	auto info = cpuid(1);
+	if (!(info.edx & (1 << 16)))
+		return false;
+	// WC UC WT WB the CPU default
+	gloxDebugLogln("Current ia32PAT is: ", (void*)rdmsr(msr::ia32PAT));
+	u32 patlow = 0x01000406;
+	// UC UC- WP WC
+	u32 pathigh = 0x00070105;
+	wrmsr(msr::ia32PAT, patlow, pathigh);
+	return true;
+}
 void initialize_cpu()
 {
 	initialize_gdt();
 	initialize_interrupts();
 	initialize_cpu_extensions();
+	if (setup_pat())
+		gloxDebugLogln("PAT supported on boot cpu");
 
 	gloxTraceLogln("Cpu features:", cpuFeatures);
-	x86::init_kernel_virt_mem();
 }
 
 } // namespace arch

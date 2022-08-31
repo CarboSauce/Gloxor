@@ -46,6 +46,7 @@ extern "C" void call_global_ctors()
 
 // extern void sleep(u64 ticks, u64 ms);
 // extern u64 getTicks();
+extern void init_addr_space();
 extern "C" void gloxor_main()
 {
 	auto fbrange = glox::term::get_used_memory_range();
@@ -53,6 +54,7 @@ extern "C" void gloxor_main()
 	gloxDebugLogln("Con end: ", fbrange.end());
 	call_pre_cpu_inits();
 	initialize_cpu();
+	init_addr_space();
 	call_driver_inits();
 	call_global_ctors();
 #ifdef GLOXTESTING

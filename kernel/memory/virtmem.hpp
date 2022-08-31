@@ -4,31 +4,20 @@
 
 namespace glox
 {
-class VSpace
+class alignas(arch::vmem::pageSize) VSpace
 {
 	// arch defined handle 
 	arch::vmem::vmemCtxT ptable;
 	public:
 	using CacheMode  = arch::vmem::PageCaching;
 	using Privileges = arch::vmem::PagePrivileges;
-	bool map(vaddrT from, paddrT to, Privileges, CacheMode, size_t count = 1)
-	{
-		/*
-		 * define them as calling arch specific function that translates
-		 * Attributes to paging structure
-		*/
-	}
-	bool map_huge(vaddrT from, paddrT to, Privileges, CacheMode, size_t count = 1)
-	{
-		/*
-		 * define them as calling arch specific function that translates
-		 * Attributes to paging structure
-		*/
-	}
+	bool map(vaddrT from, paddrT to, Privileges, CacheMode);
+	bool map_huge(vaddrT from, paddrT to, Privileges, CacheMode);
 	bool unmap(vaddrT whichVirtual);
 	paddrT translate(vaddrT from);
-	VSpace(arch::vmem::vmemCtxT handle) : ptable(handle) {}
-	static glox::optional<VSpace> create();
+	void make_current();
+	VSpace() = default;
+	static VSpace* create();
 	void destroy();
 	VSpace(const VSpace&) = delete;
 	VSpace& operator=(const VSpace&) = delete;

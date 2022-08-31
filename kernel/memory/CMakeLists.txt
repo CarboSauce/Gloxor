@@ -1,3 +1,3 @@
-target_sources(kernel PRIVATE
+:target_sources(kernel PRIVATE
  pmm.cpp
 )

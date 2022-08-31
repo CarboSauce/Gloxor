@@ -1,12 +1,13 @@
 add_executable( kernel 
                 main.cpp
-                memory/pmm.cpp
                 gloxor/mutex.cpp
                 system/danger.cpp
                 system/logging.cpp
                 system/font.cpp
                 system/terminal.cpp
+                memory/pmm.cpp
                 memory/alloc.cpp
+				memory/virtmem.cpp
 )
 
 
