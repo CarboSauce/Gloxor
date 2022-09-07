@@ -39,4 +39,4 @@ constexpr uint64_t next_pow2(uint64_t x)
 		return 1;
 	return 1 << (64 - __builtin_clzll(x - 1));
 }
-} // namespace glox
+} // namespace gx

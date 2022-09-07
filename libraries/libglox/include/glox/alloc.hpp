@@ -46,7 +46,7 @@ void dealloc(Allocator a, T* ptr, size_t size = 1)
 #include LIBGLOX_DEFAULT_ALLOCATOR_PATH
 #else
 #include <cstdlib>
-namespace glox 
+namespace glox
 {
 struct default_allocator
 {

@@ -2,7 +2,7 @@
 #include "arch/irq.hpp"
 #include "glox/mutex.hpp"
 
-namespace glox
+namespace gx
 {
 class IrqLock
 {
@@ -15,4 +15,4 @@ class IrqLock
 	IrqLock(const IrqLock&) = delete;
 	IrqLock& operator=(const IrqLock&) = delete;
 };
-}; // namespace glox
+}; // namespace gx

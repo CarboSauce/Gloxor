@@ -4,7 +4,7 @@
 #include "gloxor/graphics.hpp"
 #include "gloxor/types.hpp"
 
-namespace glox::term
+namespace gx::term
 {
 void init_term(color_t* begin, color_t* end, size_t pitch, size_t width, size_t height);
 void write_str(const char* str, size_t size);
@@ -21,4 +21,4 @@ constexpr color_t rgb(u8 r, u8 g, u8 b)
 {
 	return r << 16 | g << 8 | b;
 }
-} // namespace glox::term
+} // namespace gx::term

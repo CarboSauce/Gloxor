@@ -3,10 +3,10 @@
 #include "system/logging.hpp"
 static inline void draw_panic()
 {
-	glox::outStream, "\nKernel Panic moment";
+	gx::outStream, "\nKernel Panic moment";
 }
 
-void glox::kernel_panic()
+void gx::kernel_panic()
 {
 	draw_panic();
 	arch::halt_forever();

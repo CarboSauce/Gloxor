@@ -13,7 +13,7 @@
 /*
 [[gnu::no_caller_saved_registers]] extern "C" void _gloxAsmLongJump(); */
 using namespace arch;
-using namespace glox;
+using namespace gx;
 using namespace arch::vmem;
 
 [[gnu::used]] static Gdt code_data[3]{
@@ -40,13 +40,13 @@ static u64 cpuFeatures;
 [[gnu::interrupt]] static void div_zero_handle(InterruptFrame*)
 {
 	gloxFatalLogln("You Fool Divided By Zero!\n");
-	glox::kernel_panic();
+	gx::kernel_panic();
 }
 
 [[gnu::interrupt]] static void double_fault(InterruptFrame*)
 {
 	gloxFatalLogln("Double fault!\n");
-	glox::kernel_panic();
+	gx::kernel_panic();
 }
 [[gnu::interrupt]] static void nmi_handler(InterruptFrame*)
 {
@@ -56,7 +56,7 @@ static u64 cpuFeatures;
 [[gnu::interrupt]] static void gp_fault(InterruptFrame* frame, size_t /* errc */)
 {
 	gloxFatalLogln("General Protection Fault!\nRIP = ", (void*)frame->ip);
-	glox::kernel_panic();
+	gx::kernel_panic();
 }
 
 [[gnu::interrupt]] static void page_fault(InterruptFrame*, size_t /* errc */)
@@ -67,7 +67,7 @@ static u64 cpuFeatures;
 	{
 		gloxTraceLog("Null pointer access\n");
 	}
-	glox::kernel_panic();
+	gx::kernel_panic();
 }
 
 [[gnu::interrupt]] static void illegal_opcode(InterruptFrame* frame)

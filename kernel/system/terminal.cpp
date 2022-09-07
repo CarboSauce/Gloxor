@@ -2,22 +2,22 @@
 #include "glox/string.hpp"
 #include "gloxor/graphics.hpp"
 
-using namespace glox;
+using namespace gx;
 
 const extern uint8_t fontBitmap[];
 constexpr int scaleX = 1;
 constexpr int scaleY = 1;
 constexpr int fontWidth = 8 * scaleX;
 constexpr int fontHeight = 16 * scaleY;
-static glox::Framebuffer con;
+static gx::Framebuffer con;
 // TEEECHNICALLY we can storage optimize those
 // to be able to set both of values (or maybe 4) in same operation,
 // but it comes at a cost of making sure compiler wont break stuff,
 // and LTO will most likely elide most of those, and overall notworth
-static vec2<color_t> fgbg{0xFFFFFF, 0};
-static vec2<u32> at{0, 0};
+static glox::vec2<color_t> fgbg{0xFFFFFF, 0};
+static glox::vec2<u32> at{0, 0};
 static u8 cursorShape = '_';
-namespace glox::term
+namespace gx::term
 {
 glox::span<u8> get_used_memory_range()
 {
@@ -124,7 +124,7 @@ void init_term(color_t* begin, color_t* end, size_t pitch, size_t width, size_t 
 
 void clear_screen(color_t color)
 {
-	// glox::drawRectangle(fbBeg,pitch,{0,0},{(colorT)width,(colorT)height},color);
+	// gx::drawRectangle(fbBeg,pitch,{0,0},{(colorT)width,(colorT)height},color);
 	glox::set_range(con.fbBeg, con.fbEnd, color);
 	at = {0, 0};
 }
@@ -160,4 +160,4 @@ void set_cursor_look(u8 ascii)
 {
 	cursorShape = ascii;
 }
-} // namespace glox::term
+} // namespace gx::term

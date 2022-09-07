@@ -28,22 +28,22 @@
 */
 void* operator new(size_t size)
 {
-	return glox::memalloc(size);
+	return gx::memalloc(size);
 }
 
 void* operator new[](size_t size)
 {
-	return glox::memalloc(size);
+	return gx::memalloc(size);
 }
 
 void operator delete(void* p, size_t size)
 {
-	glox::memdealloc(p, size);
+	gx::memdealloc(p, size);
 }
 
 void operator delete[](void* p, size_t size)
 {
-	glox::memdealloc(p, size);
+	gx::memdealloc(p, size);
 }
 
 struct Freelist
@@ -72,19 +72,19 @@ struct ChunkPtr
 	Freelist* list;
 	constexpr bool is_full() const
 	{
-		return bytesUsed == glox::pmmChunkSize;
+		return bytesUsed == gx::pmmChunkSize;
 	}
 };
 struct Metadata
 {
-	static constexpr sizeT chunkCount = (glox::pmmChunkSize - (sizeof(Metadata*) + sizeof(sizeT))) / sizeof(ChunkPtr);
+	static constexpr sizeT chunkCount = (gx::pmmChunkSize - (sizeof(Metadata*) + sizeof(sizeT))) / sizeof(ChunkPtr);
 	using chunkHeadersT = glox::array<ChunkPtr, chunkCount>;
 	Metadata* next;
 	sizeT usedChunks;
 	chunkHeadersT chunkHeaders;
 };
 
-static_assert(sizeof(Metadata) == glox::pmmChunkSize);
+static_assert(sizeof(Metadata) == gx::pmmChunkSize);
 struct MetadataCtx
 {
 	sizeT leftover; // how many bytes left
@@ -118,17 +118,17 @@ inline sizeT size2bucket(sizeT size)
 
 void* big_alloc(sizeT size)
 {
-	return glox::PmmAllocator::alloc(size);
+	return gx::PmmAllocator::alloc(size);
 }
 
 inline bool init_chunk(ChunkPtr& list, sizeT bucketSize)
 {
-	auto freshAddr = (Freelist*)glox::page_alloc();
+	auto freshAddr = (Freelist*)gx::page_alloc();
 	if (freshAddr == nullptr)
 		return false;
 	list.list = freshAddr;
 	auto offset = bucketSize;
-	for (sizeT i = 0; i < glox::pmmChunkSize; i += offset)
+	for (sizeT i = 0; i < gx::pmmChunkSize; i += offset)
 	{
 		*freshAddr = {(Freelist*)((uintptr)freshAddr + offset)};
 		freshAddr = freshAddr->next;
@@ -167,7 +167,7 @@ inline bool free_chunk(ChunkPtr& it, void* ptr, sizeT size)
 	it.bytesUsed -= size;
 	if (it.bytesUsed == 0)
 	{
-		glox::page_dealloc((void*)ALIGN((uintptr)it.list, glox::pmmChunkSize));
+		gx::page_dealloc((void*)ALIGN((uintptr)it.list, gx::pmmChunkSize));
 		return true;
 	}
 	newentry->next = it.list;
@@ -183,17 +183,17 @@ inline bool free_mem(void* ptr, sizeT size)
 	}
 	if (size > tinyBuckets[tinyBuckets.size() - 1])
 	{
-		return glox::PmmAllocator::dealloc(ptr, size), true;
+		return gx::PmmAllocator::dealloc(ptr, size), true;
 	}
 	auto tbindex = size2bucket(size);
 	auto realsize = tinyBuckets[tbindex];
 	auto* curlist = globalHeap.buckets[tbindex].list;
-	auto allignedptr = ALIGN((uintptr)ptr, glox::pmmChunkSize);
+	auto allignedptr = ALIGN((uintptr)ptr, gx::pmmChunkSize);
 	for (auto iter = curlist; iter; iter = iter->next)
 	{
 		for (auto& it : iter->chunkHeaders)
 		{
-			if (allignedptr == ALIGN((uintptr)it.list, glox::pmmChunkSize))
+			if (allignedptr == ALIGN((uintptr)it.list, gx::pmmChunkSize))
 				return free_chunk(it, ptr, realsize);
 		}
 	}
@@ -216,7 +216,7 @@ inline void* alloc_mem(sizeT size)
 	// TODO: Rewrite into inf loop, as its probably clearer
 	if (iter == nullptr)
 	{
-		iter = (Metadata*)glox::page_alloc();
+		iter = (Metadata*)gx::page_alloc();
 		if (iter == nullptr)
 			return nullptr;
 		curList = iter;
@@ -231,14 +231,14 @@ inline void* alloc_mem(sizeT size)
 		}
 		iterNext = iter->next;
 	} while (iterNext);
-	iterNext = (Metadata*)glox::page_alloc();
+	iterNext = (Metadata*)gx::page_alloc();
 	if (iterNext == nullptr)
 		return nullptr;
 	iter->next = iterNext;
 	return alloc_from_chunk(iter->chunkHeaders, bucketSize).first;
 }
 
-namespace glox
+namespace gx
 {
 
 void* memalloc(sizeT size)
@@ -257,7 +257,7 @@ void memdealloc(void* ptr, sizeT size)
 	}
 }
 
-} // namespace glox
+} // namespace gx
 #ifdef TEST
 static bool test()
 {
@@ -282,7 +282,7 @@ static bool test()
 	{
 		auto tmp = it;
 		it = it->next;
-		glox::dealloc(tmp, 1);
+		gx::dealloc(tmp, 1);
 	}
 	return true;
 }

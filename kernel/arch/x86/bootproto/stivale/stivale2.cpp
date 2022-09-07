@@ -7,7 +7,7 @@
 #include "protos/egg.h"
 #include "system/terminal.hpp"
 
-using namespace glox;
+using namespace gx;
 using namespace arch;
 // Abi requires for stack to be 16byte aligned,
 // not like it matters on x86 but better make it aligned
@@ -63,7 +63,7 @@ extern "C" void stivale2_main(stivale2_struct* info)
 				machineInfo.fbInfoEntry.height = height;
 				machineInfo.fbInfoEntry.pitch = pitch;
 				machineInfo.fbInfoEntry.width = width;
-				glox::term::init_term((color_t*)fb_start, (color_t*)fb_end, pitch, width, height);
+				gx::term::init_term((color_t*)fb_start, (color_t*)fb_end, pitch, width, height);
 				break;
 			}
 			case STIVALE2_STRUCT_TAG_MEMMAP_ID:
@@ -99,7 +99,7 @@ extern "C" void stivale2_main(stivale2_struct* info)
 		kernelVirtOffset = (u64)kernelFileBegin;
 		kernelMappingOffset = -arch::kernelMemBase;
 	}
-	machineInfo.kernelCode = span(kernelFileBegin, kernelFileEnd);
+	machineInfo.kernelCode = glox::span(kernelFileBegin, kernelFileEnd);
 	setup_kernelmemmap(m);
 
 	gloxor_main();
@@ -116,7 +116,7 @@ inline void initialize_pmm(stivale2_struct_tag_memmap* m)
 		if (auto mTemp = mMap[curIndex];
 			 mTemp.type == STIVALE2_MMAP_USABLE) //|| mTemp.type == STIVALE2_MMAP_BOOTLOADER_RECLAIMABLE)
 		{
-			glox::pmm_add_chunk(reinterpret_cast<void*>(mTemp.base + arch::physicalMemBase), mTemp.length);
+			gx::pmm_add_chunk(reinterpret_cast<void*>(mTemp.base + arch::physicalMemBase), mTemp.length);
 		}
 		/*else if (mMap[curIndex].type == STIVALE2_MMAP_FRAMEBUFFER)
 		{
@@ -156,7 +156,7 @@ inline void setup_kernelmemmap(stivale2_struct_tag_memmap* m)
 {
 	const auto* mMap = m->memmap;
 	const auto entryCount = m->entries;
-	auto* memmap = (BootInfo::MemoryMap*)glox::PmmAllocator::alloc(sizeof(BootInfo::MemoryMap)*entryCount);
+	auto* memmap = (BootInfo::MemoryMap*)gx::PmmAllocator::alloc(sizeof(BootInfo::MemoryMap)*entryCount);
 	glox::uninit_def_construct(memmap, memmap+entryCount);
 	for (size_t i = 0; i != entryCount; ++i)
 	{
@@ -165,5 +165,5 @@ inline void setup_kernelmemmap(stivale2_struct_tag_memmap* m)
 						 .length = mTemp.length,
 						 .type = convert_mem_types(mTemp.type)};
 	}
-	machineInfo.mmapEntries = span<BootInfo::MemoryMap>(memmap, memmap + entryCount);
+	machineInfo.mmapEntries = glox::span<BootInfo::MemoryMap>(memmap, memmap + entryCount);
 }

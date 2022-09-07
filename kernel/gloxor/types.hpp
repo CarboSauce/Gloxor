@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-namespace glox
+namespace gx
 {
 using uintptr = uintptr_t;
 using paddrT = uintptr_t;
@@ -20,17 +20,17 @@ using i32 = int32_t;
 using u32 = uint32_t;
 using i64 = int64_t;
 using u64 = uint64_t;
-} // namespace glox
+} // namespace gx
 
-using glox::i16;
-using glox::i32;
-using glox::i64;
-using glox::i8;
-using glox::paddrT;
-using glox::sizeT;
-using glox::u16;
-using glox::u32;
-using glox::u64;
-using glox::u8;
-using glox::uintptr;
-using glox::vaddrT;
+using gx::i16;
+using gx::i32;
+using gx::i64;
+using gx::i8;
+using gx::paddrT;
+using gx::sizeT;
+using gx::u16;
+using gx::u32;
+using gx::u64;
+using gx::u8;
+using gx::uintptr;
+using gx::vaddrT;

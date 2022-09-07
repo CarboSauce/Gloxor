@@ -14,7 +14,7 @@
 using namespace arch::vmem;
 using namespace arch;
 using namespace x86::vmem;
-using namespace glox;
+using namespace gx;
 
 template <size_t I>
 glox::pair<const PageTable<I - 1>*, bool> translate_single_entry(const PageTable<I>& ctx, vaddrT from)
@@ -33,7 +33,7 @@ inline bool alloc_page_if_needed(u64& entry, u64 mask)
 {
 	if (entry & present)
 		return true;
-	const auto freshAdr = (u64)glox::page_alloc();
+	const auto freshAdr = (u64)gx::page_alloc();
 	if (!freshAdr)
 		return false;
 	entry = mask_entry(get_real_address(freshAdr), mask);

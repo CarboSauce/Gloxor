@@ -2,7 +2,7 @@
 #include <glox/util.hpp>
 #include <gloxor/types.hpp>
 
-namespace glox
+namespace gx
 {
 struct BootInfo
 {
@@ -36,5 +36,5 @@ struct BootInfo
 	FbInfo fbInfoEntry;
 	glox::span<u8> kernelCode;
 };
-inline glox::BootInfo machineInfo;
-} // namespace glox
+inline gx::BootInfo machineInfo;
+} // namespace gx

@@ -11,7 +11,7 @@
 
 using ctor_t = void (*)();
 using namespace arch;
-using namespace glox;
+using namespace gx;
 using namespace arch::vmem;
 extern ctor_t _ctorArrayStart[];
 extern ctor_t _ctorArrayEnd[];
@@ -83,7 +83,7 @@ inline void map_kernel()
 }
 inline void identity_map()
 {
-	for (const auto& it : glox::machineInfo.mmapEntries)
+	for (const auto& it : gx::machineInfo.mmapEntries)
 	{
 		if (it.type == BootInfo::MemTypes::usable || it.type == BootInfo::MemTypes::reclaimable)
 		{
@@ -98,7 +98,7 @@ void init_addr_space()
 {
 	gloxDebugLogln("Remapping CR3 to ", (void*)&kAddrSpace);
 	identity_map();
-	auto [fbeg, fend] = glox::term::get_used_memory_range();
+	auto [fbeg, fend] = gx::term::get_used_memory_range();
 	gloxDebugLogln("Mapping framebuffer from: ", fbeg, " to: ", fend);
 	map_region((vaddrT)fbeg, (paddrT)fend, get_real_data_addr((paddrT)fbeg), PagePrivileges::readWrite, PageCaching::writeCombine);
 	map_kernel();
@@ -108,7 +108,7 @@ void init_addr_space()
 }
 extern "C" void gloxor_main()
 {
-	auto fbrange = glox::term::get_used_memory_range();
+	auto fbrange = gx::term::get_used_memory_range();
 	gloxDebugLogln("Con begin: ", fbrange.begin());
 	gloxDebugLogln("Con end: ", fbrange.end());
 	call_pre_cpu_inits();
@@ -117,25 +117,25 @@ extern "C" void gloxor_main()
 	call_driver_inits();
 	call_global_ctors();
 #ifdef GLOXTESTING
-	extern glox::Ktest _moduleTesting[];
-	extern glox::Ktest _moduleTestingEnd[];
-	glox::term::set_fg_color(0xadd8e6);
+	extern gx::Ktest _moduleTesting[];
+	extern gx::Ktest _moduleTestingEnd[];
+	gx::term::set_fg_color(0xadd8e6);
 	gloxPrint("Unit tests:\nThere are ", _moduleTestingEnd - _moduleTesting, " tests\n");
-	glox::term::set_fg_color(0xFFFFFF);
+	gx::term::set_fg_color(0xFFFFFF);
 	for (auto it = _moduleTesting; it != _moduleTestingEnd; ++it)
 	{
 		gloxPrintln("Test case ", it->name);
 		if (it->init())
 		{
-			glox::term::set_fg_color(0x00FF00);
+			gx::term::set_fg_color(0x00FF00);
 			gloxPrint("Test passed\n");
 		}
 		else
 		{
-			glox::term::set_fg_color(0xFF0000);
+			gx::term::set_fg_color(0xFF0000);
 			gloxPrint("Test failed\n");
 		}
-		glox::term::set_fg_color(0xFFFFFF);
+		gx::term::set_fg_color(0xFFFFFF);
 	}
 #endif
 	gloxPrint("Initialization Completed.\n");
@@ -150,10 +150,10 @@ static bool gogole_test()
 	__get_cpuid(0x80000002, brand + 0x0, brand + 0x1, brand + 0x2, brand + 0x3);
 	__get_cpuid(0x80000003, brand + 0x4, brand + 0x5, brand + 0x6, brand + 0x7);
 	__get_cpuid(0x80000004, brand + 0x8, brand + 0x9, brand + 0xa, brand + 0xb);
-	glox::term::set_fg_color(0x80c000);
-	glox::term::write_str((const char*)brand, 12 * sizeof(u32));
-	glox::term::write_str("\n", 1);
-	glox::term::set_fg_color(0xFFFFFF);
+	gx::term::set_fg_color(0x80c000);
+	gx::term::write_str((const char*)brand, 12 * sizeof(u32));
+	gx::term::write_str("\n", 1);
+	gx::term::set_fg_color(0xFFFFFF);
 	return true;
 }
 

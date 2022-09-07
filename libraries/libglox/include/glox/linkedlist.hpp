@@ -69,6 +69,7 @@ class intrusive_list
 	{
 		T* it;
 		public:
+		friend intrusive_list;
 		using iterator_category= std::bidirectional_iterator_tag;
 		iterator() = default;
 		iterator(T* p) : it(p) {}
@@ -158,7 +159,7 @@ class intrusive_list
 	iterator insert(iterator iter, T* node)
 	{
 		node->list_node.prev = iter->list_node.prev;
-		node->list_node.next = iter;
+		node->list_node.next = iter.it;
 		iter->list_node.prev = node;
 		iter->list_node.prev->list_node.next = node;
 		return node;

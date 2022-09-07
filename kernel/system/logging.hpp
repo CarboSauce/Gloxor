@@ -1,7 +1,7 @@
 #pragma once
 #include "glox/logger.hpp"
 #include "system/logging.hpp"
-namespace glox
+namespace gx
 {
 struct LogStream : glox::b_stream
 {
@@ -22,19 +22,19 @@ enum class LogLevel
 
 void write(LogStream&, const char* str, size_t s);
 // void write(logStream&, const char* str);
-extern glox::LogStream outStream;
+extern gx::LogStream outStream;
 inline LogLevel LogLevelCap = LogLevel(LOG_LEVEL);
-} // namespace glox
+} // namespace gx
 
-using glox::LogLevel;
-using glox::outStream;
-#define gloxPrint(...) glox::outStream, __VA_ARGS__
-#define gloxPrintln(...) glox::outStream, __VA_ARGS__, '\n'
-#define gloxLog(level, ...) (glox::LogLevelCap < level ? (void)0 : (void)(glox::outStream, __VA_ARGS__))
-#define gloxLogln(level, ...) (glox::LogLevelCap < level ? (void)0 : (void)(glox::outStream, __VA_ARGS__, '\n'))
-#define gloxFatalLog(...) gloxLog(glox::LogLevel::fatal, __VA_ARGS__)
-#define gloxFatalLogln(...) gloxLogln(glox::LogLevel::fatal, __VA_ARGS__)
-#define gloxTraceLog(...) gloxLog(glox::LogLevel::trace, __VA_ARGS__)
-#define gloxTraceLogln(...) gloxLogln(glox::LogLevel::trace, __VA_ARGS__)
-#define gloxDebugLog(...) gloxLog(glox::LogLevel::debug, __VA_ARGS__)
-#define gloxDebugLogln(...) gloxLogln(glox::LogLevel::debug, __VA_ARGS__)
+using gx::LogLevel;
+using gx::outStream;
+#define gloxPrint(...) gx::outStream, __VA_ARGS__
+#define gloxPrintln(...) gx::outStream, __VA_ARGS__, '\n'
+#define gloxLog(level, ...) (gx::LogLevelCap < level ? (void)0 : (void)(gx::outStream, __VA_ARGS__))
+#define gloxLogln(level, ...) (gx::LogLevelCap < level ? (void)0 : (void)(gx::outStream, __VA_ARGS__, '\n'))
+#define gloxFatalLog(...) gloxLog(gx::LogLevel::fatal, __VA_ARGS__)
+#define gloxFatalLogln(...) gloxLogln(gx::LogLevel::fatal, __VA_ARGS__)
+#define gloxTraceLog(...) gloxLog(gx::LogLevel::trace, __VA_ARGS__)
+#define gloxTraceLogln(...) gloxLogln(gx::LogLevel::trace, __VA_ARGS__)
+#define gloxDebugLog(...) gloxLog(gx::LogLevel::debug, __VA_ARGS__)
+#define gloxDebugLogln(...) gloxLogln(gx::LogLevel::debug, __VA_ARGS__)

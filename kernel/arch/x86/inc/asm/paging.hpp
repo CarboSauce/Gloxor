@@ -104,15 +104,15 @@ struct alignas(0x1000) PageTable
 	{
 		return entries + 512;
 	}
-	auto index(glox::vaddrT addr) const
+	auto index(gx::vaddrT addr) const
 	{
 		return (addr >> shift) & 0x1ff;
 	}
-	const PageEntry<I>& entry(glox::vaddrT addr) const
+	const PageEntry<I>& entry(gx::vaddrT addr) const
 	{
 		return entries[index(addr)];
 	}
-	PageEntry<I>& entry(glox::vaddrT addr)
+	PageEntry<I>& entry(gx::vaddrT addr)
 	{
 		// :tf:
 		return const_cast<PageEntry<I>&>(static_cast<const PageTable<I>&>(*this).entry(addr));
@@ -122,12 +122,12 @@ struct alignas(0x1000) PageTable
 	 * @param addr Address used for retrieving next table
 	 * @return Next table of lower level
 	 */
-	const auto* next(glox::vaddrT addr) const
+	const auto* next(gx::vaddrT addr) const
 	{
 		static_assert(I > PageLevel::lvl1, "Can't get next table from lvl1 page table");
 		return entries[index(addr)].vaddr();
 	}
-	auto next(glox::vaddrT addr)
+	auto next(gx::vaddrT addr)
 	{
 		// :tf:
 		return const_cast<PageEntry<I>&>(static_cast<const PageTable<I>&>(*this).next(addr));

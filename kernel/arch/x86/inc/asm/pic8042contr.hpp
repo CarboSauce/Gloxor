@@ -19,7 +19,7 @@
 #define ICW4_SFNM 0x10		  /* Special fully nested (not) */
 #define PIC_EOI 0x20			  /* End-of-interrupt ccommand code */
 
-namespace glox
+namespace gx
 {
 struct PicContext
 {
@@ -34,4 +34,4 @@ namespace pic
 	void send_eoi_slave();
 	void remap(u8 masterOffst, u8 slaveOffst);
 } // namespace pic
-} // namespace glox
+} // namespace gx

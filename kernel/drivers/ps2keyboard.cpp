@@ -10,7 +10,7 @@
 	auto val = inb(0x60);
 	if (val == 185)
 	{
-		glox::term::clear_screen(0); // i think this basically can crash kernel, too complex in irq
+		gx::term::clear_screen(0); // i think this basically can crash kernel, too complex in irq
 	}
 	else if (val == 158)
 	{
@@ -22,7 +22,7 @@
 		gloxTraceLog("gar");
 	else
 		gloxTraceLogln("Kbval = ", val);
-	glox::pic::send_eoi_master();
+	gx::pic::send_eoi_master();
 }
 
 static void init_keyboard()
@@ -33,7 +33,7 @@ static void init_keyboard()
 
 	// This should be generic, seperated drivers might have trouble to
 	// unmask the controller
-	glox::pic::set_master_mask(0b11111101);
+	gx::pic::set_master_mask(0b11111101);
 }
 
 initDriverModule(init_keyboard);

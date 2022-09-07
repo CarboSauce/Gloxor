@@ -2,7 +2,7 @@
 #include "arch/paging.hpp"
 #include "gloxor/types.hpp"
 
-namespace glox
+namespace gx
 {
 class alignas(arch::vmem::pageSize) VSpace
 {
@@ -26,4 +26,4 @@ class alignas(arch::vmem::pageSize) VSpace
 
 extern VSpace kAddrSpace;
 void* vmap_iomem(paddrT base, size_t len, arch::vmem::PageCaching);
-} // namespace glox
+} // namespace gx

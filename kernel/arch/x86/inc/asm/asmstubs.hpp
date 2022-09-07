@@ -84,7 +84,7 @@ inline void set_status_flags(statusFlags::Eflags flags)
  * @brief Returns EDX:EAX from xgetbv instruction
  *
  * @param ecx XCR branch to read from, only 0 and 1 supported rest are reserved
- * @return glox::pair<uint32_t,uint32_t>
+ * @return gx::pair<uint32_t,uint32_t>
  */
 inline RegisterPair xgetbv(size_t ecx)
 {

@@ -6,7 +6,7 @@
 #include "system/terminal.hpp"
 #include "arch/addrspace.hpp"
 using namespace arch::vmem;
-using namespace glox;
+using namespace gx;
 using namespace arch;
 
 struct VmapRegion
@@ -18,7 +18,7 @@ struct VmapRegion
 	glox::list_node<VmapRegion> list_node;
 };
 
-intrusive_list<VmapRegion> vmapList;
+glox::intrusive_list<VmapRegion> vmapList;
 inline bool is_overlapping(uintptr base, uintptr back, uintptr obase, uintptr oback)
 {
 	return base <= oback && obase <= back;
@@ -40,20 +40,20 @@ inline VmapRegion* find_room(size_t len)
 	{
 		// TODO: Api wise libglox cant easilly get next entry
 		// gotta fix
-		if (it.virt_base+it.len+len < it.list_node.next.virt_base)
+		if (it.virt_base+it.len+len < it.list_node.next->virt_base)
 		{
 			return &it;
 		}
 	}
 	return nullptr;
 }
-namespace glox
+namespace gx
 {
 VSpace kAddrSpace{};
 void* vmap_iomem(paddrT base, size_t len, arch::vmem::PageCaching pc)
 {
 	auto nvmap = find_room(len);
-	auto newptr = glox::alloc<VmapRegion>();
+	auto newptr = gx::alloc<VmapRegion>();
 	if (newptr == nullptr) return nullptr;
 	newptr->virt_base = nvmap->virt_base+nvmap->len;
 	newptr->phys_base = base;
@@ -65,7 +65,7 @@ void* vmap_iomem(paddrT base, size_t len, arch::vmem::PageCaching pc)
 	}
 	else
 	{
-		vmapList.insert(intrusive_list<VmapRegion>::iterator(nvmap), newptr);
+		vmapList.insert(glox::intrusive_list<VmapRegion>::iterator(nvmap), newptr);
 	}
 
 	(void)base;
@@ -77,21 +77,21 @@ inline auto to_mask(PagePrivileges p, PageCaching c)
 {
 	return (u64)p | (u64)c;
 }
-bool glox::VSpace::map(vaddrT from, paddrT to, Privileges pv, CacheMode cm)
+bool gx::VSpace::map(vaddrT from, paddrT to, Privileges pv, CacheMode cm)
 {
 	return arch::vmem::map(kAddrSpace.ptable, from, to, to_mask(pv, cm));
 }
-bool glox::VSpace::map_huge(vaddrT from, paddrT to, Privileges pv, CacheMode cm)
+bool gx::VSpace::map_huge(vaddrT from, paddrT to, Privileges pv, CacheMode cm)
 {
 	return arch::vmem::map(kAddrSpace.ptable, from, to, to_mask(pv, cm));
 }
-void glox::VSpace::make_current()
+void gx::VSpace::make_current()
 {
 	arch::vmem::set_context(ptable);
 }
-paddrT glox::VSpace::translate(vaddrT from)
+paddrT gx::VSpace::translate(vaddrT from)
 {
 	return arch::vmem::translate(ptable, from);
 }
-} // namespace glox
+} // namespace gx
 

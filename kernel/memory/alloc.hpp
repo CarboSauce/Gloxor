@@ -3,24 +3,24 @@
 #include "gloxor/types.hpp"
 #include "memory/pmm.hpp"
 
-namespace glox
+namespace gx
 {
 
 void memdealloc(void* ptr, sizeT size);
 
-[[using gnu: malloc, mallocAttribute(glox::memdealloc, 1), alloc_size(1), aligned(glox::pmmChunkSize)]] void* memalloc(sizeT bytes);
+[[using gnu: malloc, mallocAttribute(gx::memdealloc, 1), alloc_size(1), aligned(gx::pmmChunkSize)]] void* memalloc(sizeT bytes);
 
 struct KAllocator
 {
-	[[gnu::always_inline]] [[nodiscard]] static void* alloc(sizeT size) { return glox::memalloc(size); }
-	[[gnu::always_inline]] static void dealloc(void* p, sizeT s) { glox::memdealloc(p, s); }
+	[[gnu::always_inline]] [[nodiscard]] static void* alloc(sizeT size) { return gx::memalloc(size); }
+	[[gnu::always_inline]] static void dealloc(void* p, sizeT s) { gx::memdealloc(p, s); }
 };
 using default_allocator = KAllocator;
 
 struct PmmAllocator
 {
-	[[gnu::always_inline]] [[nodiscard]] static void* alloc(sizeT s) { return glox::page_alloc(s / pmmChunkSize + 1); }
-	[[gnu::always_inline]] static void dealloc(void* p, sizeT s) { glox::page_dealloc(p, s / pmmChunkSize + 1); }
+	[[gnu::always_inline]] [[nodiscard]] static void* alloc(sizeT s) { return gx::page_alloc(s / pmmChunkSize + 1); }
+	[[gnu::always_inline]] static void dealloc(void* p, sizeT s) { gx::page_dealloc(p, s / pmmChunkSize + 1); }
 };
 
 template <typename T>
@@ -47,4 +47,4 @@ void dealloc(T* ptr, size_t size)
 	memdealloc(ptr, sizeof(T) * size);
 }
 
-} // namespace glox
+} // namespace gx

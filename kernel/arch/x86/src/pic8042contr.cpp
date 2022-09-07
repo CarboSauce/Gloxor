@@ -3,9 +3,9 @@
 #include "gloxor/modules.hpp"
 #include "system/logging.hpp"
 // everything is masked on startup
-static glox::PicContext picCtx{0xFF, 0xFF};
+static gx::PicContext picCtx{0xFF, 0xFF};
 
-namespace glox::pic
+namespace gx::pic
 {
 void send_eoi_slave()
 {
@@ -54,11 +54,11 @@ void set_slave_mask(u8 mask)
 	picCtx.slaveMask &= mask;
 	outb(PIC1_DATA, picCtx.slaveMask);
 }
-} // namespace glox::pic
+} // namespace gx::pic
 
 static void init_pic()
 {
-	glox::pic::remap(0x20, 0x28);
+	gx::pic::remap(0x20, 0x28);
 	gloxDebugLog("Initializing PIC\n");
 	// Mask all devices
 	outb(PIC1_DATA, 0xFF);

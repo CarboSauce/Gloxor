@@ -5,7 +5,7 @@
 #include <gloxor/test.hpp>
 #include <memory/llallocator.hpp>
 
-using namespace glox;
+using namespace gx;
 
 /*
 	@TODO: size could perhaps be replaced pointer to end of range
@@ -18,19 +18,19 @@ struct PmmChunk
 		return &l <=> &r;
 	};
 };
-using pmmHeader = node<PmmChunk>;
-using pmmList = list<PmmChunk>;
+using pmmHeader = glox::node<PmmChunk>;
+using pmmList = glox::list<PmmChunk>;
 
-static list<PmmChunk> pmmCtx;
+static glox::list<PmmChunk> pmmCtx;
 static u64 memorySize;
 
-namespace glox
+namespace gx
 {
 
 void pmm_add_chunk(void* base, size_t length)
 {
-	gloxAssert(length % glox::pmmChunkSize == 0, "Pmm chunk length must be multiple of pmmChunkSize");
-	const auto realBase = arch::to_virt((glox::vaddrT)base);
+	gloxAssert(length % gx::pmmChunkSize == 0, "Pmm chunk length must be multiple of pmmChunkSize");
+	const auto realBase = arch::to_virt((gx::vaddrT)base);
 	auto* chunk = reinterpret_cast<pmmHeader*>(realBase);
 	auto& pmmStart = pmmCtx.front;
 	auto& pmmEnd = pmmCtx.back;
@@ -53,12 +53,12 @@ void pmm_add_chunk(void* base, size_t length)
 
 void* page_alloc(sizeT pageCount)
 {
-	return alloc_from_chunk(pmmCtx, glox::pmmChunkSize, pageCount);
+	return alloc_from_chunk(pmmCtx, gx::pmmChunkSize, pageCount);
 }
 void* page_alloc_z(sizeT pageCount)
 {
 	auto addr = page_alloc(pageCount);
-	memset(addr, 0, pageCount * glox::pmmChunkSize);
+	memset(addr, 0, pageCount * gx::pmmChunkSize);
 	return addr;
 }
 
@@ -66,9 +66,9 @@ void page_dealloc(void* ptr, sizeT pageCount)
 {
 	if (ptr == nullptr)
 		return;
-	glox::pmm_add_chunk(ptr, glox::pmmChunkSize * pageCount);
+	gx::pmm_add_chunk(ptr, gx::pmmChunkSize * pageCount);
 }
-} // namespace glox
+} // namespace gx
 
 #ifdef TEST
 static bool test()

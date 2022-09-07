@@ -1,6 +1,6 @@
 #include "gloxor/mutex.hpp"
 #include "arch/irq.hpp"
-namespace glox
+namespace gx
 {
 void IrqLock::lock()
 {
@@ -12,4 +12,4 @@ void IrqLock::unlock()
 {
 	arch::restore_irq(irqCtx);
 }
-} // namespace glox
+} // namespace gx

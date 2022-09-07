@@ -70,7 +70,7 @@ class vector : private Allocator
 		cap   = other.cap  ; other.cap   = 0;
 		siz   = other.siz  ; other.siz   = 0;
 	}
-	vector& operator=(vector& other)
+	vector& operator=(vector&& other)
 	{
 		using glox::swap;
 		swap(start,other.start);
@@ -84,8 +84,8 @@ class vector : private Allocator
 	const auto& back() const { return start[siz-1];}
 	auto& front() { return start[0];}
 	const auto& front() const { return start[0];}
-	const auto begin() const { return start; }
-	const auto end() const {return start+siz;}
+	auto begin() const { return start; }
+	auto end() const {return start+siz;}
 	auto size() const { return siz; }
 	auto capacity() const { return cap; }
 

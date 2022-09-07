@@ -3,7 +3,7 @@
 #include "glox/utilalgs.hpp"
 #include "gloxor/types.hpp"
 
-namespace glox
+namespace gx
 {
 using color_t = u32;
 
@@ -24,4 +24,4 @@ void draw_rectangle(iter beg, size_t fbwidth, glox::vec2<T> pos, glox::vec2<T> s
 		glox::set_range(i, i + size.x, color);
 	}
 }
-} // namespace glox
+} // namespace gx
