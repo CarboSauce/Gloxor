@@ -1,6 +1,8 @@
 #pragma once
 #include "glox/iterator.hpp"
 #include <glox/assert.hpp>
+#include <cstddef>
+#include "glox/macros.hpp"
 namespace glox
 {
 // keep for now, remove and replace legacy code once intrusive_list is tested
@@ -53,131 +55,160 @@ struct node : public T
  * @brief List node type, if used for intrusive_list
  * 		  define it as 'list_node'
  */
-template<typename T>
+template<typename Base, typename Member>
+GLOX_ALWAYS_INLINE 
+inline std::ptrdiff_t offset_of(const Member Base::* ptr)
+{
+	alignas(Base) char ahack[sizeof(Base)]{};
+	const Base* base = reinterpret_cast<const Base*>(ahack);
+	return reinterpret_cast<std::ptrdiff_t>(&(base->*ptr)) 
+		- reinterpret_cast<std::ptrdiff_t>(base);
+}
 struct list_node
 {
-	T* next = nullptr, *prev = nullptr;
+	list_node* next = this, *prev = this;
 	friend bool operator==(const list_node&,const list_node&) = default;
 };
-
-template<typename T>
+template<typename T,list_node T::*NodePtr = &T::list_node>
 class intrusive_list
 {
-	T* first_node = nullptr, *last_node = nullptr;
-	public:
-	class iterator
+	static_assert(std::is_same_v<glox::list_node,decltype(T::list_node)>);
+	// .prev is last element, .next is first
+	list_node sentinel;
+	size_t list_size;
+	using node_t = list_node;
+	//constexpr static auto node_offset = offsetof(T,.*NodePtr);
+	template<bool IsConst>
+	class iter_base
 	{
-		T* it;
+		using iter = std::conditional_t<IsConst,const list_node*,list_node*>;
+		iter it;
+		iter_base(node_t* p) : it(p){}
 		public:
 		friend intrusive_list;
+		using pointer = std::conditional_t<IsConst,const T*,T*>;
+		using reference = std::conditional_t<IsConst,const T&,T&>;
 		using iterator_category= std::bidirectional_iterator_tag;
-		iterator() = default;
-		iterator(T* p) : it(p) {}
-		iterator(const iterator&) = default;
-		iterator(iterator&&) = default;
-		iterator& operator=(const iterator&) = default;
-		iterator& operator=(iterator&&) = default;
-		auto operator++() { return it = it->list_node.next; }
-		auto operator--() { return it = it->list_node.prev; }
-		auto operator++(int) 
-		{ 
+
+		iter_base() = default;
+		iter_base(pointer p) : it(&p->list_node) {}
+		iter_base(const iter_base&) = default;
+		iter_base(iter_base&&) = default;
+		iter_base& operator=(const iter_base&) = default;
+		iter_base& operator=(iter_base&&) = default;
+		operator pointer() const 
+		{ return intrusive_list<T>::ptr_from_node(it);}
+		operator iter_base<true>() const { return iter_base<true>(it);}
+
+		iter_base next() const { return it->next;}
+		iter_base prev() const { return it->prev;}
+
+		iter_base operator++() { return it = it->next; }
+		iter_base operator++(int) 
+		{
 			auto tmp = it;
-			it = it->list_node.next;
+			it = it->next;
 			return tmp;
 		}
-		auto operator--(int) 
+		iter_base operator--() { return it = it->prev; }
+		iter_base operator--(int) 
 		{ 
 			auto tmp = it;
-			it = it->list_node.prev; 
+			it = it->prev; 
 			return tmp;
 		}
-		friend bool operator==(iterator l, iterator r) = default;
-		auto& operator*() const { return *it; }
-		auto& operator->() const { return it; }
+		friend bool operator==(iter_base l, iter_base r) = default;
+		reference operator*() const { return *operator->(); }
+		pointer operator->() const { return static_cast<T*>(*this);}
 	};
-	intrusive_list() = default;
-	//intrusive_list(T* pb, T* pe) : first_node(pb),last_node(pe){}
+	public:
+	//struct iterator : public iter_base<false> {using iter_base<false>::iter_base;};
+	//struct const_iterator : public iter_base<true>{using iter_base<true>::iter_base;};
+	using iterator = iter_base<false>;
+	using const_iterator = iter_base<true>;
+
+	intrusive_list() : sentinel{},list_size(0){}
 	intrusive_list(const intrusive_list&) = delete;
 	intrusive_list& operator=(const intrusive_list&) = delete;
 	intrusive_list(intrusive_list&& other)
 	{
-		first_node = other.first_node; other.first_node = nullptr;
-		last_node  = other.last_node ; other.last_node  = nullptr;
+		sentinel = other.sentinel;
+		list_size = other.list_size;
+		other.sentinel = {};
+		other.list_size = 0;
 	}
 	intrusive_list& operator=(intrusive_list&& other)
 	{
-		gloxAssert(first_node && last_node);
-		first_node = other.first_node; other.first_node = nullptr;
-		last_node  = other.last_node ; other.last_node  = nullptr;
+		gloxAssert(other.header.size);
+		sentinel = other.sentinel;
+		list_size = other.list_size;
+		other.sentinel = {};
+		other.list_size = 0;
 		return *this;
 	}
 
-	iterator begin() { return {first_node}; }
+	auto size() const { return list_size; }
+	iterator begin() { return {sentinel.next}; }
 	// non conformant cuz end()-- is ub
-	iterator end() { return {nullptr}; }
-	T& back() { return *last_node; }
-	T& front() { return *first_node; }
-	const iterator begin() const { return {first_node}; }
-	const iterator end() const { return {last_node}; }
-	const T& back() const { return *last_node; }
-	const T& front() const { return *first_node; }
-	bool is_empty() const { return first_node == nullptr;}
+	iterator end() { return {(node_t*)&sentinel}; }
+	T& back() { return *ptr_from_node(sentinel.prev);}
+	T& front() { return *ptr_from_node(sentinel.next);}
+	const_iterator begin() const { return {sentinel.next}; }
+	const_iterator end() const { return {&sentinel}; }
+	const T& back() const { return *ptr_from_node(sentinel.prev);}
+	const T& front() const { return *ptr_from_node(sentinel.next);}
+	bool is_empty() const { return list_size == 0; } 
 
 	// todo: replace null checks with calls to insert that would check null
 	void push_back(T* node)
 	{
-		if (last_node == nullptr)
-		{
-			node->list_node.next = nullptr;
-			node->list_node.prev = nullptr;
-			first_node = node;
-			last_node = node;
-		}
-		else
-		{
-			last_node->list_node.next = node;
-			node->list_node.prev = last_node;
-			last_node = node;	
-		}
+		impl_insert(&sentinel,&node->list_node);
 	};
 	void push_front(T* node)
 	{
-		if (first_node == nullptr)
-		{
-			node->list_node.next = nullptr;
-			node->list_node.prev = nullptr;
-			first_node = node;
-			last_node = node;
-		}
-		else
-		{
-			first_node->list_node.prev = node;
-			node->list_node.next = first_node;
-			first_node = node;
-		}
+		impl_insert(sentinel.next,&node->list_node);
 	}
 	iterator insert(iterator iter, T* node)
 	{
-		node->list_node.prev = iter->list_node.prev;
-		node->list_node.next = iter.it;
-		iter->list_node.prev = node;
-		iter->list_node.prev->list_node.next = node;
+		impl_insert(iter.it,&node->list_node);
 		return node;
 	}
 	iterator erase(iterator iter)
 	{
-		iter->list_node.next->list_node.prev = iter->list_node.prev;
-		iter->list_node.prev->list_node.next = iter->list_node.next;
-		return iter->list_node.next;
+		iter->next->prev = iter->list_node.prev;
+		iter->prev->next = iter->list_node.next;
+		return iter->next;
 	}
 	template<typename Cb>
 	void clear(Cb fn)
 	{
-		for(;last_node;last_node=last_node->list_node.prev)
+		for(auto tmp = sentinel.prev;tmp!=&sentinel;tmp=tmp->prev)
 		{
-			fn(last_node);
+			fn(ptr_from_node(tmp));
 		} 
-		first_node = last_node;
+		sentinel = {};
+		list_size = 0;
+	}
+	private:
+	GLOX_ALWAYS_INLINE
+	static const T* ptr_from_node(const list_node *const a)
+	{
+		return reinterpret_cast<const T*>(
+				reinterpret_cast<const char*>(a) - offset_of(NodePtr));
+	}
+	GLOX_ALWAYS_INLINE
+	static T* ptr_from_node(list_node *const a)
+	{
+		return const_cast<T*>(
+				intrusive_list::ptr_from_node(static_cast<const list_node*>(a)));
+	}
+	void impl_insert(list_node* new_next, list_node* new_current)
+	{
+		new_current->next = new_next;
+		new_current->prev = new_next->prev;
+		new_next->prev->next = new_current;
+		new_next->prev = new_current;
+		list_size += 1;
 	}
 };
 

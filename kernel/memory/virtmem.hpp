@@ -25,5 +25,6 @@ class alignas(arch::vmem::pageSize) VSpace
 };
 
 extern VSpace kAddrSpace;
-void* vmap_iomem(paddrT base, size_t len, arch::vmem::PageCaching);
+[[nodiscard]] void* vmap_iomem(paddrT base, size_t len, arch::vmem::PageCaching);
+void vunmap_iomem(void* ptr);
 } // namespace gx

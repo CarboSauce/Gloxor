@@ -8,7 +8,8 @@ namespace gx
 
 void memdealloc(void* ptr, sizeT size);
 
-[[using gnu: malloc, mallocAttribute(gx::memdealloc, 1), alloc_size(1), aligned(gx::pmmChunkSize)]] void* memalloc(sizeT bytes);
+[[using gnu: malloc, mallocAttribute(gx::memdealloc, 1), alloc_size(1), aligned(gx::pmmChunkSize)]] 
+void* memalloc(sizeT bytes);
 
 struct KAllocator
 {
@@ -24,27 +25,27 @@ struct PmmAllocator
 };
 
 template <typename T>
-T* alloc(size_t size = 1)
+T* alloc(size_t ele_count = 1)
 {
-	T* ptr = (T*)(memalloc(sizeof(T) * size));
+	T* ptr = (T*)(memalloc(sizeof(T) * ele_count));
 	if (ptr == nullptr)
 		return nullptr;
-	for (size_t i = 0; i < size; ++i)
+	for (size_t i = 0; i < ele_count; ++i)
 	{
 		::new (ptr + i) T();
 	}
 	return ptr;
 }
 template <typename T>
-void dealloc(T* ptr, size_t size)
+void dealloc(T* ptr, size_t ele_count)
 {
 	if (ptr == nullptr)
 		return;
-	for (size_t i = 0; i < size; ++i)
+	for (size_t i = 0; i < ele_count; ++i)
 	{
 		ptr[i].~T();
 	}
-	memdealloc(ptr, sizeof(T) * size);
+	memdealloc(ptr, sizeof(T) * ele_count);
 }
 
 } // namespace gx

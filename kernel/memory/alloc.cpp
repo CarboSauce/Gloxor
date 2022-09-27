@@ -259,17 +259,17 @@ void memdealloc(void* ptr, sizeT size)
 
 } // namespace gx
 #ifdef TEST
-static bool test()
+struct List
 {
-	struct List
-	{
-		int x;
-		List* next;
-	};
-	List *head = new List{.x = 21, .next = nullptr}, *iter = head;
+	int x,y,z;
+	List* next;
+};
+static List* test_alloc(int sp)
+{
+	List *head = new List{.x = sp+20,.y = sp+40,.z = sp+60, .next = nullptr}, *iter = head;
 	for (int i = 1; i < 20; ++i)
 	{
-		iter->next = new List{.x = i, .next = nullptr};
+		iter->next = new List{.x = i, .y=i+20,.z=i+40,.next = nullptr};
 		iter = iter->next;
 	}
 	gloxPrint("List:\n");
@@ -278,12 +278,23 @@ static bool test()
 		gloxPrint(it->x, ' ');
 	}
 	gloxPrint("\nEndlist\n");
+	return head;
+}
+static void test_free(List* head)
+{
 	for (auto it = head; it;)
 	{
 		auto tmp = it;
 		it = it->next;
 		gx::dealloc(tmp, 1);
 	}
+}
+static bool test()
+{
+	auto tmp = test_alloc(1);
+	test_free(tmp);
+	tmp = test_alloc(600);
+	test_free(tmp);
 	return true;
 }
 registerTest("Allocator test",test);

@@ -15,7 +15,7 @@ inline auto format(char* buffer, testest a)
 	return (size_t)18;
 }
 
-struct test_stream : glox::bStream
+struct test_stream : glox::b_stream
 {
 	char buffer[256];
 };

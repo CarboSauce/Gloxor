@@ -1,12 +1,27 @@
 #pragma once
 #include <concepts>
 #include <glox/string.hpp>
-#include <utility>
-// temporary
+#include <glox/metaprog.hpp>
 
 namespace glox
 {
 
+template <typename iter,typename T>
+constexpr iter find(iter a, iter b,const T& val)
+{
+	for (;a != b; ++a)
+		if (*a == val)
+			return a;
+	return b;
+}
+template <typename iter,typename Cb>
+constexpr iter find_if(iter a, iter b,Cb fn)
+{
+	for (;a != b; ++a)
+		if (fn(*a))
+			return a;
+	return b;
+}
 template <typename iter>
 constexpr void reverse(iter a, iter b)
 {
@@ -58,7 +73,7 @@ constexpr auto copy_overlapped(iterIn src, iterIn srcLast, iterOut dest)
 template <typename T, typename... Args>
 T* construct(T* at, Args&&... args)
 {
-	return ::new (const_cast<void*>(static_cast<const volatile void*>(at))) T(std::forward<Args>(args)...);
+	return ::new (const_cast<void*>(static_cast<const volatile void*>(at))) T(FWD(args)...);
 }
 
 } // namespace glox

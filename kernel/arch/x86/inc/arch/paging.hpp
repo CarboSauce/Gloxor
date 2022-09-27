@@ -2,6 +2,7 @@
 #include <asm/paging.hpp>
 #include <glox/util.hpp>
 #include <gloxor/types.hpp>
+#define VMEM_MASK(a,b) ((u64)(a) | (u64)(b))
 namespace arch::vmem
 {
 using paging_t = u64;
