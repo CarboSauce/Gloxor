@@ -2,6 +2,7 @@
 #include "glox/iterator.hpp"
 #include <glox/assert.hpp>
 #include <cstddef>
+#include <sys/types.h>
 #include "glox/macros.hpp"
 namespace glox
 {
@@ -52,8 +53,11 @@ struct node : public T
 	}
 };
 /*
- * @brief List node type, if used for intrusive_list
- * 		  define it as 'list_node'
+ * Dear mortals reading it, this is offsetof equivalent 
+ * that works with C++ member pointers
+ * Based on proposal: 
+ * https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0908r0.html
+ * please make it live :(
  */
 template<typename Base, typename Member>
 GLOX_ALWAYS_INLINE 
@@ -64,10 +68,29 @@ inline std::ptrdiff_t offset_of(const Member Base::* ptr)
 	return reinterpret_cast<std::ptrdiff_t>(&(base->*ptr)) 
 		- reinterpret_cast<std::ptrdiff_t>(base);
 }
+
+/*
+ * @brief List node type, if used for intrusive_list
+ * 		  define it as 'list_node'
+ */
 struct list_node
 {
 	list_node* next = this, *prev = this;
 	friend bool operator==(const list_node&,const list_node&) = default;
+	void remove()
+	{
+		list_node* const n = next;
+		list_node* const p = prev;
+		p->next = n;
+		n->prev = p;
+	}
+	void insert(list_node* new_current)
+	{
+		new_current->next = this;
+		new_current->prev = this->prev;
+		this->prev->next = new_current;
+		this->prev = new_current;
+	}
 };
 template<typename T,list_node T::*NodePtr = &T::list_node>
 class intrusive_list
@@ -175,9 +198,8 @@ class intrusive_list
 	}
 	iterator erase(iterator iter)
 	{
-		iter->next->prev = iter->list_node.prev;
-		iter->prev->next = iter->list_node.next;
-		return iter->next;
+		iter.it->remove();
+		return iter;
 	}
 	template<typename Cb>
 	void clear(Cb fn)
@@ -204,10 +226,7 @@ class intrusive_list
 	}
 	void impl_insert(list_node* new_next, list_node* new_current)
 	{
-		new_current->next = new_next;
-		new_current->prev = new_next->prev;
-		new_next->prev->next = new_current;
-		new_next->prev = new_current;
+		new_next->insert(new_current);
 		list_size += 1;
 	}
 };
@@ -323,42 +342,6 @@ struct list
 	iterator end()
 	{
 		return {nullptr};
-	}
-	/*
-		this function isnt actually used anywhere it handles too many edge cases
-		which in certain conditions can be guaranteed to never occur
-		maybe compiler is good enough to ellide them, should be investigated
-	*/
-	void insert(node<T>& p)
-	{
-		gloxDebugLogln("back <= &p ", back, ' ', &p);
-		if (*back <= p)
-		{
-			back->next = &p;
-			p.prev = back;
-			back = &p;
-			return;
-		}
-		else if (*front >= p)
-		{
-			p.next = front;
-			p.prev = nullptr;
-			front->prev = &p;
-			front = &p;
-			return;
-		}
-		for (auto it = front->next; it != back; it = it->next)
-		{
-			gloxDebugLogln("&it <= &p ", &it, ' ', &p);
-			if (*it >= p)
-			{
-				p.next = it;
-				p.prev = it->prev;
-				it->prev->next = &p;
-				it->prev = &p;
-				return;
-			}
-		}
 	}
 };
 } // namespace glox

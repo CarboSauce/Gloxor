@@ -18,7 +18,7 @@ struct VmapRegion
 	vaddrT virt_base;
 	size_t len;
 	size_t flags;
-	glox::list_node<VmapRegion> list_node;
+	glox::list_node list_node;
 };
 
 glox::intrusive_list<VmapRegion> vmapList;
@@ -38,25 +38,25 @@ inline bool is_there_dup(uintptr base,size_t len)
 	}
 	return false;
 }
-inline VmapIter find_room(size_t len)
-{
-	for (auto& it : vmapList)
-	{
-		// TODO: Api wise libglox cant easilly get next entry
-		// gotta fix
-		if (it.virt_base+it.len+len < it.list_node.next->virt_base)
-		{
-			return &it;
-		}
-	}
-	return nullptr;
-}
+//inline VmapIter find_room(size_t len)
+//{
+//	for (auto& it : vmapList)
+//	{
+//		// TODO: Api wise libglox cant easilly get next entry
+//		// gotta fix
+//		if (it.virt_base+it.len+len < it.list_node.next->virt_base)
+//		{
+//			return &it;
+//		}
+//	}
+//	return nullptr;
+//}
 namespace gx
 {
 void* vmap_iomem(paddrT base, size_t len, arch::vmem::PageCaching pc)
 {
 	auto nvmap = glox::find_if(vmapList.begin(),vmapList.end(),
-			[len](auto&& it){return it.virt_base+it.len+len < it.list_node.next->virt_base;});
+			[len](auto&& it){return it.virt_base+it.len+len < VmapIter(&it).next()->virt_base;});
 	auto newptr = gx::alloc<VmapRegion>();
 	if (newptr == nullptr) return nullptr;
 	newptr->virt_base = 0xdeadbeef;

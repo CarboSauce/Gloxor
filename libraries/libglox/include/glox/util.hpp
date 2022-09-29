@@ -105,10 +105,6 @@ using optional = result<T, bool>;
 
 namespace std
 {
-template <typename T>
-struct tuple_size;
-template <size_t S, typename T>
-struct tuple_element;
 
 template <typename T>
 struct tuple_size<glox::span<T>> : ::std::integral_constant<size_t, 2>

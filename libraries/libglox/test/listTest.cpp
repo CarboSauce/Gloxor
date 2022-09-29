@@ -1,6 +1,7 @@
 #include "glox/linkedlist.hpp"
 #include <cassert>
 #include <cstdio>
+#include <cstdlib>
 struct test_struct
 {
 	int x;
@@ -28,10 +29,15 @@ int main()
 	int i = 1;
 	auto it2 = l.begin();
 	testlist::const_iterator it3 = it2;
+	delete static_cast<testlist::iterator::pointer>(l.erase(l.begin()));
+	l.push_front(new test_struct{1});
 	for (const auto& it : l)
 	{
-		assert(it.x == i++);
+		//assert(it.x == i++);
+		if (i == 10) abort();
+		printf("%d\n",it.x);
 	}
+
 	l.clear([](test_struct* p)
 	{
 		delete p;
