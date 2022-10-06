@@ -19,7 +19,7 @@ struct tuple_leaf
 {
 	[[no_unique_address]] T val;
 	T& get(std::integral_constant<std::size_t, I>) { return val; }
-	auto operator<=>(const tuple_leaf&) const = default;
+	constexpr auto operator<=>(const tuple_leaf&) const = default;
 	static T type_identity(std::integral_constant<std::size_t, I>);
 };
 template <typename... T>
@@ -35,14 +35,14 @@ struct tuple<glox::index_sequence<Idx...>, T...> : tuple_leaf<Idx, T>...
 	using types = type_pack<T...>;
 	constexpr static std::size_t size = sizeof...(T);
 	template <std::size_t I>
-	auto& get() { return get(std::integral_constant<std::size_t, I>{}); }
+	[[nodiscard]] constexpr auto& get() { return get(std::integral_constant<std::size_t, I>{}); }
 };
 
 template <typename... T>
 tuple(T...) -> tuple<std::remove_reference_t<T>...>;
 
 template<std::size_t I,typename Tup>
-constexpr decltype(auto) get(Tup&& tpl)
+[[nodiscard]] constexpr decltype(auto) get(Tup&& tpl)
 {
 	return FORWARD(tpl).template get<I>();
 }
@@ -54,22 +54,22 @@ namespace detail
 		return FORWARD(cb)(FORWARD(tup).template get<I>()...);
 	}
 	template <typename Cb, typename Tup, std::size_t... I>
-	void for_each(Tup&& tup, Cb&& cb,glox::index_sequence<I...>)
+	constexpr void for_each(Tup&& tup, Cb&& cb,glox::index_sequence<I...>)
 	{
 		((void)cb(FORWARD(tup).template get<I>()),...);
 	}
 }
 template <typename Cb,typename Tup>
-void for_each(Tup&& tup, Cb&& cb)
+constexpr void for_each(Tup&& tup, Cb&& cb)
 {
 	detail::for_each(FORWARD(tup),FORWARD(cb),
-			glox::make_index_sequence<tup.size>{});
+			glox::make_index_sequence<std::remove_reference_t<Tup>::size>{});
 }
 template<typename Cb, typename Tup>
 constexpr decltype(auto) apply(Cb&& cb, Tup&& tup)
 {
 	return detail::apply(FORWARD(cb), FORWARD(tup), 
-			glox::make_index_sequence<tup.size>{});
+			glox::make_index_sequence<std::remove_reference_t<Tup>::size>{});
 }
 
 template<typename... T>

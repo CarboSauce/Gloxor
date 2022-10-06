@@ -9,6 +9,7 @@ template <typename T, size_t N>
 struct array
 {
 	T data[N];
+	static constexpr size_t size = N;
 	constexpr const T& operator[](size_t i) const
 	{
 		gloxAssert(i < N, "Out of bounds access");
@@ -20,10 +21,6 @@ struct array
 	}
 	constexpr explicit operator T*() { return data; }
 	constexpr explicit operator const T*() const { return data; }
-	constexpr size_t size() const
-	{
-		return N;
-	}
 	constexpr auto begin() {return data;}
 	constexpr auto begin() const {return data;}
 	constexpr auto end() {return data + N;}

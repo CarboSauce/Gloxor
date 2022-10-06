@@ -6,20 +6,6 @@
 
 namespace glox
 {
-template<typename T>
-void swap(T& l, T& r)
-{
-	auto tmp = RVALUE(l);
-	l = RVALUE(r);
-	r = RVALUE(tmp);
-}
-template<typename T, typename U = T>
-T exchange(T& l, U&& r)
-{
-	auto tmp = RVALUE(l);
-	l = r;
-	return tmp;
-}
 template <typename T, typename U>
 struct pair
 {
@@ -71,36 +57,6 @@ class span
 	}
 };
 // boiler plate for structure bindings
-
-template <typename T, typename E>
-class result
-{
-	// static_assert(std::is_default_constructible<T>::value, "Result type needs to be default constructible");
-	union
-	{
-		T val;
-		E err;
-	};
-	bool isErr;
-
- public:
-	constexpr result(T val) : val(RVALUE(val)), isErr(false) {}
-	constexpr result(E err) : val(RVALUE(err)), isErr(true) {}
-	T& unwrap()
-	{
-		gloxAssert(!isErr, "unwrap called with error set");
-		return val;
-	}
-
-	constexpr operator bool()
-	{
-		return isErr;
-	}
-};
-
-template <typename T>
-using optional = result<T, bool>;
-
 } // namespace glox
 
 namespace std

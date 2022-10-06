@@ -9,6 +9,7 @@ namespace glox
 #ifdef DEBUG
 	#define _mSTRINGIFY(x) _implSTRINGIFY(x)
 	#define _implSTRINGIFY(x) #x
+	#define gloxDebugError(...) (glox::exec_assert(__VA_ARGS__,__FILE__,_mSTRINGIFY(__LINE__)))
 	#define gloxAssert(cond, ...) (void)((!!(cond)) || (glox::exec_assert(#cond " " __VA_ARGS__, __FILE__, _mSTRINGIFY(__LINE__)), 0))
 	#define gloxUnreachable()                      \
 		gloxAssert(false, "unreachable() invoked"); \
@@ -16,4 +17,5 @@ namespace glox
 #else
 	#define gloxAssert(cond, ...) ((void)0)
 	#define gloxUnreachable() __builtin_unreachable();
+	#define gloxDebugError(...) ((void)0)
 #endif

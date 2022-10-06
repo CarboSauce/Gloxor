@@ -1,8 +1,6 @@
 #pragma once
 #include "glox/types.hpp"
-#include <new>
-//[[gnu::always_inline, nodiscard]] inline void* operator new(size_t, void* p) noexcept { return p; }
-//[[gnu::always_inline, nodiscard]] inline void* operator new[](size_t, void* p) noexcept { return p; }
+#include "detail/opnew.hpp"
 namespace glox
 {
 template <typename T>

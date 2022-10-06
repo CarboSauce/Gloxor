@@ -10,7 +10,7 @@ namespace glox
 // 							   char buf[30];
 // 							   return glox::unsafe::format(buf, (intmax_t)123);
 // 						   })();
-using namespace glox::unsafe;
+using namespace glox::detail;
 
 /**
  * @brief Base Class used for ADL, derive from that class and implement

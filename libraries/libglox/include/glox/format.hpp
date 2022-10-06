@@ -5,8 +5,7 @@
 
 namespace glox
 {
-using callback_t = void (*)(const char*, size_t);
-namespace unsafe
+namespace detail 
 {
 
 	inline auto format(char* buffer, const void* addr)
