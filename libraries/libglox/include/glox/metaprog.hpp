@@ -1,7 +1,7 @@
 #pragma once
+#include "detail/movesem.hpp"
 #include <type_traits>
-#define RVALUE(...) static_cast<std::remove_reference_t<decltype(__VA_ARGS__)>&&>(__VA_ARGS__)
-#define FORWARD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)
+
 namespace std
 {
 template <typename T>
