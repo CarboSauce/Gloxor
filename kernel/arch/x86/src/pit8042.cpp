@@ -8,8 +8,7 @@
 static u64 tick = 0;
 using namespace gx::pit;
 
-namespace gx::pit
-{
+namespace gx::pit {
 /**
  * @brief Set the divisor of PIT
  * Make sure to stop IRQ

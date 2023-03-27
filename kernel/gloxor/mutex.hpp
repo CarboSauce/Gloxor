@@ -2,13 +2,11 @@
 #include "arch/irq.hpp"
 #include "glox/mutex.hpp"
 
-namespace gx
-{
-class IrqLock
-{
+namespace gx {
+class IrqLock {
 	arch::irqT irqCtx;
 
- public:
+public:
 	IrqLock() = default;
 	void lock();
 	void unlock();

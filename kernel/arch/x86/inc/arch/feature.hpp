@@ -1,12 +1,9 @@
 #pragma once
 #include <gloxor/types.hpp>
-namespace arch
-{
-enum class FeatureBit
-{
+namespace arch {
+enum class FeatureBit {
 	avx,
 	xsave,
-
 };
 constexpr FeatureBit operator|(FeatureBit l, FeatureBit r)
 {

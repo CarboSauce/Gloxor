@@ -1,13 +1,13 @@
+#include "arch/addrspace.hpp"
 #include "arch/cpu.hpp"
 #include "arch/irq.hpp"
-#include "arch/addrspace.hpp"
-#include "system/logging.hpp"
-#include "system/terminal.hpp"
+#include "cpuid.h"
+#include "gloxor/kinfo.hpp"
 #include "gloxor/modules.hpp"
 #include "gloxor/test.hpp"
-#include "gloxor/kinfo.hpp"
 #include "memory/virtmem.hpp"
-#include "cpuid.h"
+#include "system/logging.hpp"
+#include "system/terminal.hpp"
 
 using ctor_t = void (*)();
 using namespace arch;
@@ -21,8 +21,7 @@ extern ctor_t _moduleDriverEnd[];
 
 extern "C" void call_ctor_pointers(ctor_t* begin, ctor_t* end)
 {
-	for (auto it = begin; it != end; ++it)
-	{
+	for (auto it = begin; it != end; ++it) {
 		(*it)();
 	}
 }
@@ -52,20 +51,14 @@ extern "C" void call_global_ctors()
 // extern u64 getTicks();
 inline void map_region(vaddrT from, vaddrT to, paddrT start, arch::vmem::PagePrivileges pp, arch::vmem::PageCaching pc)
 {
-	auto isalign = [](auto a, auto b)
-	{ return a % b == 0; };
+	auto isalign = [](auto a, auto b) { return a % b == 0; };
 
-	while (from < to)
-	{
-
-		if (to - from > 0x200'000 && isalign(from, 0x200'000))
-		{
+	while (from < to) {
+		if (to - from > 0x200'000 && isalign(from, 0x200'000)) {
 			kAddrSpace.map_huge(from, start, pp, pc);
 			from += 0x200'000;
 			start += 0x200'000;
-		}
-		else
-		{
+		} else {
 			kAddrSpace.map(from, start, pp, pc);
 			from += 0x1000;
 			start += 0x1000;
@@ -76,17 +69,19 @@ inline void map_kernel()
 {
 	size_t size = (kernelFileEnd - kernelFileBegin);
 	gloxDebugLogln("kernelPhysOffset: ", kernelPhysOffset);
-	for (size_t i = 0; i < size; i += pageSize)
-	{
-		kAddrSpace.map((vaddrT)kernelFileBegin + i, kernelPhysOffset + i, PagePrivileges::all, PageCaching::writeThrough);
+	for (size_t i = 0; i < size; i += pageSize) {
+		kAddrSpace.map(
+			(vaddrT)kernelFileBegin + i,
+			kernelPhysOffset + i,
+			PagePrivileges::all,
+			PageCaching::writeThrough);
 	}
 }
 inline void identity_map()
 {
-	for (const auto& it : gx::machineInfo.mmapEntries)
-	{
-		if (it.type == BootInfo::MemTypes::usable || it.type == BootInfo::MemTypes::reclaimable)
-		{
+	for (const auto& it : gx::machineInfo.mmapEntries) {
+		if (it.type == BootInfo::MemTypes::usable
+		    || it.type == BootInfo::MemTypes::reclaimable) {
 			const auto from = it.base + physicalMemBase;
 			const auto to = it.base;
 			map_region(from, from + it.length, to, PagePrivileges::all, PageCaching::writeThrough);
@@ -103,7 +98,11 @@ void init_addr_space()
 	map_region((vaddrT)fbeg, (paddrT)fend, get_real_data_addr((paddrT)fbeg), PagePrivileges::readWrite, PageCaching::writeCombine);
 	map_kernel();
 	gloxDebugLogln("Trying translation code, from : ", fbeg, " to: ", (void*)kAddrSpace.translate((u64)fbeg));
-	gloxDebugLogln("Trying translation code, from : ", (u8*)physicalMemBase + 0x200'000, " to: ", (void*)kAddrSpace.translate(physicalMemBase + 0x200'000));
+	gloxDebugLogln(
+		"Trying translation code, from : ",
+		(u8*)physicalMemBase + 0x200'000,
+		" to: ",
+		(void*)kAddrSpace.translate(physicalMemBase + 0x200'000));
 	// lets goo
 }
 extern "C" void gloxor_main()
@@ -122,16 +121,12 @@ extern "C" void gloxor_main()
 	gx::term::set_fg_color(0xadd8e6);
 	gloxPrint("Unit tests:\nThere are ", _moduleTestingEnd - _moduleTesting, " tests\n");
 	gx::term::set_fg_color(0xFFFFFF);
-	for (auto it = _moduleTesting; it != _moduleTestingEnd; ++it)
-	{
+	for (auto it = _moduleTesting; it != _moduleTestingEnd; ++it) {
 		gloxPrintln("Test case ", it->name);
-		if (it->init())
-		{
+		if (it->init()) {
 			gx::term::set_fg_color(0x00FF00);
 			gloxPrint("Test passed\n");
-		}
-		else
-		{
+		} else {
 			gx::term::set_fg_color(0xFF0000);
 			gloxPrint("Test failed\n");
 		}

@@ -14,14 +14,13 @@ static gx::Framebuffer con;
 // to be able to set both of values (or maybe 4) in same operation,
 // but it comes at a cost of making sure compiler wont break stuff,
 // and LTO will most likely elide most of those, and overall notworth
-static glox::vec2<color_t> fgbg{0xFFFFFF, 0};
-static glox::vec2<u32> at{0, 0};
+static glox::vec2<color_t> fgbg { 0xFFFFFF, 0 };
+static glox::vec2<u32> at { 0, 0 };
 static u8 cursorShape = '_';
-namespace gx::term
-{
+namespace gx::term {
 glox::span<u8> get_used_memory_range()
 {
-	return {(u8*)con.fbBeg, (u8*)con.fbEnd};
+	return { (u8*)con.fbBeg, (u8*)con.fbEnd };
 }
 inline void put_pixel(int x, int y, color_t color)
 {
@@ -40,19 +39,17 @@ inline void write_char(char ch, glox::vec2<u32> at, glox::vec2<color_t> fgbg)
  {
 	  for (int k = 0; k < fontWidth; ++k)
 	  {
-			auto fontBit =  0b10000000 >> (k/scaleX);
-			auto fontMask = fontBitmap[index + (i/scaleY)];
-			putPixel(at.x+k, at.y+i , fontMask & fontBit ? fgbg.x : fgbg.y);
+	        auto fontBit =  0b10000000 >> (k/scaleX);
+	        auto fontMask = fontBitmap[index + (i/scaleY)];
+	        putPixel(at.x+k, at.y+i , fontMask & fontBit ? fgbg.x : fgbg.y);
 	  }
 
  } */
 
 	/*Magic code stolen from ted uses no division*/
 
-	for (u32 i = 0, i1 = 0, i2 = 0; i2 < fontHeight; ++i, ++i2, (i == scaleY) ? (i = 0, i1++) : i)
-	{
-		for (u32 j = 0, j1 = 0, j2 = 0; j2 < fontWidth; ++j, ++j2, (j == scaleX) ? (j = 0, j1++) : j)
-		{
+	for (u32 i = 0, i1 = 0, i2 = 0; i2 < fontHeight; ++i, ++i2, (i == scaleY) ? (i = 0, i1++) : i) {
+		for (u32 j = 0, j1 = 0, j2 = 0; j2 < fontWidth; ++j, ++j2, (j == scaleX) ? (j = 0, j1++) : j) {
 			auto fontBit = 0b10000000 >> (j1);
 			auto fontMask = fontBitmap[index + i1];
 			put_pixel(at.x + j2, at.y + i2, fontMask & fontBit ? fgbg.x : fgbg.y);
@@ -75,35 +72,28 @@ inline void exec_newline()
 inline void parse_char(char c)
 {
 	// total hack, we scroll the buffer incase next write would overflow
-	if (at.y + fontHeight > con.height)
-	{
+	if (at.y + fontHeight > con.height) {
 		at.y -= fontHeight;
 		exec_newline();
 	}
-	switch (c)
-	{
-		case '\n':
-		{
-			auto yoffset = at.y + fontHeight;
-			if (con.fbBeg + con.pitch * yoffset >= con.fbEnd)
-			{
-				exec_newline();
-			}
-			else
-			{
-				at.y = yoffset;
-				at.x = 0;
-			}
-			break;
+	switch (c) {
+	case '\n': {
+		auto yoffset = at.y + fontHeight;
+		if (con.fbBeg + con.pitch * yoffset >= con.fbEnd) {
+			exec_newline();
+		} else {
+			at.y = yoffset;
+			at.x = 0;
 		}
-		default:
-			write_char(c, at, fgbg);
-			at.x += fontWidth;
-			break;
+		break;
+	}
+	default:
+		write_char(c, at, fgbg);
+		at.x += fontWidth;
+		break;
 	}
 	// should we jump to next line?
-	if (at.x + fontWidth >= con.pitch)
-	{
+	if (at.x + fontWidth >= con.pitch) {
 		at.y += fontHeight;
 		at.x = 0;
 	}
@@ -112,11 +102,11 @@ inline void parse_char(char c)
 void init_term(color_t* begin, color_t* end, size_t pitch, size_t width, size_t height)
 {
 	con = {
-	    .fbBeg = begin,
-	    .fbEnd = end,
-	    .width = width,
-	    .height = height,
-	    .pitch = pitch
+		.fbBeg = begin,
+		.fbEnd = end,
+		.width = width,
+		.height = height,
+		.pitch = pitch
 	};
 }
 
@@ -124,7 +114,7 @@ void clear_screen(color_t color)
 {
 	// gx::drawRectangle(fbBeg,pitch,{0,0},{(colorT)width,(colorT)height},color);
 	glox::set_range(con.fbBeg, con.fbEnd, color);
-	at = {0, 0};
+	at = { 0, 0 };
 }
 inline void print_cursor()
 {
@@ -138,8 +128,7 @@ inline void erase_cursor()
 void write_str(const char* str, size_t size)
 {
 	erase_cursor();
-	for (size_t s = 0; s != size; ++s)
-	{
+	for (size_t s = 0; s != size; ++s) {
 		char c = str[s];
 		parse_char(c);
 	}

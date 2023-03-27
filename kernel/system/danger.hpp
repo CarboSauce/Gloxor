@@ -1,6 +1,5 @@
 #pragma once
 
-namespace gx
-{
+namespace gx {
 [[noreturn]] void kernel_panic();
 }

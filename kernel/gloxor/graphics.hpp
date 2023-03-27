@@ -3,12 +3,10 @@
 #include "glox/utilalgs.hpp"
 #include "gloxor/types.hpp"
 
-namespace gx
-{
+namespace gx {
 using color_t = u32;
 
-struct Framebuffer
-{
+struct Framebuffer {
 	color_t* fbBeg;
 	color_t* fbEnd;
 	size_t width;
@@ -19,8 +17,7 @@ struct Framebuffer
 template <typename iter, typename T>
 void draw_rectangle(iter beg, size_t fbwidth, glox::vec2<T> pos, glox::vec2<T> size, T color)
 {
-	for (auto i = beg + pos.y; i < beg + size.y * fbwidth; i += fbwidth)
-	{
+	for (auto i = beg + pos.y; i < beg + size.y * fbwidth; i += fbwidth) {
 		glox::set_range(i, i + size.x, color);
 	}
 }

@@ -1,7 +1,6 @@
 #pragma once
 
-namespace arch
-{
+namespace arch {
 
 inline void spinloop_hint()
 {
@@ -17,8 +16,7 @@ void initialize_cpu();
 
 [[noreturn]] inline void halt_forever()
 {
-	while (1)
-	{
+	while (1) {
 		asm("cli;hlt");
 	}
 }

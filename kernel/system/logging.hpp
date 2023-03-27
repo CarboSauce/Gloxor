@@ -1,10 +1,8 @@
 #pragma once
 #include "glox/logger.hpp"
 #include "system/logging.hpp"
-namespace gx
-{
-struct LogStream : glox::b_stream
-{
+namespace gx {
+struct LogStream : glox::b_stream {
 	char buffer[512];
 	uint32_t curLogLevel;
 	template <typename... args>
@@ -13,8 +11,7 @@ struct LogStream : glox::b_stream
 		((void)(*this, Args), ...);
 	}
 };
-enum class LogLevel
-{
+enum class LogLevel {
 	fatal,
 	trace,
 	debug,

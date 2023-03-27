@@ -1,8 +1,8 @@
 #pragma once
-#include <concepts>
-#include <glox/string.hpp>
-#include <glox/metaprog.hpp>
 #include "detail/moveutils.hpp"
+#include <concepts>
+#include <glox/metaprog.hpp>
+#include <glox/string.hpp>
 
 namespace glox
 {

@@ -1,7 +1,6 @@
 #include "gloxor/mutex.hpp"
 #include "arch/irq.hpp"
-namespace gx
-{
+namespace gx {
 void IrqLock::lock()
 {
 	irqCtx = arch::save_irq();

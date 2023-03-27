@@ -3,10 +3,9 @@
 #include "gloxor/modules.hpp"
 #include "system/logging.hpp"
 // everything is masked on startup
-static gx::PicContext picCtx{0xFF, 0xFF};
+static gx::PicContext picCtx { 0xFF, 0xFF };
 
-namespace gx::pic
-{
+namespace gx::pic {
 void send_eoi_slave()
 {
 	outb(PIC2_COMMAND, PIC_EOI);

@@ -6,8 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-namespace gx
-{
+namespace gx {
 using uintptr = uintptr_t;
 using paddrT = uintptr_t;
 using vaddrT = uintptr_t;

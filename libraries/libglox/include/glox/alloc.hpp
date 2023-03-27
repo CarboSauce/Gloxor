@@ -1,6 +1,6 @@
 #pragma once
-#include "glox/types.hpp"
 #include "detail/opnew.hpp"
+#include "glox/types.hpp"
 namespace glox
 {
 template <typename T>
@@ -41,16 +41,16 @@ void dealloc(Allocator a, T* ptr, size_t size = 1)
 } // namespace glox
 
 #ifdef LIBGLOX_DEFAULT_ALLOCATOR_PATH
-#include LIBGLOX_DEFAULT_ALLOCATOR_PATH
+	#include LIBGLOX_DEFAULT_ALLOCATOR_PATH
 #else
-#include <cstdlib>
+	#include <cstdlib>
 namespace glox
 {
 struct default_allocator
 {
 	void* allocate(size_t s)
-	{	
-		return std::malloc(s); 
+	{
+		return std::malloc(s);
 	}
 	void deallocate(void* p, [[maybe_unused]] size_t s)
 	{
@@ -58,9 +58,8 @@ struct default_allocator
 	}
 	void* reallocate(void* p, [[maybe_unused]] size_t old_size, size_t new_size)
 	{
-		return std::realloc(p,new_size);
+		return std::realloc(p, new_size);
 	}
 };
-}
-#endif 
-
+} // namespace glox
+#endif

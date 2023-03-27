@@ -4,10 +4,8 @@
 #include <cstddef>
 
 // TODO: this namespace name is so bad, change it
-namespace x86::vmem
-{
-enum PagingBits
-{
+namespace x86::vmem {
+enum PagingBits {
 	present = 1,
 	writable = 1 << 1,
 	user = 1 << 2,
@@ -22,8 +20,7 @@ enum PagingBits
 	pdptePAT = 1 << 12,
 	noexec = size_t(1) << 63
 };
-enum class PteShift
-{
+enum class PteShift {
 	lvl1 = 12, // 4KB page
 	lvl2 = 21, // 2MB page
 	lvl3 = 30, // 1GB page
@@ -45,8 +42,7 @@ constexpr size_t pte_index(u64 addr, PteShift shiftval)
 	return (addr >> static_cast<int>(shiftval)) & 0x1ff;
 }
 
-enum PageLevel
-{
+enum PageLevel {
 	lvl1 = 1,
 	lvl2,
 	lvl3,
@@ -58,8 +54,7 @@ template <size_t I>
 struct alignas(0x1000) PageTable;
 
 template <size_t I>
-struct PageEntry
-{
+struct PageEntry {
 	constexpr static size_t lvl = I;
 	u64 entry;
 	void set(paddrT addr, PagingBits mask)
@@ -89,8 +84,7 @@ struct PageEntry
  * slowly shift towards using this type for all ptable manipulations
  */
 template <size_t I>
-struct alignas(0x1000) PageTable
-{
+struct alignas(0x1000) PageTable {
 	static constexpr size_t lvl = I;
 	static_assert(lvl > 0 && lvl < 5, "Page table level must be between 1 and 4");
 	static constexpr size_t shift = lvl * 9 + 3;

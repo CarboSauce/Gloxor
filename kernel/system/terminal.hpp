@@ -4,8 +4,7 @@
 #include "gloxor/graphics.hpp"
 #include "gloxor/types.hpp"
 
-namespace gx::term
-{
+namespace gx::term {
 void init_term(color_t* begin, color_t* end, size_t pitch, size_t width, size_t height);
 void write_str(const char* str, size_t size);
 inline void write_str(const char* str) { write_str(str, strlen(str)); }

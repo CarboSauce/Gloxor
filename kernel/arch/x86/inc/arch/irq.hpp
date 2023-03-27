@@ -1,8 +1,7 @@
 #pragma once
 #include <gloxor/types.hpp>
 
-namespace arch
-{
+namespace arch {
 
 using irqT = u64;
 
@@ -10,28 +9,28 @@ inline irqT save_irq()
 {
 	irqT flags;
 	asm volatile("pushf;pop %0"
-					 : "=rm"(flags)
-					 :
-					 : "memory");
+	             : "=rm"(flags)
+	             :
+	             : "memory");
 	return flags;
 }
 
 inline void restore_irq(irqT flags)
 {
 	asm("push %0;popf"
-		 :
-		 : "rm"(flags)
-		 : "memory", "cc");
+	    :
+	    : "rm"(flags)
+	    : "memory", "cc");
 }
 inline void stop_irq()
 {
 	asm volatile("cli" ::
-						  : "memory");
+	                 : "memory");
 }
 
 inline void start_irq()
 {
 	asm volatile("sti" ::
-						  : "memory");
+	                 : "memory");
 }
 } // namespace arch

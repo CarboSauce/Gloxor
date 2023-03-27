@@ -21,13 +21,13 @@ struct array
 	}
 	constexpr explicit operator T*() { return data; }
 	constexpr explicit operator const T*() const { return data; }
-	constexpr auto begin() {return data;}
-	constexpr auto begin() const {return data;}
-	constexpr auto end() {return data + N;}
-	constexpr auto end() const {return data + N;}
-	constexpr auto& back() { return data[N-1];}
-	constexpr auto& back() const { return data[N-1];}
-	constexpr auto& front() const { return data[0];}
-	constexpr auto& front() { return data[0];}
+	constexpr auto begin() { return data; }
+	constexpr auto begin() const { return data; }
+	constexpr auto end() { return data + N; }
+	constexpr auto end() const { return data + N; }
+	constexpr auto& back() { return data[N - 1]; }
+	constexpr auto& back() const { return data[N - 1]; }
+	constexpr auto& front() const { return data[0]; }
+	constexpr auto& front() { return data[0]; }
 };
 } // namespace glox

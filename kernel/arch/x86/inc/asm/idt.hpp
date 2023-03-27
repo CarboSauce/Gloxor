@@ -5,8 +5,7 @@
 #define IDT_CALLGATE 0b10001100
 #define IDT_TRAPGATE 0b10001111
 
-struct InterruptFrame
-{
+struct InterruptFrame {
 	size_t ip;
 	size_t cs;
 	size_t flags;
@@ -14,11 +13,10 @@ struct InterruptFrame
 	size_t ss;
 };
 
-struct [[gnu::packed]] Idt
-{
+struct [[gnu::packed]] Idt {
 	uint16_t offset_1; // offset bits 0..15
 	uint16_t selector; // a code segment selector in GDT or LDT
-	uint8_t ist;		 // bits 0..2 holds Interrupt Stack Table offset, rest of bits zero.
+	uint8_t ist;       // bits 0..2 holds Interrupt Stack Table offset, rest of bits zero.
 	uint8_t type_attr; // type and attributes
 	uint16_t offset_2; // offset bits 16..31
 #ifdef __amd64
@@ -41,8 +39,7 @@ struct [[gnu::packed]] Idt
 	}
 };
 
-struct [[gnu::packed]] IdtPointer
-{
+struct [[gnu::packed]] IdtPointer {
 	uint16_t size;
 	Idt* base;
 };
@@ -50,14 +47,14 @@ struct [[gnu::packed]] IdtPointer
 inline void load_idt(const IdtPointer& ptr)
 {
 	asm("lidt %0"
-		 :
-		 : "m"(ptr));
+	    :
+	    : "m"(ptr));
 }
 
 inline IdtPointer get_idt()
 {
 	IdtPointer ptr;
 	asm("sidt %0"
-		 : "=m"(ptr));
+	    : "=m"(ptr));
 	return ptr;
 }

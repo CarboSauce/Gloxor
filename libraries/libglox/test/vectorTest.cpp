@@ -1,19 +1,29 @@
 #include "glox/vector.hpp"
-#include <cstdio>
 #include <cassert>
+#include <cstdio>
 #include <vector>
 struct St
 {
-	St(){printf("St(%p)\n",this);}
-	~St(){printf("~St(%p)\n",this);}
-	St(const St&){printf("St&(%p)\n",this);}
-	St(St&&){printf("St&&(%p)\n",this);}
-	St& operator=(const St&){printf("=St&(%p)\n",this);return *this;}
-	St& operator=(St&&) {printf("=St&&(%p)\n",this);return *this;}
+	St() { printf("St(%p)\n", this); }
+	~St() { printf("~St(%p)\n", this); }
+	St(const St&) { printf("St&(%p)\n", this); }
+	St(St&&) { printf("St&&(%p)\n", this); }
+	St& operator=(const St&)
+	{
+		printf("=St&(%p)\n", this);
+		return *this;
+	}
+	St& operator=(St&&)
+	{
+		printf("=St&&(%p)\n", this);
+		return *this;
+	}
 };
-static_assert(sizeof(glox::vector<St>) == sizeof(St*) + sizeof(size_t)*2);
-auto test(glox::result<std::vector<int>>& a){
-	if (a.has_value()) return RVALUE(a).unwrap();
+static_assert(sizeof(glox::vector<St>) == sizeof(St*) + sizeof(size_t) * 2);
+auto test(glox::result<std::vector<int>>& a)
+{
+	if (a.has_value())
+		return RVALUE(a).unwrap();
 	throw 5;
 }
 int main()

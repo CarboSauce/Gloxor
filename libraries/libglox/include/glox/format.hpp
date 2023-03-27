@@ -5,7 +5,7 @@
 
 namespace glox
 {
-namespace detail 
+namespace detail
 {
 
 	inline auto format(char* buffer, const void* addr)
@@ -56,5 +56,5 @@ namespace detail
 		return (size_t)1;
 	}
 
-} // namespace unsafe
+} // namespace detail
 } // namespace glox

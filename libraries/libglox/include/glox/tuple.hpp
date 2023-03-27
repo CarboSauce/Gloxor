@@ -1,7 +1,7 @@
 #ifndef GLOX_TUPLE
 #define GLOX_TUPLE
-#include "glox/metaprog.hpp"
 #include "glox/macros.hpp"
+#include "glox/metaprog.hpp"
 #include <compare>
 #include <cstddef>
 #include <type_traits>
@@ -12,8 +12,10 @@
 
 namespace glox
 {
-template<typename... T>
-struct type_pack{};
+template <typename... T>
+struct type_pack
+{
+};
 template <std::size_t I, typename T>
 struct tuple_leaf
 {
@@ -41,38 +43,38 @@ struct tuple<glox::index_sequence<Idx...>, T...> : tuple_leaf<Idx, T>...
 template <typename... T>
 tuple(T...) -> tuple<std::remove_reference_t<T>...>;
 
-template<std::size_t I,typename Tup>
+template <std::size_t I, typename Tup>
 [[nodiscard]] constexpr decltype(auto) get(Tup&& tpl)
 {
 	return FORWARD(tpl).template get<I>();
 }
 namespace detail
 {
-	template<typename Cb, typename Tup, std::size_t... I>
+	template <typename Cb, typename Tup, std::size_t... I>
 	constexpr decltype(auto) apply(Cb&& cb, Tup&& tup, glox::index_sequence<I...>)
 	{
 		return FORWARD(cb)(FORWARD(tup).template get<I>()...);
 	}
 	template <typename Cb, typename Tup, std::size_t... I>
-	constexpr void for_each(Tup&& tup, Cb&& cb,glox::index_sequence<I...>)
+	constexpr void for_each(Tup&& tup, Cb&& cb, glox::index_sequence<I...>)
 	{
-		((void)cb(FORWARD(tup).template get<I>()),...);
+		((void)cb(FORWARD(tup).template get<I>()), ...);
 	}
-}
-template <typename Cb,typename Tup>
+} // namespace detail
+template <typename Cb, typename Tup>
 constexpr void for_each(Tup&& tup, Cb&& cb)
 {
-	detail::for_each(FORWARD(tup),FORWARD(cb),
-			glox::make_index_sequence<std::remove_reference_t<Tup>::size>{});
+	detail::for_each(FORWARD(tup), FORWARD(cb),
+						  glox::make_index_sequence<std::remove_reference_t<Tup>::size>{});
 }
-template<typename Cb, typename Tup>
+template <typename Cb, typename Tup>
 constexpr decltype(auto) apply(Cb&& cb, Tup&& tup)
 {
-	return detail::apply(FORWARD(cb), FORWARD(tup), 
-			glox::make_index_sequence<std::remove_reference_t<Tup>::size>{});
+	return detail::apply(FORWARD(cb), FORWARD(tup),
+								glox::make_index_sequence<std::remove_reference_t<Tup>::size>{});
 }
 
-template<typename... T>
+template <typename... T>
 [[nodiscard]] constexpr glox::tuple<T...> make_tuple(T&&... args)
 {
 	return {FORWARD(args)...};
@@ -80,16 +82,16 @@ template<typename... T>
 }; // namespace glox
 namespace std
 {
-template<typename... T>
-struct tuple_size<glox::tuple<T...>> 
-	: std::integral_constant<std::size_t, sizeof...(T)> {};
-template<std::size_t I, typename... T>
-struct tuple_element<I, glox::tuple<T...>>
-{ 
-	using type = decltype( 
-		glox::tuple<T...>::type_identity(
-			std::integral_constant<std::size_t,I>{}
-			));
+template <typename... T>
+struct tuple_size<glox::tuple<T...>>
+	 : std::integral_constant<std::size_t, sizeof...(T)>
+{
 };
-}
+template <std::size_t I, typename... T>
+struct tuple_element<I, glox::tuple<T...>>
+{
+	using type = decltype(glox::tuple<T...>::type_identity(
+		 std::integral_constant<std::size_t, I>{}));
+};
+} // namespace std
 #endif

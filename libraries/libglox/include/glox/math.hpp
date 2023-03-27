@@ -1,8 +1,8 @@
 #pragma once
 #include "types.hpp"
 
-#define ALLIGNUP(val, to) ALIGN(val+to,to)
-#define ALIGN(val, to) ((val) & (~(to-1)))
+#define ALLIGNUP(val, to) ALIGN(val + to, to)
+#define ALIGN(val, to) ((val) & (~(to - 1)))
 namespace glox
 {
 /**
@@ -39,4 +39,4 @@ constexpr uint64_t next_pow2(uint64_t x)
 		return 1;
 	return 1 << (64 - __builtin_clzll(x - 1));
 }
-} // namespace gx
+} // namespace glox

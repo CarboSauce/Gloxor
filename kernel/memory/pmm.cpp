@@ -8,10 +8,9 @@
 using namespace gx;
 
 /*
-	@TODO: size could perhaps be replaced pointer to end of range
+    @TODO: size could perhaps be replaced pointer to end of range
 */
-struct PmmChunk
-{
+struct PmmChunk {
 	size_t size;
 	friend auto operator<=>(const PmmChunk& l, const PmmChunk& r)
 	{
@@ -24,8 +23,7 @@ using pmmList = glox::list<PmmChunk>;
 static glox::list<PmmChunk> pmmCtx;
 static u64 memorySize;
 
-namespace gx
-{
+namespace gx {
 
 void pmm_add_chunk(void* base, size_t length)
 {
@@ -37,13 +35,11 @@ void pmm_add_chunk(void* base, size_t length)
 	chunk->next = nullptr;
 	chunk->size = length;
 	memorySize += length;
-	if (pmmStart == nullptr)
-	{
+	if (pmmStart == nullptr) {
 		pmmStart = chunk;
 		pmmStart->prev = nullptr;
 		pmmEnd = chunk;
-	}
-	else if (pmmEnd < chunk)
+	} else if (pmmEnd < chunk)
 		append_chunk(pmmEnd, chunk, length);
 	else if (pmmStart > chunk)
 		prepend_chunk(pmmStart, chunk, length);

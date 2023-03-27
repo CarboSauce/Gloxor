@@ -8,7 +8,7 @@ template <typename T>
 struct tuple_size;
 template <size_t S, typename T>
 struct tuple_element;
-}
+} // namespace std
 namespace glox
 {
 template <typename T, T... I>

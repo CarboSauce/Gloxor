@@ -1,9 +1,9 @@
 #pragma once
 #include "assert.hpp"
+#include "detail/moveutils.hpp"
+#include "metaprog.hpp"
 #include "type_traits"
 #include "types.hpp"
-#include "metaprog.hpp"
-#include "detail/moveutils.hpp"
 
 namespace glox
 {

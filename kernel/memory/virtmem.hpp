@@ -2,14 +2,12 @@
 #include "arch/paging.hpp"
 #include "gloxor/types.hpp"
 
-namespace gx
-{
-class alignas(arch::vmem::pageSize) VSpace
-{
+namespace gx {
+class alignas(arch::vmem::pageSize) VSpace {
 	// arch defined handle
 	arch::vmem::vmemCtxT ptable;
 
- public:
+public:
 	using CacheMode = arch::vmem::PageCaching;
 	using Privileges = arch::vmem::PagePrivileges;
 	bool map(vaddrT from, paddrT to, Privileges, CacheMode);

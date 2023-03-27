@@ -9,7 +9,7 @@
 #include "system/logging.hpp"
 #include "system/terminal.hpp"
 /*
-	on x86, paging looks like a tree, so we need to traverse the tree of height 5
+    on x86, paging looks like a tree, so we need to traverse the tree of height 5
 */
 using namespace arch::vmem;
 using namespace arch;
@@ -21,14 +21,13 @@ glox::pair<const PageTable<I - 1>*, bool> translate_single_entry(const PageTable
 {
 	auto entry = ctx.entry(from);
 	if (!(entry.entry & present))
-		return {nullptr, true};
+		return { nullptr, true };
 	else if (entry.entry & granul)
-		return {(const PageTable<I - 1>*)entry.paddr(), true};
-	return {entry.vaddr(), false};
+		return { (const PageTable<I - 1>*)entry.paddr(), true };
+	return { entry.vaddr(), false };
 }
 
-namespace arch::vmem
-{
+namespace arch::vmem {
 inline bool alloc_page_if_needed(u64& entry, u64 mask)
 {
 	if (entry & present)

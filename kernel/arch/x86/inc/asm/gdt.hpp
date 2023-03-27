@@ -2,8 +2,7 @@
 
 #include <cstdint>
 
-struct [[gnu::packed]] Gdt
-{
+struct [[gnu::packed]] Gdt {
 	uint16_t limit;
 	uint16_t base0_15;
 	uint8_t base16_23;
@@ -12,8 +11,7 @@ struct [[gnu::packed]] Gdt
 	uint8_t base24_31;
 };
 
-struct [[gnu::packed]] GdtPointer
-{
+struct [[gnu::packed]] GdtPointer {
 	uint16_t size;
 	void* base;
 };
@@ -21,12 +19,12 @@ struct [[gnu::packed]] GdtPointer
 inline void load_gdt(GdtPointer& ptr)
 {
 	asm("lgdt %0"
-		 :
-		 : "m"(ptr));
+	    :
+	    : "m"(ptr));
 }
 
 inline void get_gdt(GdtPointer& ptr)
 {
 	asm("sgdt %0"
-		 : "=m"(ptr));
+	    : "=m"(ptr));
 }

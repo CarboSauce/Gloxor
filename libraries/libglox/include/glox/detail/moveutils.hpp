@@ -18,4 +18,3 @@ T exchange(T& l, U&& r)
 }
 } // namespace glox
 #endif
-

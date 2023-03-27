@@ -3,8 +3,7 @@
 #include "system/logging.hpp"
 extern u8 kernelFileBegin[];
 extern u8 kernelFileEnd[];
-namespace arch
-{
+namespace arch {
 constexpr u64 kernelMemBase = 0xffffffff80000000;
 constexpr u64 physicalMemBase = 0xffff800000000000;
 constexpr u64 virtMemBase = 0xffffe00000000000; // 96TB from the physbase

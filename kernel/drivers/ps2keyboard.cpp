@@ -8,15 +8,11 @@
 [[gnu::interrupt]] static void kbd_handler(InterruptFrame* frame)
 {
 	auto val = inb(0x60);
-	if (val == 185)
-	{
+	if (val == 185) {
 		gx::term::clear_screen(0); // i think this basically can crash kernel, too complex in irq
-	}
-	else if (val == 158)
-	{
+	} else if (val == 158) {
 		gloxTraceLog("Borgir\n");
-	}
-	else if (val == 22)
+	} else if (val == 22)
 		gloxTraceLog("Bor");
 	else if (val == 150)
 		gloxTraceLog("gar");

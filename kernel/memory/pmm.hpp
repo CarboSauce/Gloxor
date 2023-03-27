@@ -2,13 +2,12 @@
 #include "gloxor/types.hpp"
 #include <compare>
 #if defined(__GNUC__) && !defined(__clang__)
-	#define mallocAttribute(...) malloc(__VA_ARGS__)
+#define mallocAttribute(...) malloc(__VA_ARGS__)
 #else
-	#define mallocAttribute(...)
+#define mallocAttribute(...)
 #endif
 
-namespace gx
-{
+namespace gx {
 /**
  * @brief use this incase you need access to internals of pmm,
  * its temporary workaround of not having proper initilalization functions
@@ -31,13 +30,11 @@ void page_dealloc(void* ptr, sizeT pageCount = 1);
  * @brief Allocate pageCount amount of pages
  * @return pointer to allocated page, nullptr on out of memory
  */
-[[using gnu: malloc, mallocAttribute(gx::page_dealloc, 1), alloc_size(1), aligned(gx::pmmChunkSize)]]
-void* page_alloc(sizeT pageCount = 1);
+[[using gnu: malloc, mallocAttribute(gx::page_dealloc, 1), alloc_size(1), aligned(gx::pmmChunkSize)]] void* page_alloc(sizeT pageCount = 1);
 /**
  * @brief Allocate single page and zero it
  * @return pointer to allocated page, nullptr on out of memory
  */
-[[using gnu: malloc, mallocAttribute(gx::page_dealloc, 1), alloc_size(1), aligned(gx::pmmChunkSize)]]
-void* page_alloc_z(sizeT pageCount = 1);
+[[using gnu: malloc, mallocAttribute(gx::page_dealloc, 1), alloc_size(1), aligned(gx::pmmChunkSize)]] void* page_alloc_z(sizeT pageCount = 1);
 
 } // namespace gx
