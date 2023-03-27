@@ -64,21 +64,25 @@ template<typename T,typename E>
 struct pod_union<T,E,true>
 {
 	static constexpr bool is_pod = true;
-	constexpr explicit pod_union(E&& _err) : _err{RVALUE(_err)}{}
-	constexpr explicit pod_union(T&& _val) : _val{RVALUE(_val)},_err{E{}}{}
-	constexpr explicit pod_union(const T& _val) : _val{_val},_err{E{}}{}
+	GLOX_ALWAYS_INLINE constexpr explicit pod_union(E&& _err) : _err{RVALUE(_err)}{}
+	GLOX_ALWAYS_INLINE constexpr explicit pod_union(T&& _val) : _val{RVALUE(_val)},_err{E{}}{}
+	GLOX_ALWAYS_INLINE constexpr explicit pod_union(const T& _val) : _val{_val},_err{E{}}{}
 	union 
 	{
 		T _val;
 	};
 	E _err;
 };
-enum : bool
+enum option_t : bool
 {
 	some = false,
 	none = true
 };
-using option_t = bool;
+GLOX_ALWAYS_INLINE 
+inline constexpr option_t operator!(option_t a) 
+{ 
+	return static_cast<option_t>(!static_cast<bool>(a));
+}
 
 template <typename T, typename E = option_t>
 class [[nodiscard]] result : private pod_union<T,E,std::is_trivially_copyable_v<T>> 
@@ -89,12 +93,18 @@ class [[nodiscard]] result : private pod_union<T,E,std::is_trivially_copyable_v<
 	using storage_t = pod_union<T,E,std::is_trivially_copyable_v<T>>;
 	using storage_t::_val;
 	using storage_t::_err;
+	constexpr static bool is_conv = 
+		std::is_convertible<T,E>::value;
+		//!std::is_constructible<T,E>::value;
 	public:
 	//static constexpr bool is_pod = storage_t::is_pod;
 	//friend conditional_trivial<T, E,std::is_trivially_copyable_v<T>>;
-	constexpr explicit result(T&& val) : storage_t{RVALUE(val)}{}
-	constexpr explicit result(const T& val) : storage_t{val}{}
-	constexpr explicit result(E err) : storage_t{RVALUE(err)}{} 
+	GLOX_ALWAYS_INLINE constexpr explicit(is_conv)
+		result(T&& val) : storage_t{RVALUE(val)}{}
+	GLOX_ALWAYS_INLINE constexpr explicit(is_conv) 
+		result(const T& val) : storage_t{val}{}
+	GLOX_ALWAYS_INLINE constexpr explicit(is_conv)
+		result(E err) : storage_t{RVALUE(err)}{} 
 	constexpr ~result() = default;
 	constexpr result(const result&) = default;
 	constexpr result(result&&) = default;
@@ -163,6 +173,8 @@ class [[nodiscard]] result : private pod_union<T,E,std::is_trivially_copyable_v<
 		return def;
 	}
 };
+template<typename T>
+using optional = result<T,option_t>;
 //template<typename T>
 //struct option : result<T,option_t>
 //{

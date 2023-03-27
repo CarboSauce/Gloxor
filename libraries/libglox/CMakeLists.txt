@@ -6,6 +6,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
 option(USE_LTO "Should we use Link time optimizations" ON)
 option(COMPILE_TESTS "Enable tests?" ON)
 option(SET_INSTALL_TARGETS "Should we attach installation targets?" OFF)
+option(LIBGLOX_SANITIZE "Use sanitizers" OFF)
 set(DEFAULT_ALLOCATOR_PATH "" CACHE STRING 
 	"Header file path with default allocator that will be included in glox/alloc.hpp
 and used as default allocator for containers that require them")

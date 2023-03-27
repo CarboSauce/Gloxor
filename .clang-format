@@ -1,32 +1,12 @@
-BasedOnStyle: LLVM
-BreakBeforeBraces: Allman
-UseTab: Always
-IndentWidth:     3
-TabWidth:        3
-ColumnLimit: 0
-BinPackArguments: true
-BinPackParameters: false
-AlignAfterOpenBracket: Align
+---
+BasedOnStyle: WebKit
+AlignAfterOpenBracket: AlwaysBreak
+AlignArrayOfStructures: Right
 AlignOperands: AlignAfterOperator
-BreakBeforeBinaryOperators: NonAssignment
-AlwaysBreakAfterReturnType: None
-AlwaysBreakAfterDefinitionReturnType: None
-AlignEscapedNewlines: Left
-AllowShortBlocksOnASingleLine: Always
-AllowShortIfStatementsOnASingleLine: Never
-BraceWrapping: 
-    AfterCaseLabel: true
-    AfterClass: true
-    AfterEnum: true
-    AfterFunction: true
-    AfterNamespace: true
-    AfterStruct: true
-FixNamespaceComments: true
-IndentCaseLabels: true
-IndentExternBlock: Indent
-IndentPPDirectives: BeforeHash
-NamespaceIndentation: Inner
-PointerAlignment: Left
-SpaceBeforeAssignmentOperators: true
-AllowAllArgumentsOnNextLine: false
 AlignTrailingComments: true
+AllowShortBlocksOnASingleLine: Always
+AllowShortEnumsOnASingleLine: false
+BinPackArguments: false
+BinPackParameters: false
+TabWidth: 4
+UseTab: AlignWithSpaces

@@ -106,21 +106,21 @@ class intrusive_list
 	{
 		using iter = std::conditional_t<IsConst,const list_node*,list_node*>;
 		iter it;
-		iter_base(node_t* p) : it(p){}
 		public:
+		iter_base(iter p) : it(p){}
 		friend intrusive_list;
 		using pointer = std::conditional_t<IsConst,const T*,T*>;
 		using reference = std::conditional_t<IsConst,const T&,T&>;
 		using iterator_category= std::bidirectional_iterator_tag;
 
 		iter_base() = default;
-		iter_base(pointer p) : it(&p->list_node) {}
+		iter_base(pointer p) : it(&(p->*NodePtr)) {}
 		iter_base(const iter_base&) = default;
 		iter_base(iter_base&&) = default;
 		iter_base& operator=(const iter_base&) = default;
 		iter_base& operator=(iter_base&&) = default;
 		operator pointer() const 
-		{ return intrusive_list<T>::ptr_from_node(it);}
+		{ return intrusive_list::ptr_from_node(it);}
 		operator iter_base<true>() const { return iter_base<true>(it);}
 
 		iter_base next() const { return it->next;}
@@ -149,6 +149,7 @@ class intrusive_list
 	//struct const_iterator : public iter_base<true>{using iter_base<true>::iter_base;};
 	using iterator = iter_base<false>;
 	using const_iterator = iter_base<true>;
+	friend iterator;
 
 	intrusive_list() : sentinel{},list_size(0){}
 	intrusive_list(const intrusive_list&) = delete;
@@ -157,7 +158,7 @@ class intrusive_list
 	{
 		sentinel = other.sentinel;
 		list_size = other.list_size;
-		other.sentinel = {};
+		other.sentinel = {&sentinel,&sentinel};
 		other.list_size = 0;
 	}
 	intrusive_list& operator=(intrusive_list&& other)
@@ -165,13 +166,13 @@ class intrusive_list
 		gloxAssert(other.header.size);
 		sentinel = other.sentinel;
 		list_size = other.list_size;
-		other.sentinel = {};
+		other.sentinel = {&sentinel,&sentinel};
 		other.list_size = 0;
 		return *this;
 	}
 
 	auto size() const { return list_size; }
-	iterator begin() { return {sentinel.next}; }
+	iterator begin() { return sentinel.next; }
 	// non conformant cuz end()-- is ub
 	iterator end() { return {(node_t*)&sentinel}; }
 	T& back() { return *ptr_from_node(sentinel.prev);}
@@ -185,15 +186,15 @@ class intrusive_list
 	// todo: replace null checks with calls to insert that would check null
 	void push_back(T* node)
 	{
-		impl_insert(&sentinel,&node->list_node);
+		impl_insert(&sentinel,&(node->*NodePtr));
 	};
 	void push_front(T* node)
 	{
-		impl_insert(sentinel.next,&node->list_node);
+		impl_insert(sentinel.next,&(node->*NodePtr));
 	}
 	iterator insert(iterator iter, T* node)
 	{
-		impl_insert(iter.it,&node->list_node);
+		impl_insert(iter.it,&(node->*NodePtr));
 		return node;
 	}
 	iterator erase(iterator iter)
@@ -201,14 +202,27 @@ class intrusive_list
 		iter.it->remove();
 		return iter;
 	}
+	void clear()
+	{
+		for(auto tmp = sentinel.prev;tmp!=&sentinel;)
+		{
+			auto saved = tmp->prev;
+			tmp->remove();
+			tmp = saved;
+		} 
+		sentinel = {&sentinel,&sentinel};
+		list_size = 0;
+	}
 	template<typename Cb>
 	void clear(Cb fn)
 	{
 		for(auto tmp = sentinel.prev;tmp!=&sentinel;tmp=tmp->prev)
 		{
-			fn(ptr_from_node(tmp));
+			auto saved = tmp->prev;
+			fn(ptr_from_node(tmp->remove()));
+			tmp = saved;
 		} 
-		sentinel = {};
+		sentinel = {&sentinel,&sentinel};
 		list_size = 0;
 	}
 	private:

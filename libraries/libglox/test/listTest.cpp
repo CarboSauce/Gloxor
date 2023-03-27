@@ -6,6 +6,7 @@ struct test_struct
 {
 	int x;
 	glox::list_node list_node;
+	glox::list_node list2_node;
 };
 struct test2_struct
 {
@@ -13,34 +14,48 @@ struct test2_struct
 	glox::fwd_list_node<test2_struct> fwd_list_node;
 };
 
-using testlist = glox::intrusive_list<test_struct>;
-using test2list = glox::intrusive_fwd_list<test2_struct>;
-auto asmtest(testlist& a)
-{
-	return a.back().x;
-}
+using test1list = glox::intrusive_list<test_struct>;
+using test2list = glox::intrusive_list<test_struct,&test_struct::list2_node>;
+using testfwdlist= glox::intrusive_fwd_list<test2_struct>;
 
 int main()
 {
-	testlist l{};
-	l.push_back(new test_struct{2});
-	l.insert(begin(l),new test_struct{1});
-	l.insert(end(l),new test_struct{3});
-	int i = 1;
-	auto it2 = l.begin();
-	testlist::const_iterator it3 = it2;
-	delete static_cast<testlist::iterator::pointer>(l.erase(l.begin()));
-	l.push_front(new test_struct{1});
-	for (const auto& it : l)
+	test1list l1{};
+	test2list l2{};
+	test_struct s[6]{{1},{2},{3},{4},{5},{6}};
+	puts("EMPTY LIST");
+	for (const auto& it : l1)
 	{
-		//assert(it.x == i++);
-		if (i == 10) abort();
 		printf("%d\n",it.x);
 	}
-
-	l.clear([](test_struct* p)
+	puts("END EMPTY LIST");
+	for (int i = 0; i != 6; ++i)
 	{
-		delete p;
-	});
+		l1.push_back(s+i);
+	}
+	for (int i = 0; i != 6; i+=2)
+		l2.push_back(s+i);
+	puts("L1");
+	for (const auto& it : l1)
+	{
+		printf("%d\n",it.x);
+	}
+	puts("L2");
+	for (const auto& it : l2)
+	{
+		printf("%d\n",it.x);
+	}
+	l2.clear();
+	puts("L1 after L2 clear");
+	for (const auto& it : l1)
+	{
+		printf("%d\n",it.x);
+	}
+	l1.clear();
+	puts("L1 should be empty");
+	for (auto tmp = l1.begin(); tmp != l1.end(); ++tmp)
+	{
+		printf("%d\n",tmp->x);
+	}
 	puts("Success");
 }

@@ -2,36 +2,23 @@
 #include <concepts>
 #include <glox/string.hpp>
 #include <glox/metaprog.hpp>
+#include "detail/moveutils.hpp"
 
 namespace glox
 {
-template<typename T>
-void swap(T& l, T& r)
-{
-	auto tmp = RVALUE(l);
-	l = RVALUE(r);
-	r = RVALUE(tmp);
-}
-template<typename T, typename U = T>
-T exchange(T& l, U&& r)
-{
-	auto tmp = RVALUE(l);
-	l = r;
-	return tmp;
-}
 
-template <typename iter,typename T>
-constexpr iter find(iter a, iter b,const T& val)
+template <typename iter, typename T>
+constexpr iter find(iter a, iter b, const T& val)
 {
-	for (;a != b; ++a)
+	for (; a != b; ++a)
 		if (*a == val)
 			return a;
 	return b;
 }
-template <typename iter,typename Cb>
-constexpr iter find_if(iter a, iter b,Cb fn)
+template <typename iter, typename Cb>
+constexpr iter find_if(iter a, iter b, Cb fn)
 {
-	for (;a != b; ++a)
+	for (; a != b; ++a)
 		if (fn(*a))
 			return a;
 	return b;
@@ -41,7 +28,7 @@ constexpr void reverse(iter a, iter b)
 {
 	while ((a != b) && (a != --b))
 	{
-		std::swap(*a++, *b);
+		glox::swap(*a++, *b);
 	}
 }
 

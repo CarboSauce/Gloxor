@@ -1,6 +1,8 @@
 function(glox_add_test param)
     add_executable(${param} ${param}Test.cpp)
-    target_link_libraries(${param} PRIVATE libglox)
+	target_compile_options(${param} PRIVATE $<$<BOOL:${LIBGLOX_SANITIZE}>:-fsanitize=address>)
+    target_link_libraries(${param} PRIVATE libglox
+		$<$<BOOL:${LIBGLOX_SANITIZE}>:-fsanitize=address>)
 endfunction()
 set(testList hash logger list vector tuple misc)
 foreach(test ${testList})

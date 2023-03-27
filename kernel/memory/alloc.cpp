@@ -94,7 +94,7 @@ struct MetadataCtx
 constexpr glox::array<size_t, 8> tinyBuckets{16, 32, 64, 128, 256, 512, 1024, 2048};
 struct HeapCtx
 {
-	static constexpr sizeT bucketCount = tinyBuckets.size();
+	static constexpr sizeT bucketCount = tinyBuckets.size;
 	sizeT totalPages;
 	//	freelist* bigAllocList;
 	glox::array<MetadataCtx, bucketCount> buckets;
@@ -181,7 +181,7 @@ inline bool free_mem(void* ptr, sizeT size)
 	{
 		return false;
 	}
-	if (size > tinyBuckets[tinyBuckets.size() - 1])
+	if (size > tinyBuckets[tinyBuckets.size - 1])
 	{
 		return gx::PmmAllocator::dealloc(ptr, size), true;
 	}
@@ -204,7 +204,7 @@ inline void* alloc_mem(sizeT size)
 {
 	if (size == 0)
 		return nullptr;
-	if (size > tinyBuckets[tinyBuckets.size() - 1])
+	if (size > tinyBuckets[tinyBuckets.size - 1])
 	{
 		return big_alloc(size);
 	}

@@ -50,6 +50,11 @@ glox::result<int> test_res(int a,int b)
 	return glox::result<int>::from_err(glox::none);
 
 }
+enum class test_err : int;
+
+glox::result<int,test_err> test_codegen1(){
+	return 5;
+}
 auto test_sus(glox::result<uint64_t> a)
 {
 	if (a.has_value()) return a.val();

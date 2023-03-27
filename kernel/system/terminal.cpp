@@ -47,9 +47,7 @@ inline void write_char(char ch, glox::vec2<u32> at, glox::vec2<color_t> fgbg)
 
  } */
 
-	/*
-	  Magic code stolen from ted
-*/
+	/*Magic code stolen from ted uses no division*/
 
 	for (u32 i = 0, i1 = 0, i2 = 0; i2 < fontHeight; ++i, ++i2, (i == scaleY) ? (i = 0, i1++) : i)
 	{
@@ -113,13 +111,13 @@ inline void parse_char(char c)
 
 void init_term(color_t* begin, color_t* end, size_t pitch, size_t width, size_t height)
 {
-	con =
-		 {
-			  .fbBeg = begin,
-			  .fbEnd = end,
-			  .width = width,
-			  .height = height,
-			  .pitch = pitch};
+	con = {
+	    .fbBeg = begin,
+	    .fbEnd = end,
+	    .width = width,
+	    .height = height,
+	    .pitch = pitch
+	};
 }
 
 void clear_screen(color_t color)

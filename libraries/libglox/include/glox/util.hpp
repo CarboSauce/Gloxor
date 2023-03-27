@@ -3,6 +3,7 @@
 #include "type_traits"
 #include "types.hpp"
 #include "metaprog.hpp"
+#include "detail/moveutils.hpp"
 
 namespace glox
 {
