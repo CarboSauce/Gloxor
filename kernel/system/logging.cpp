@@ -4,8 +4,8 @@
 #include "system/terminal.hpp"
 void glox::exec_assert(const char* message, const char* file, const char* line)
 {
-	gx::outStream, "Assertion failed: \n (", message, ")\n ",
-		file, ":", line, '\n';
+	gx::outStream, "Assertion failed: \n (", message, ")\n ", file, ":", line,
+		'\n';
 	gx::kernel_panic();
 }
 namespace gx {

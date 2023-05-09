@@ -48,15 +48,15 @@ namespace glox
 {
 struct default_allocator
 {
-	void* allocate(size_t s)
+	void* alloc(size_t s)
 	{
 		return std::malloc(s);
 	}
-	void deallocate(void* p, [[maybe_unused]] size_t s)
+	void dealloc(void* p, [[maybe_unused]] size_t s)
 	{
 		return std::free(p);
 	}
-	void* reallocate(void* p, [[maybe_unused]] size_t old_size, size_t new_size)
+	void* realloc(void* p, [[maybe_unused]] size_t old_size, size_t new_size)
 	{
 		return std::realloc(p, new_size);
 	}

@@ -8,7 +8,6 @@ set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
 set(CMAKE_SYSTEM_NAME "Generic")
 ###
 project(Gloxor VERSION 1.0 LANGUAGES C CXX ASM_NASM)
-set(CMAKE_VERBOSE_MAKEFILE TRUE)
 
 include(CMakeOptions.cmake)
 include(CheckCXXSourceCompiles)

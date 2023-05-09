@@ -38,12 +38,12 @@ struct [[gnu::packed]] Madt : SdtHeader {
 		u8 len;
 	} entries[];
 	enum class Type : u8 {
-		lapic = 0,
-		ioapic = 1,
-		iso = 2,
-		nmi = 4,
+		lapic         = 0,
+		ioapic        = 1,
+		iso           = 2,
+		nmi           = 4,
 		lapicOverride = 5,
-		x2lapic = 9
+		x2lapic       = 9
 	};
 	struct [[gnu::packed]] Lapic : Entry {
 		u8 processorId;

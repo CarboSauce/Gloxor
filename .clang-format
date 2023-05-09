@@ -1,12 +1,15 @@
 ---
 BasedOnStyle: WebKit
-AlignAfterOpenBracket: AlwaysBreak
-AlignArrayOfStructures: Right
+AlignAfterOpenBracket: DontAlign
+AlignConsecutiveAssignments:
+  Enabled: true
+AlignEscapedNewlines: Left
 AlignOperands: AlignAfterOperator
-AlignTrailingComments: true
 AllowShortBlocksOnASingleLine: Always
 AllowShortEnumsOnASingleLine: false
 BinPackArguments: false
 BinPackParameters: false
+ColumnLimit: 80
 TabWidth: 4
-UseTab: AlignWithSpaces
+UseTab: ForContinuationAndIndentation
+AlignArrayOfStructures: None

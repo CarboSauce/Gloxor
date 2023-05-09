@@ -7,8 +7,5 @@ void IrqLock::lock()
 	arch::stop_irq();
 }
 
-void IrqLock::unlock()
-{
-	arch::restore_irq(irqCtx);
-}
+void IrqLock::unlock() { arch::restore_irq(irqCtx); }
 } // namespace gx

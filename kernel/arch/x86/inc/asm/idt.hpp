@@ -16,7 +16,8 @@ struct InterruptFrame {
 struct [[gnu::packed]] Idt {
 	uint16_t offset_1; // offset bits 0..15
 	uint16_t selector; // a code segment selector in GDT or LDT
-	uint8_t ist;       // bits 0..2 holds Interrupt Stack Table offset, rest of bits zero.
+	uint8_t
+		ist; // bits 0..2 holds Interrupt Stack Table offset, rest of bits zero.
 	uint8_t type_attr; // type and attributes
 	uint16_t offset_2; // offset bits 16..31
 #ifdef __amd64
@@ -30,11 +31,12 @@ struct [[gnu::packed]] Idt {
 		offset_2 = (offset & 0xFFFF0000) >> 16;
 		offset_3 = (offset & 0xFFFFFFFF00000000) >> 32;
 	}
-	constexpr void register_handler(uint64_t offset, uint16_t selector, uint8_t ist, uint8_t type_attr)
+	constexpr void register_handler(
+		uint64_t offset, uint16_t selector, uint8_t ist, uint8_t type_attr)
 	{
-		this->selector = selector;
+		this->selector  = selector;
 		this->type_attr = type_attr;
-		this->ist = ist;
+		this->ist       = ist;
 		set_offset(offset);
 	}
 };
@@ -44,17 +46,11 @@ struct [[gnu::packed]] IdtPointer {
 	Idt* base;
 };
 
-inline void load_idt(const IdtPointer& ptr)
-{
-	asm("lidt %0"
-	    :
-	    : "m"(ptr));
-}
+inline void load_idt(const IdtPointer& ptr) { asm("lidt %0" : : "m"(ptr)); }
 
 inline IdtPointer get_idt()
 {
 	IdtPointer ptr;
-	asm("sidt %0"
-	    : "=m"(ptr));
+	asm("sidt %0" : "=m"(ptr));
 	return ptr;
 }

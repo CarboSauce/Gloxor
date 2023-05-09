@@ -16,15 +16,6 @@ struct [[gnu::packed]] GdtPointer {
 	void* base;
 };
 
-inline void load_gdt(GdtPointer& ptr)
-{
-	asm("lgdt %0"
-	    :
-	    : "m"(ptr));
-}
+inline void load_gdt(GdtPointer& ptr) { asm("lgdt %0" : : "m"(ptr)); }
 
-inline void get_gdt(GdtPointer& ptr)
-{
-	asm("sgdt %0"
-	    : "=m"(ptr));
-}
+inline void get_gdt(GdtPointer& ptr) { asm("sgdt %0" : "=m"(ptr)); }

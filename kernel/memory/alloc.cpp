@@ -12,39 +12,29 @@
 #include <gloxor/test.hpp>
 
 /*
-    Allocator idea is pretty simple, its similar in idea to slab
-    Its segregated fit with freelist of free slots in a bucket
-    Metadata is stored in a unrolled linked list that fits the page,
-    so you can construct it in the buffer provided by pageAlloc()
-    Alloc calculates bucket index from the given size, and pops address
-    from bucket with free slot, if there isnt a free list, new one is allocated
-    Dealloc is pricy as it requires traversal of all entries of the given address
-    TODO:
-    -	Traversing unrolled list of buckets in case of allocation might be slow
-        if lot of buckets are full, reconsider adding full list to keep track
-        of allocated buckets, so we dont lose the information of them being allocated
-    -	Freeing is costly, perhaps one could have FIFO/HashTable to speedup freeing
-    -	Massive fragmentation might occur if lot of chunks are partially filled
+	Allocator idea is pretty simple, its similar in idea to slab
+	Its segregated fit with freelist of free slots in a bucket
+	Metadata is stored in a unrolled linked list that fits the page,
+	so you can construct it in the buffer provided by pageAlloc()
+	Alloc calculates bucket index from the given size, and pops address
+	from bucket with free slot, if there isnt a free list, new one is allocated
+	Dealloc is pricy as it requires traversal of all entries of the given
+   address
+	TODO:
+	-	Traversing unrolled list of buckets in case of allocation might be slow
+		if lot of buckets are full, reconsider adding full list to keep track
+		of allocated buckets, so we dont lose the information of them being
+   allocated -	Freeing is costly, perhaps one could have FIFO/HashTable to
+   speedup freeing -	Massive fragmentation might occur if lot of chunks are
+   partially filled
 */
-void* operator new(size_t size)
-{
-	return gx::memalloc(size);
-}
+void* operator new(size_t size) { return gx::memalloc(size); }
 
-void* operator new[](size_t size)
-{
-	return gx::memalloc(size);
-}
+void* operator new[](size_t size) { return gx::memalloc(size); }
 
-void operator delete(void* p, size_t size)
-{
-	gx::memdealloc(p, size);
-}
+void operator delete(void* p, size_t size) { gx::memdealloc(p, size); }
 
-void operator delete[](void* p, size_t size)
-{
-	gx::memdealloc(p, size);
-}
+void operator delete[](void* p, size_t size) { gx::memdealloc(p, size); }
 
 struct Freelist {
 	Freelist* next;
@@ -55,25 +45,18 @@ struct Freelist {
 		auto& operator*() const { return *it; }
 		auto& operator->() const { return it; }
 	};
-	Iterator begin()
-	{
-		return { this };
-	}
-	Iterator end()
-	{
-		return { nullptr };
-	}
+	Iterator begin() { return { this }; }
+	Iterator end() { return { nullptr }; }
 };
 struct ChunkPtr {
 	sizeT bytesUsed;
 	Freelist* list;
-	constexpr bool is_full() const
-	{
-		return bytesUsed == gx::pmmChunkSize;
-	}
+	constexpr bool is_full() const { return bytesUsed == gx::pmmChunkSize; }
 };
 struct Metadata {
-	static constexpr sizeT chunkCount = (gx::pmmChunkSize - (sizeof(Metadata*) + sizeof(sizeT))) / sizeof(ChunkPtr);
+	static constexpr sizeT chunkCount
+		= (gx::pmmChunkSize - (sizeof(Metadata*) + sizeof(sizeT)))
+		/ sizeof(ChunkPtr);
 	using chunkHeadersT = glox::array<ChunkPtr, chunkCount>;
 	Metadata* next;
 	sizeT usedChunks;
@@ -86,7 +69,9 @@ struct MetadataCtx {
 	Metadata* list;
 };
 
-constexpr glox::array<size_t, 8> tinyBuckets { 16, 32, 64, 128, 256, 512, 1024, 2048 };
+constexpr glox::array<size_t, 8> tinyBuckets {
+	16, 32, 64, 128, 256, 512, 1024, 2048
+};
 struct HeapCtx {
 	static constexpr sizeT bucketCount = tinyBuckets.size;
 	sizeT totalPages;
@@ -110,28 +95,26 @@ inline sizeT size2bucket(sizeT size)
 	return align_up_pow2(size) - 4;
 }
 
-void* big_alloc(sizeT size)
-{
-	return gx::PmmAllocator::alloc(size);
-}
+void* big_alloc(sizeT size) { return gx::PmmAllocator::alloc(size); }
 
 inline bool init_chunk(ChunkPtr& list, sizeT bucketSize)
 {
 	auto freshAddr = (Freelist*)gx::page_alloc();
 	if (freshAddr == nullptr)
 		return false;
-	list.list = freshAddr;
+	list.list   = freshAddr;
 	auto offset = bucketSize;
 	for (sizeT i = 0; i < gx::pmmChunkSize; i += offset) {
 		*freshAddr = { (Freelist*)((uintptr)freshAddr + offset) };
-		freshAddr = freshAddr->next;
+		freshAddr  = freshAddr->next;
 	}
 	freshAddr->next = nullptr;
-	list.bytesUsed = 0;
+	list.bytesUsed  = 0;
 	return true;
 }
 
-inline glox::pair<void*, bool> alloc_from_chunk(Metadata::chunkHeadersT& chunks, sizeT bucketSize)
+inline glox::pair<void*, bool> alloc_from_chunk(
+	Metadata::chunkHeadersT& chunks, sizeT bucketSize)
 {
 	for (auto&& it : chunks) {
 		// completely borked, quickly fix
@@ -143,7 +126,7 @@ inline glox::pair<void*, bool> alloc_from_chunk(Metadata::chunkHeadersT& chunks,
 		// fallthrough from previous branch
 		if (!it.is_full()) {
 			auto tmp = it.list;
-			it.list = it.list->next;
+			it.list  = it.list->next;
 			it.bytesUsed += bucketSize;
 			return { tmp, true };
 		}
@@ -160,7 +143,7 @@ inline bool free_chunk(ChunkPtr& it, void* ptr, sizeT size)
 		return true;
 	}
 	newentry->next = it.list;
-	it.list = newentry;
+	it.list        = newentry;
 	return true;
 }
 
@@ -172,9 +155,9 @@ inline bool free_mem(void* ptr, sizeT size)
 	if (size > tinyBuckets[tinyBuckets.size - 1]) {
 		return gx::PmmAllocator::dealloc(ptr, size), true;
 	}
-	auto tbindex = size2bucket(size);
-	auto realsize = tinyBuckets[tbindex];
-	auto* curlist = globalHeap.buckets[tbindex].list;
+	auto tbindex     = size2bucket(size);
+	auto realsize    = tinyBuckets[tbindex];
+	auto* curlist    = globalHeap.buckets[tbindex].list;
 	auto allignedptr = ALIGN((uintptr)ptr, gx::pmmChunkSize);
 	for (auto iter = curlist; iter; iter = iter->next) {
 		for (auto& it : iter->chunkHeaders) {
@@ -192,9 +175,9 @@ inline void* alloc_mem(sizeT size)
 	if (size > tinyBuckets[tinyBuckets.size - 1]) {
 		return big_alloc(size);
 	}
-	auto index = size2bucket(size);
+	auto index      = size2bucket(size);
 	auto bucketSize = tinyBuckets[index];
-	auto& curList = globalHeap.buckets[index].list;
+	auto& curList   = globalHeap.buckets[index].list;
 	// gloxDebugLog("Memalloc(", bucketSize, ")\n");
 	auto* iter = curList;
 	// TODO: Rewrite into inf loop, as its probably clearer
@@ -207,7 +190,8 @@ inline void* alloc_mem(sizeT size)
 	auto iterNext = iter;
 	do {
 		iter = iterNext;
-		if (auto val = alloc_from_chunk(iter->chunkHeaders, bucketSize); val.second) {
+		if (auto val = alloc_from_chunk(iter->chunkHeaders, bucketSize);
+			val.second) {
 			return val.first;
 		}
 		iterNext = iter->next;
@@ -244,9 +228,16 @@ struct List {
 };
 static List* test_alloc(int sp)
 {
-	List *head = new List { .x = sp + 20, .y = sp + 40, .z = sp + 60, .next = nullptr }, *iter = head;
+	List* head = new List {
+		.x    = sp + 20,
+		.y    = sp + 40,
+		.z    = sp + 60,
+		.next = nullptr,
+	};
+	List* iter = head;
 	for (int i = 1; i < 20; ++i) {
-		iter->next = new List { .x = i, .y = i + 20, .z = i + 40, .next = nullptr };
+		iter->next
+			= new List { .x = i, .y = i + 20, .z = i + 40, .next = nullptr };
 		iter = iter->next;
 	}
 	gloxPrint("List:\n");
@@ -260,7 +251,7 @@ static void test_free(List* head)
 {
 	for (auto it = head; it;) {
 		auto tmp = it;
-		it = it->next;
+		it       = it->next;
 		gx::dealloc(tmp, 1);
 	}
 }

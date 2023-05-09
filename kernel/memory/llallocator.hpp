@@ -2,11 +2,11 @@
 #include "glox/linkedlist.hpp"
 #include "gloxor/types.hpp"
 /*
-    Both of those functions actually return nullptr on OOM situations
-    Single chunk allocator is seperate for purpouses of optimization.
-    I very much doubt compiler can eliminate loop when page count is 1.
-    Loop doesnt need to be there because we can guarantee that if
-    node is present in the list, it has atleast 1 free page
+	Both of those functions actually return nullptr on OOM situations
+	Single chunk allocator is seperate for purpouses of optimization.
+	I very much doubt compiler can eliminate loop when page count is 1.
+	Loop doesnt need to be there because we can guarantee that if
+	node is present in the list, it has atleast 1 free page
 */
 template <typename T>
 inline void* alloc_from_chunk(glox::list<T>& chunk, size_t chunkSize)
@@ -23,7 +23,8 @@ inline void* alloc_from_chunk(glox::list<T>& chunk, size_t chunkSize)
 }
 
 template <typename T>
-inline void* alloc_from_chunk(glox::list<T>& chunk, size_t chunkSize, sizeT pageCount)
+inline void* alloc_from_chunk(
+	glox::list<T>& chunk, size_t chunkSize, sizeT pageCount)
 {
 	const auto allocSize = chunkSize * pageCount;
 	for (auto& it : chunk) {
@@ -47,22 +48,22 @@ inline void* alloc_from_chunk(glox::list<T>& chunk, size_t chunkSize, sizeT page
 				chunk.back = it.prev;
 			return &it;
 		}
-		return reinterpret_cast<void*>(reinterpret_cast<uintptr>(&it) + it.size);
+		return reinterpret_cast<void*>(
+			reinterpret_cast<uintptr>(&it) + it.size);
 	}
 
 	return nullptr;
 }
 
 // this functions seems like it could be eliminated and added to insert chunk
-template <typename T>
-inline void append_chunk(T*& back, T* chunk, sizeT length)
+template <typename T> inline void append_chunk(T*& back, T* chunk, sizeT length)
 {
 	if ((uintptr)back + back->size == (uintptr)chunk) {
 		back->size += length;
 	} else {
-		back->next = chunk;
+		back->next  = chunk;
 		chunk->prev = back;
-		back = chunk;
+		back        = chunk;
 	}
 }
 
@@ -72,28 +73,27 @@ inline void prepend_chunk(T*& front, T* chunk, sizeT length)
 	if ((uintptr)chunk + length == (uintptr)front) {
 		chunk->size = front->size + length;
 		chunk->next = front->next;
-		front = chunk;
+		front       = chunk;
 	} else {
 		chunk->next = front;
 		chunk->prev = nullptr;
-		front = chunk;
+		front       = chunk;
 	}
 }
 
 // assumes chunk is in the node list range
-template <typename T>
-inline void insert_chunk(T*& from, T* chunk, sizeT length)
+template <typename T> inline void insert_chunk(T*& from, T* chunk, sizeT length)
 {
 	auto* it = from;
 	if (it > chunk) {
 		if ((uintptr)chunk + length == (uintptr)it) {
 			chunk->size += it->size;
 			it->next->prev = chunk;
-			chunk->next = it->next;
-			from = chunk;
+			chunk->next    = it->next;
+			from           = chunk;
 			return;
 		}
-		it->prev = chunk;
+		it->prev    = chunk;
 		chunk->next = it;
 		chunk->prev = nullptr;
 		return;
@@ -104,9 +104,9 @@ inline void insert_chunk(T*& from, T* chunk, sizeT length)
 			auto nextChunk = it->next;
 			if ((uintptr)it + it->size == (uintptr)nextChunk) {
 				it->size += nextChunk->size;
-				auto farAhead = nextChunk->next;
+				auto farAhead  = nextChunk->next;
 				farAhead->prev = it;
-				it->next = farAhead;
+				it->next       = farAhead;
 			}
 			return;
 		}
@@ -114,8 +114,8 @@ inline void insert_chunk(T*& from, T* chunk, sizeT length)
 	if ((uintptr)chunk + length == (uintptr)it) {
 		chunk->size += it->size;
 		it->next->prev = chunk;
-		chunk->next = it->next;
-		chunk->prev = it->prev;
+		chunk->next    = it->next;
+		chunk->prev    = it->prev;
 		it->prev->next = chunk;
 		return;
 	}

@@ -49,7 +49,11 @@ extern "C" void call_global_ctors()
 
 // extern void sleep(u64 ticks, u64 ms);
 // extern u64 getTicks();
-inline void map_region(vaddrT from, vaddrT to, paddrT start, arch::vmem::PagePrivileges pp, arch::vmem::PageCaching pc)
+inline void map_region(vaddrT from,
+	vaddrT to,
+	paddrT start,
+	arch::vmem::PagePrivileges pp,
+	arch::vmem::PageCaching pc)
 {
 	auto isalign = [](auto a, auto b) { return a % b == 0; };
 
@@ -70,8 +74,7 @@ inline void map_kernel()
 	size_t size = (kernelFileEnd - kernelFileBegin);
 	gloxDebugLogln("kernelPhysOffset: ", kernelPhysOffset);
 	for (size_t i = 0; i < size; i += pageSize) {
-		kAddrSpace.map(
-			(vaddrT)kernelFileBegin + i,
+		kAddrSpace.map((vaddrT)kernelFileBegin + i,
 			kernelPhysOffset + i,
 			PagePrivileges::all,
 			PageCaching::writeThrough);
@@ -81,10 +84,14 @@ inline void identity_map()
 {
 	for (const auto& it : gx::machineInfo.mmapEntries) {
 		if (it.type == BootInfo::MemTypes::usable
-		    || it.type == BootInfo::MemTypes::reclaimable) {
+			|| it.type == BootInfo::MemTypes::reclaimable) {
 			const auto from = it.base + physicalMemBase;
-			const auto to = it.base;
-			map_region(from, from + it.length, to, PagePrivileges::all, PageCaching::writeThrough);
+			const auto to   = it.base;
+			map_region(from,
+				from + it.length,
+				to,
+				PagePrivileges::all,
+				PageCaching::writeThrough);
 		}
 	}
 }
@@ -95,11 +102,17 @@ void init_addr_space()
 	identity_map();
 	auto [fbeg, fend] = gx::term::get_used_memory_range();
 	gloxDebugLogln("Mapping framebuffer from: ", fbeg, " to: ", fend);
-	map_region((vaddrT)fbeg, (paddrT)fend, get_real_data_addr((paddrT)fbeg), PagePrivileges::readWrite, PageCaching::writeCombine);
+	map_region((vaddrT)fbeg,
+		(paddrT)fend,
+		get_real_data_addr((paddrT)fbeg),
+		PagePrivileges::readWrite,
+		PageCaching::writeCombine);
 	map_kernel();
-	gloxDebugLogln("Trying translation code, from : ", fbeg, " to: ", (void*)kAddrSpace.translate((u64)fbeg));
-	gloxDebugLogln(
-		"Trying translation code, from : ",
+	gloxDebugLogln("Trying translation code, from : ",
+		fbeg,
+		" to: ",
+		(void*)kAddrSpace.translate((u64)fbeg));
+	gloxDebugLogln("Trying translation code, from : ",
 		(u8*)physicalMemBase + 0x200'000,
 		" to: ",
 		(void*)kAddrSpace.translate(physicalMemBase + 0x200'000));
@@ -119,7 +132,9 @@ extern "C" void gloxor_main()
 	extern gx::Ktest _moduleTesting[];
 	extern gx::Ktest _moduleTestingEnd[];
 	gx::term::set_fg_color(0xadd8e6);
-	gloxPrint("Unit tests:\nThere are ", _moduleTestingEnd - _moduleTesting, " tests\n");
+	gloxPrint("Unit tests:\nThere are ",
+		_moduleTestingEnd - _moduleTesting,
+		" tests\n");
 	gx::term::set_fg_color(0xFFFFFF);
 	for (auto it = _moduleTesting; it != _moduleTestingEnd; ++it) {
 		gloxPrintln("Test case ", it->name);

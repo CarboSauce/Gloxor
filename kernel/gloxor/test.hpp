@@ -10,10 +10,11 @@ struct Ktest {
 } // namespace gx
 
 #ifdef GLOXTESTING
-#define registerTest(name, fnc)                                                 \
-	[[gnu::used, gnu::section(".module.test")]] static gx::Ktest _testptr_##fnc \
-	{                                                                           \
-		name, &fnc                                                              \
+#define registerTest(name, fnc)                                        \
+	[[gnu::used,                                                       \
+		gnu::section(".module.test")]] static gx::Ktest _testptr_##fnc \
+	{                                                                  \
+		name, &fnc                                                     \
 	}
 #define KTEST_EXPECT(expr)                                                   \
 	do {                                                                     \

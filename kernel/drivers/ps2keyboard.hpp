@@ -1,4 +1,3 @@
 #pragma once
 
-struct Ps2keyboard {
-};
+struct Ps2keyboard { };

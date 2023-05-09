@@ -16,24 +16,24 @@ using namespace arch;
 using namespace gx;
 using namespace arch::vmem;
 
-[[gnu::used]] static Gdt code_data[3] {
+[[gnu::used]] static Gdt code_data[3] = {
 	{},
 	{
-     0x0000,     // limit
-		0x0000,     // base
-		0x00,       // base
+		0x0000, // limit
+		0x0000, // base
+		0x00, // base
 		0b10011010, // flags
 		0b00100000, // gran
-		0x00        // base
+		0x00, // base
 	},
 	{
-     0x0000,     // limit
-		0x0000,     // base
-		0x00,       // base
+		0x0000, // limit
+		0x0000, // base
+		0x00, // base
 		0b10010010, // flags
 		0b00000000, // gran
-		0x00        // base
-	}
+		0x00, // base
+	},
 };
 [[gnu::used]] static Idt idt_list[256] {};
 static u64 cpuFeatures;
@@ -54,7 +54,8 @@ static u64 cpuFeatures;
 	gloxFatalLogln("Non Maskable Interrupt!\n");
 }
 
-[[gnu::interrupt]] static void gp_fault(InterruptFrame* frame, size_t /* errc */)
+[[gnu::interrupt]] static void gp_fault(
+	InterruptFrame* frame, size_t /* errc */)
 {
 	gloxFatalLogln("General Protection Fault!\nRIP = ", (void*)frame->ip);
 	gx::kernel_panic();
@@ -122,10 +123,7 @@ inline void initialize_gdt()
 {
 	stop_irq();
 
-	GdtPointer gdt_ptr = {
-		sizeof(code_data),
-		code_data
-	};
+	GdtPointer gdt_ptr = { sizeof(code_data), code_data };
 
 	load_gdt(gdt_ptr);
 	// Perform long jump after loading gdt to flush instruction cache
@@ -156,15 +154,14 @@ inline void initialize_gdt()
 inline void initialize_interrupts()
 {
 
-	IdtPointer idt_ptr = {
-		sizeof(idt_list),
-		idt_list
-	};
+	IdtPointer idt_ptr = { sizeof(idt_list), idt_list };
 
-	idt_list[0].register_handler((u64)div_zero_handle, 0x8, 0, IDT_INTERRUPTGATE);
+	idt_list[0].register_handler(
+		(u64)div_zero_handle, 0x8, 0, IDT_INTERRUPTGATE);
 	idt_list[1].register_handler((u64)debug_handler, 0x8, 0, IDT_INTERRUPTGATE);
 	idt_list[2].register_handler((u64)nmi_handler, 0x8, 0, IDT_INTERRUPTGATE);
-	idt_list[6].register_handler((u64)illegal_opcode, 0x8, 0, IDT_INTERRUPTGATE);
+	idt_list[6].register_handler(
+		(u64)illegal_opcode, 0x8, 0, IDT_INTERRUPTGATE);
 	idt_list[8].register_handler((u64)double_fault, 0x8, 0, IDT_TRAPGATE);
 	idt_list[13].register_handler((u64)gp_fault, 0x8, 0, IDT_INTERRUPTGATE);
 	idt_list[14].register_handler((u64)page_fault, 0x8, 0, IDT_INTERRUPTGATE);

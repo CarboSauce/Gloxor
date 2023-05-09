@@ -6,19 +6,19 @@
 // TODO: this namespace name is so bad, change it
 namespace x86::vmem {
 enum PagingBits {
-	present = 1,
-	writable = 1 << 1,
-	user = 1 << 2,
+	present      = 1,
+	writable     = 1 << 1,
+	user         = 1 << 2,
 	writeThrough = 1 << 3,
 	cacheDisable = 1 << 4,
-	accessed = 1 << 5,
-	dirty = 1 << 6,
-	granul = 1 << 7,
-	globalPage = 1 << 8,
-	ptePAT = 1 << 7,
-	pdePAT = 1 << 12,
-	pdptePAT = 1 << 12,
-	noexec = size_t(1) << 63
+	accessed     = 1 << 5,
+	dirty        = 1 << 6,
+	granul       = 1 << 7,
+	globalPage   = 1 << 8,
+	ptePAT       = 1 << 7,
+	pdePAT       = 1 << 12,
+	pdptePAT     = 1 << 12,
+	noexec       = size_t(1) << 63
 };
 enum class PteShift {
 	lvl1 = 12, // 4KB page
@@ -50,21 +50,16 @@ enum PageLevel {
 	lvl5
 };
 
-template <size_t I>
-struct alignas(0x1000) PageTable;
+template <size_t I> struct alignas(0x1000) PageTable;
 
-template <size_t I>
-struct PageEntry {
+template <size_t I> struct PageEntry {
 	constexpr static size_t lvl = I;
 	u64 entry;
 	void set(paddrT addr, PagingBits mask)
 	{
 		entry = (addr & 0x000ffffffffff000) | mask;
 	}
-	auto paddr() const
-	{
-		return entry & 0x000ffffffffff000;
-	}
+	auto paddr() const { return entry & 0x000ffffffffff000; }
 	const auto* vaddr() const
 	{
 		auto realaddr = paddr();
@@ -75,7 +70,8 @@ struct PageEntry {
 	auto vaddr()
 	{
 		// :tf:
-		return const_cast<PageTable<PageLevel(lvl - 1)>*>(static_cast<const PageEntry<I>&>(*this).vaddr());
+		return const_cast<PageTable<PageLevel(lvl - 1)>*>(
+			static_cast<const PageEntry<I>&>(*this).vaddr());
 	}
 };
 
@@ -83,25 +79,16 @@ struct PageEntry {
  * @brief Type used for managing page tables
  * slowly shift towards using this type for all ptable manipulations
  */
-template <size_t I>
-struct alignas(0x1000) PageTable {
+template <size_t I> struct alignas(0x1000) PageTable {
 	static constexpr size_t lvl = I;
-	static_assert(lvl > 0 && lvl < 5, "Page table level must be between 1 and 4");
+	static_assert(
+		lvl > 0 && lvl < 5, "Page table level must be between 1 and 4");
 	static constexpr size_t shift = lvl * 9 + 3;
 	PageEntry<I> entries[512];
 
-	auto begin()
-	{
-		return entries;
-	}
-	auto end()
-	{
-		return entries + 512;
-	}
-	auto index(gx::vaddrT addr) const
-	{
-		return (addr >> shift) & 0x1ff;
-	}
+	auto begin() { return entries; }
+	auto end() { return entries + 512; }
+	auto index(gx::vaddrT addr) const { return (addr >> shift) & 0x1ff; }
 	const PageEntry<I>& entry(gx::vaddrT addr) const
 	{
 		return entries[index(addr)];
@@ -109,7 +96,8 @@ struct alignas(0x1000) PageTable {
 	PageEntry<I>& entry(gx::vaddrT addr)
 	{
 		// :tf:
-		return const_cast<PageEntry<I>&>(static_cast<const PageTable<I>&>(*this).entry(addr));
+		return const_cast<PageEntry<I>&>(
+			static_cast<const PageTable<I>&>(*this).entry(addr));
 	}
 	/**
 	 * @brief Obtains lower level table from the provided addr
@@ -118,13 +106,15 @@ struct alignas(0x1000) PageTable {
 	 */
 	const auto* next(gx::vaddrT addr) const
 	{
-		static_assert(I > PageLevel::lvl1, "Can't get next table from lvl1 page table");
+		static_assert(
+			I > PageLevel::lvl1, "Can't get next table from lvl1 page table");
 		return entries[index(addr)].vaddr();
 	}
 	auto next(gx::vaddrT addr)
 	{
 		// :tf:
-		return const_cast<PageEntry<I>&>(static_cast<const PageTable<I>&>(*this).next(addr));
+		return const_cast<PageEntry<I>&>(
+			static_cast<const PageTable<I>&>(*this).next(addr));
 	}
 };
 

@@ -9,7 +9,8 @@
 #include "system/logging.hpp"
 #include "system/terminal.hpp"
 /*
-    on x86, paging looks like a tree, so we need to traverse the tree of height 5
+	on x86, paging looks like a tree, so we need to traverse the tree of height
+   5
 */
 using namespace arch::vmem;
 using namespace arch;
@@ -17,7 +18,8 @@ using namespace x86::vmem;
 using namespace gx;
 
 template <size_t I>
-glox::pair<const PageTable<I - 1>*, bool> translate_single_entry(const PageTable<I>& ctx, vaddrT from)
+glox::pair<const PageTable<I - 1>*, bool> translate_single_entry(
+	const PageTable<I>& ctx, vaddrT from)
 {
 	auto entry = ctx.entry(from);
 	if (!(entry.entry & present))
@@ -42,7 +44,7 @@ inline bool alloc_page_if_needed(u64& entry, u64 mask)
 bool map_huge_page(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 {
 	auto* ctx = (PageTable<4>*)context;
-	auto& e4 = ctx->entry(from);
+	auto& e4  = ctx->entry(from);
 	gloxAssert(alloc_page_if_needed(e4.entry, mask));
 	auto& e3 = e4.vaddr()->entry(from);
 	gloxAssert(alloc_page_if_needed(e3.entry, mask));
@@ -53,7 +55,7 @@ bool map_huge_page(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 bool map(vmemCtxT context, vaddrT from, paddrT to, u64 mask)
 {
 	auto* ctx = (PageTable<4>*)context;
-	auto& e4 = ctx->entry(from);
+	auto& e4  = ctx->entry(from);
 	gloxAssert(alloc_page_if_needed(e4.entry, mask));
 	auto& e3 = e4.vaddr()->entry(from);
 	gloxAssert(alloc_page_if_needed(e3.entry, mask));
@@ -73,7 +75,7 @@ bool unmap(vmemCtxT context, const void* whichVirtual)
 paddrT translate(vmemCtxT pt, vaddrT from)
 {
 	auto* ctx = (const PageTable<4>*)pt;
-	auto e4 = translate_single_entry(*ctx, from);
+	auto e4   = translate_single_entry(*ctx, from);
 	if (e4.second)
 		return (paddrT)e4.first;
 	auto e3 = translate_single_entry(*e4.first, from);

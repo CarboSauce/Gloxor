@@ -10,7 +10,7 @@ public:
 	IrqLock() = default;
 	void lock();
 	void unlock();
-	IrqLock(const IrqLock&) = delete;
+	IrqLock(const IrqLock&)            = delete;
 	IrqLock& operator=(const IrqLock&) = delete;
 };
 }; // namespace gx

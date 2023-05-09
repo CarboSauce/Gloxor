@@ -22,7 +22,7 @@ class vector
 	vector() = default;
 	vector(size_t reserve)
 	{
-		start = (T*)alloc.allocate(sizeof(T) * reserve);
+		start = (T*)alloc.alloc(sizeof(T) * reserve);
 		if (!start)
 			cap = 0;
 		else
@@ -31,7 +31,7 @@ class vector
 	}
 	vector(const T& val, size_t size)
 	{
-		start = (T*)alloc.allocate(sizeof(T) * size);
+		start = (T*)alloc.alloc(sizeof(T) * size);
 		if (!start)
 			return;
 		cap = size;
@@ -43,7 +43,7 @@ class vector
 	}
 	vector(const vector& other) : alloc(other.alloc)
 	{
-		start = (T*)alloc.allocate(sizeof(T) * other.cap);
+		start = (T*)alloc.alloc(sizeof(T) * other.cap);
 		if (!start)
 			return;
 		cap = other.cap;
@@ -93,7 +93,7 @@ class vector
 		{
 			start[i].~T();
 		}
-		alloc.deallocate(start, cap * sizeof(T));
+		alloc.dealloc(start, cap * sizeof(T));
 	}
 	static glox::result<glox::vector<T>, option_t> with_capacity(size_t cap)
 	{
@@ -150,21 +150,21 @@ class vector
 	{
 		if constexpr (std::is_trivially_copyable<T>::value)
 		{
-			return (T*)alloc.reallocate(start, sizeof(T) * old, sizeof(T) * news);
+			return (T*)alloc.realloc(start, sizeof(T) * old, sizeof(T) * news);
 		}
 		else
 		{
-			T* newb = (T*)alloc.allocate(sizeof(T) * news);
+			T* newb = (T*)alloc.alloc(sizeof(T) * news);
 			if (!newb)
 			{
-				alloc.deallocate(start, old * sizeof(T));
+				alloc.dealloc(start, old * sizeof(T));
 				return newb;
 			}
 			for (size_t i = 0; i < old; ++i)
 			{
 				::new (newb + i) T(RVALUE(start[i]));
 			}
-			alloc.deallocate(start, old * sizeof(T));
+			alloc.dealloc(start, old * sizeof(T));
 			return newb;
 		}
 	}
@@ -178,7 +178,7 @@ class vector
 		{
 			new_size = cap < 4 ? 4 : cap + cap / 2; // siz = siz * 1.5;
 			auto tmp_ptr = realloc_buffer(cap * sizeof(T), new_size * sizeof(T));
-			// auto tmp_ptr = (T*)this->reallocate(start,old_siz*sizeof(T),new_size*sizeof(T));
+			// auto tmp_ptr = (T*)this->realloc(start,old_siz*sizeof(T),new_size*sizeof(T));
 			if (!tmp_ptr)
 				return false;
 			start = tmp_ptr;
