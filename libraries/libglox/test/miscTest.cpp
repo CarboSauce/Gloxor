@@ -3,6 +3,7 @@
 #include <new>
 #include <string>
 #include <type_traits>
+#include <cstdint>
 
 // enum class option_type : bool
 //{
@@ -15,16 +16,18 @@ constexpr static bool Empty = true;
 
 constexpr auto test_consxpr()
 {
-	// auto t = glox::result<int,option_type>::from_err(Empty);
+	auto t1 = glox::result<int,option_type>::from_err(true);
 	optional_int t(5);
 	auto t2 = optional_int::from_val(10);
 	return RVALUE(t).unwrap();
 }
 struct NonTrivial
 {
-	NonTrivial(const NonTrivial&) {}
-	NonTrivial(NonTrivial&&) {}
-	~NonTrivial() {}
+	constexpr NonTrivial(int a) { x = y = z = a;}
+	constexpr NonTrivial(const NonTrivial&) { x = y = z = 0;}
+	constexpr NonTrivial(NonTrivial&&) { x = y = z = 0; }
+	constexpr ~NonTrivial() {}
+	int x,y,z;
 };
 using nontrivial_res = glox::result<NonTrivial, option_type>;
 
@@ -32,6 +35,14 @@ static constexpr auto res = test_consxpr();
 static_assert(std::is_trivially_destructible_v<optional_int>);
 static_assert(not std::is_trivially_destructible_v<nontrivial_res>);
 static_assert(std::is_trivially_copyable_v<optional_int>);
+
+constexpr auto test_constexpr_nontrivial() {
+	//auto test = nontrivial_res::from_err(true);
+	auto test = nontrivial_res::from_val(NonTrivial(5));
+	return test;
+}
+	
+static constexpr nontrivial_res ntres = nontrivial_res::from_val(NonTrivial(5));
 
 struct St
 {

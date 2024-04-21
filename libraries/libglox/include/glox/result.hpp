@@ -5,6 +5,7 @@
 #include "metaprog.hpp"
 #include <compare>
 #include <type_traits>
+#include <memory>
 namespace glox
 {
 struct empty_t
@@ -31,7 +32,8 @@ struct pod_union
 	constexpr pod_union(pod_union&& other) : _err(RVALUE(other._err))
 	{
 		if (not other._err)
-			new (&_val) T(RVALUE(other._val));
+			std::construct_at(&_val,RVALUE(other._val));
+			//new (&_val) T(RVALUE(other._val));
 	}
 	// pod_union& operator=(const pod_union& other) = delete;
 	// pod_union& operator=(pod_union&& other) = delete;
