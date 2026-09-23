@@ -2,12 +2,10 @@ OUTPUT_FORMAT("elf64-x86-64")
 ENTRY(limine_main)
 PHDRS
 {
-    null    PT_NULL    FLAGS(0) ;                   /* Null segment */
-    text    PT_LOAD    FLAGS((1 << 0) | (1 << 2)) ; /* Execute + Read */
-    rodata  PT_LOAD    FLAGS((1 << 2)) ;            /* Read only */
-    data    PT_LOAD    FLAGS((1 << 1) | (1 << 2)) ; /* Write + Read */
-    rwx     PT_LOAD    FLAGS((1 << 0) | (1 << 1) | (1 << 2)) ;
-                        /* Read Write Exec */
+    limine_requests    PT_LOAD    FLAGS((1 << 1) | (1 << 2)); /* Read + Write */
+    text    PT_LOAD    FLAGS((1 << 0) | (1 << 2)); /* Execute + Read */
+    rodata  PT_LOAD    FLAGS((1 << 2));            /* Read only */
+    data    PT_LOAD    FLAGS((1 << 1) | (1 << 2)); /* Write + Read */
 }
 SECTIONS
 {
@@ -15,22 +13,20 @@ SECTIONS
     kernelFileBegin = .;
 
 
+    .limine_requests : {
+        KEEP(*(.limine_requests_start))
+        KEEP(*(.limine_requests))
+        KEEP(*(.limine_requests_end))
+    } :limine_requests
+
+    . = ALIGN(CONSTANT(MAXPAGESIZE));
+
     .text ALIGN(4K)  : {   
         *(.start*)  
         KEEP(*(.text*))
     } :text
 
-    .data ALIGN(4K) : {
-        KEEP(*(.data*))
-
-    } :data
-
-    .bss ALIGN(4K) :{
-        PROVIDE(bss_begin = .);
-        KEEP(*(.bss*))
-        *(COMMON)
-        PROVIDE(bss_end = .);
-    } :data
+    . = ALIGN(CONSTANT(MAXPAGESIZE));
 
     .rodata ALIGN(4K) : {
         *(.rodata*)
@@ -56,10 +52,19 @@ SECTIONS
         PROVIDE(_moduleTestingEnd = .);
     } :rodata
 
-    .limine_reqs ALIGN(4K) :
-    {
-        KEEP(*(.limine_reqs))
-    } :rodata
+    . = ALIGN(CONSTANT(MAXPAGESIZE));
+
+    .data ALIGN(4K) : {
+        KEEP(*(.data*))
+    } :data
+
+    .bss ALIGN(4K) :{
+        PROVIDE(bss_begin = .);
+        KEEP(*(.bss*))
+        *(COMMON)
+        PROVIDE(bss_end = .);
+    } :data
+
     kernelFileEnd = .;
 
     /DISCARD/ : 

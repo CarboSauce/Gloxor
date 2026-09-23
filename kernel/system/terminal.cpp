@@ -1,6 +1,8 @@
 #include "terminal.hpp"
+#include "arch/cpu.hpp"
 #include "glox/string.hpp"
 #include "gloxor/graphics.hpp"
+#include "system/logging.hpp"
 
 using namespace gx;
 
@@ -19,13 +21,9 @@ static glox::vec2<u32> at { 0, 0 };
 static u8 cursorShape = '_';
 namespace gx::term {
 glox::span<u8> get_used_memory_range()
-{
-	return { (u8*)con.fbBeg, (u8*)con.fbEnd };
-}
+{ return { (u8*)con.fbBeg, (u8*)con.fbEnd }; }
 inline void put_pixel(int x, int y, color_t color)
-{
-	const_cast<volatile color_t*>(con.fbBeg)[y * con.pitch + x] = color;
-}
+{ const_cast<volatile color_t*>(con.fbBeg)[y * con.pitch + x] = color; }
 
 inline void write_char(char ch, glox::vec2<u32> at, glox::vec2<color_t> fgbg)
 {
@@ -49,9 +47,9 @@ inline void write_char(char ch, glox::vec2<u32> at, glox::vec2<color_t> fgbg)
 	/*Magic code stolen from ted uses no division*/
 
 	for (u32 i = 0, i1 = 0, i2 = 0; i2 < fontHeight;
-		 ++i, ++i2, (i == scaleY) ? (i = 0, i1++) : i) {
+		++i, ++i2, (i == scaleY) ? (i = 0, i1++) : i) {
 		for (u32 j = 0, j1 = 0, j2 = 0; j2 < fontWidth;
-			 ++j, ++j2, (j == scaleX) ? (j = 0, j1++) : j) {
+			++j, ++j2, (j == scaleX) ? (j = 0, j1++) : j) {
 			auto fontBit  = 0b10000000 >> (j1);
 			auto fontMask = fontBitmap[index + i1];
 			put_pixel(

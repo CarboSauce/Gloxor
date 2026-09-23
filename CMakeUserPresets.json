@@ -1,0 +1,31 @@
+{
+  "version": 4,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 23,
+    "patch": 0
+  },
+  "configurePresets": [
+	{
+		"name": "clang",
+		"generator": "Ninja Multi-Config",
+		"binaryDir": "${sourceDir}/build/clang",
+		"cacheVariables": {
+			"CMAKE_EXE_LINKER_FLAGS": "-fuse-ld=lld"
+		},
+		"environment": {
+			"CC": "/usr/bin/clang",
+			"CXX": "/usr/bin/clang++"
+		}
+	},
+	{
+		"name": "gcc",
+		"generator": "Ninja Multi-Config",
+		"binaryDir": "${sourceDir}/build/gcc",
+		"environment": {
+			"CC": "/usr/bin/gcc",
+			"CXX": "/usr/bin/g++"
+		}
+	}
+  ]
+}
