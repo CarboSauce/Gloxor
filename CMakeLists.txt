@@ -93,3 +93,17 @@ add_custom_command(
 
 add_custom_target(iso DEPENDS "${OS_ISO}" )
 add_dependencies(iso kernel limine)
+
+set(QEMU_COMMAND "qemu-system-x86_64" CACHE STRING "Command used to launch QEMU")
+set(QEMU_ARGS "" CACHE STRING "Additional args passed to QEMU")
+
+add_custom_target(run-qemu
+    COMMAND
+        ${CMAKE_CURRENT_SOURCE_DIR}/scripts/run-qemu.sh
+        "${QEMU_COMMAND}"
+        "${OS_ISO}"
+        "${QEMU_ARGS}"
+    DEPENDS
+        iso
+    USES_TERMINAL
+)
