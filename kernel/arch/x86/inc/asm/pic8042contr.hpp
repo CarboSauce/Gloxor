@@ -20,15 +20,16 @@
 #define PIC_EOI 0x20 /* End-of-interrupt ccommand code */
 
 namespace gx {
-struct PicContext {
-	u8 masterMask;
-	u8 slaveMask;
+struct PicContext
+{
+    u8 masterMask;
+    u8 slaveMask;
 };
 namespace pic {
-	void set_master_mask(u8 mask);
-	void set_slave_mask(u8 mask);
-	void send_eoi_master();
-	void send_eoi_slave();
-	void remap(u8 masterOffst, u8 slaveOffst);
+    void set_master_mask(u8 mask);
+    void set_slave_mask(u8 mask);
+    void send_eoi_master();
+    void send_eoi_slave();
+    void remap(u8 masterOffst, u8 slaveOffst);
 } // namespace pic
 } // namespace gx

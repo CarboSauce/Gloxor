@@ -3,9 +3,12 @@
 namespace gx {
 void IrqLock::lock()
 {
-	irqCtx = arch::save_irq();
-	arch::stop_irq();
+    irqCtx = arch::save_irq();
+    arch::stop_irq();
 }
 
-void IrqLock::unlock() { arch::restore_irq(irqCtx); }
+void IrqLock::unlock()
+{
+    arch::restore_irq(irqCtx);
+}
 } // namespace gx

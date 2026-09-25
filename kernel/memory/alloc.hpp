@@ -5,55 +5,59 @@
 
 namespace gx {
 
-void memdealloc(void* ptr, sizeT size);
+void memdealloc(void* ptr, usize size);
 
 [[using gnu: malloc,
-	mallocAttribute(gx::memdealloc, 1),
-	alloc_size(1),
-	aligned(gx::pmmChunkSize)]] void*
-memalloc(sizeT bytes);
+    mallocAttribute(gx::memdealloc, 1),
+    alloc_size(1),
+    aligned(gx::pmmChunkSize)]] void*
+memalloc(usize bytes);
 
-struct KAllocator {
-	[[gnu::always_inline]] [[nodiscard]] static void* alloc(sizeT size)
-	{
-		return gx::memalloc(size);
-	}
-	[[gnu::always_inline]] static void dealloc(void* p, sizeT s)
-	{
-		gx::memdealloc(p, s);
-	}
+struct KAllocator
+{
+    [[gnu::always_inline]] [[nodiscard]] static void* alloc(usize size)
+    {
+        return gx::memalloc(size);
+    }
+    [[gnu::always_inline]] static void dealloc(void* p, usize s)
+    {
+        gx::memdealloc(p, s);
+    }
 };
 using default_allocator = KAllocator;
 
-struct PmmAllocator {
-	[[gnu::always_inline]] [[nodiscard]] static void* alloc(sizeT s)
-	{
-		return gx::page_alloc(s / pmmChunkSize + 1);
-	}
-	[[gnu::always_inline]] static void dealloc(void* p, sizeT s)
-	{
-		gx::page_dealloc(p, s / pmmChunkSize + 1);
-	}
+struct PmmAllocator
+{
+    [[gnu::always_inline]] [[nodiscard]] static void* alloc(usize s)
+    {
+        return gx::page_alloc(s / pmmChunkSize + 1);
+    }
+    [[gnu::always_inline]] static void dealloc(void* p, usize s)
+    {
+        gx::page_dealloc(p, s / pmmChunkSize + 1);
+    }
 };
 
-template <typename T> T* alloc(size_t ele_count = 1)
+template <typename T>
+T* alloc(size_t ele_count = 1)
 {
-	T* ptr = (T*)(memalloc(sizeof(T) * ele_count));
-	if (ptr == nullptr)
-		return nullptr;
-	for (size_t i = 0; i < ele_count; ++i) {
-		::new (ptr + i) T();
-	}
-	return ptr;
+    T* ptr = (T*)(memalloc(sizeof(T) * ele_count));
+    if (ptr == nullptr)
+        return nullptr;
+    for (size_t i = 0; i < ele_count; ++i) {
+        ::new (ptr + i) T();
+    }
+    return ptr;
 }
-template <typename T> void dealloc(T* ptr, size_t ele_count)
+template <typename T>
+void dealloc(T* ptr, size_t ele_count)
 {
-	if (ptr == nullptr)
-		return;
-	for (size_t i = 0; i < ele_count; ++i) {
-		ptr[i].~T();
-	}
-	memdealloc(ptr, sizeof(T) * ele_count);
+    if (ptr == nullptr)
+        return;
+    for (size_t i = 0; i < ele_count; ++i) {
+        ptr[i].~T();
+    }
+    memdealloc(ptr, sizeof(T) * ele_count);
 }
 
 } // namespace gx

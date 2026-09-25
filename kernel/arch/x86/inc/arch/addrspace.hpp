@@ -4,44 +4,44 @@
 extern u8 kernelFileBegin[];
 extern u8 kernelFileEnd[];
 namespace arch {
-constexpr u64 kernelMemBase   = 0xffffffff80000000;
+constexpr u64 kernelMemBase = 0xffffffff80000000;
 constexpr u64 physicalMemBase = 0xffff800000000000;
-constexpr u64 virtMemBase     = 0xffffe00000000000; // 96TB from the physbase
-inline paddrT kernelPhysOffset;
-inline vaddrT kernelVirtOffset;
-inline sizeT kernelMappingOffset;
+constexpr u64 virtMemBase = 0xffffe00000000000; // 96TB from the physbase
+inline vaddr kernelPhysOffset;
+inline vaddr kernelVirtOffset;
+inline usize kernelMappingOffset;
 
-inline paddrT get_real_kernel_addr(vaddrT virt)
+inline vaddr get_real_kernel_addr(vaddr virt)
 {
-	gloxAssert(virt >= arch::kernelMemBase);
-	return virt + kernelMappingOffset;
+    gloxAssert(virt >= arch::kernelMemBase);
+    return virt + kernelMappingOffset;
 }
-inline paddrT get_real_kernel_addr(const void* virt)
+inline vaddr get_real_kernel_addr(const void* virt)
 {
-	return get_real_kernel_addr((u64)virt);
+    return get_real_kernel_addr((u64)virt);
 }
-inline paddrT get_real_data_addr(vaddrT virt)
+inline vaddr get_real_data_addr(vaddr virt)
 {
-	gloxAssert(virt >= arch::physicalMemBase);
-	return virt - arch::physicalMemBase;
+    gloxAssert(virt >= arch::physicalMemBase);
+    return virt - arch::physicalMemBase;
 }
-inline vaddrT to_virt(paddrT addr)
+inline vaddr to_virt(vaddr addr)
 {
-	if (addr < arch::physicalMemBase)
-		return addr + arch::physicalMemBase;
-	return addr;
+    if (addr < arch::physicalMemBase)
+        return addr + arch::physicalMemBase;
+    return addr;
 }
 
-inline paddrT get_real_data_addr(const void* virt)
+inline vaddr get_real_data_addr(const void* virt)
 {
-	return get_real_data_addr((u64)virt);
+    return get_real_data_addr((u64)virt);
 }
-inline paddrT get_real_address(vaddrT virt)
+inline vaddr get_real_address(vaddr virt)
 {
-	if (virt >= arch::kernelMemBase)
-		return get_real_kernel_addr(virt);
-	if (virt >= arch::physicalMemBase)
-		return get_real_data_addr(virt);
-	return virt;
+    if (virt >= arch::kernelMemBase)
+        return get_real_kernel_addr(virt);
+    if (virt >= arch::physicalMemBase)
+        return get_real_data_addr(virt);
+    return virt;
 }
 } // namespace arch

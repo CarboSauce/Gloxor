@@ -2,18 +2,21 @@
 #include "glox/logger.hpp"
 #include "system/logging.hpp"
 namespace gx {
-struct LogStream : glox::b_stream {
-	char buffer[512];
-	uint32_t curLogLevel;
-	template <typename... args> void operator()(args... Args)
-	{
-		((void)(*this, Args), ...);
-	}
+struct LogStream : glox::b_stream
+{
+    char buffer[512];
+    uint32_t curLogLevel;
+    template <typename... args>
+    void operator()(args... Args)
+    {
+        ((void)(*this, Args), ...);
+    }
 };
-enum class LogLevel {
-	fatal,
-	trace,
-	debug,
+enum class LogLevel
+{
+    fatal,
+    trace,
+    debug,
 };
 
 void write(LogStream&, const char* str, size_t s);
@@ -27,10 +30,10 @@ using gx::outStream;
 #define gloxPrint(...) gx::outStream, __VA_ARGS__
 #define gloxPrintln(...) gx::outStream, __VA_ARGS__, '\n'
 #define gloxLog(level, ...) \
-	(gx::LogLevelCap < level ? (void)0 : (void)(gx::outStream, __VA_ARGS__))
+    (gx::LogLevelCap < level ? (void)0 : (void)(gx::outStream, __VA_ARGS__))
 #define gloxLogln(level, ...)          \
-	(gx::LogLevelCap < level ? (void)0 \
-							 : (void)(gx::outStream, __VA_ARGS__, '\n'))
+    (gx::LogLevelCap < level ? (void)0 \
+                             : (void)(gx::outStream, __VA_ARGS__, '\n'))
 #define gloxFatalLog(...) gloxLog(gx::LogLevel::fatal, __VA_ARGS__)
 #define gloxFatalLogln(...) gloxLogln(gx::LogLevel::fatal, __VA_ARGS__)
 #define gloxTraceLog(...) gloxLog(gx::LogLevel::trace, __VA_ARGS__)
