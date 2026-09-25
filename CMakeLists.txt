@@ -15,6 +15,7 @@ project(Gloxor VERSION 1.0 LANGUAGES C CXX ASM_NASM)
 
 include(CMakeOptions.cmake)
 include(CheckCXXSourceCompiles)
+include(scripts/get-cpm.cmake)
 
 if (WITH_PIC)
     #set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -35,6 +36,29 @@ if (FORCE_DEBUG_CHECKS OR CMAKE_BUILD_TYPE EQUAL "DEBUG")
     add_compile_definitions(DEBUG)
 endif()
 
+
+list(APPEND KERNEL_COMPILE_FLAGS
+# Used to make linker be willing to put our code in high memory
+# alternatively we can use PIE and PIC magic
+# red zone is x86_64 abi thing
+# in kernel code it needs to be disabled because of interrupts
+    -mno-red-zone
+    -fno-stack-protector
+    -fno-exceptions
+    -fno-rtti
+    -ffreestanding
+    -fbuiltin
+    -fno-threadsafe-statics
+    -mgeneral-regs-only
+    -mno-mmx
+    -mno-sse
+    -mno-sse2
+    -nostdlib
+    -nostdlibinc
+    -nostdinc++
+    -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=/
+)
+list(APPEND KERNEL_LINK_FLAGS -ffreestanding -nostdlib)
 
 set(WARNING_FLAGS
     $<$<COMPILE_LANG_AND_ID:CXX,Clang,GNU,AppleClang>:$<BUILD_INTERFACE:-Wall;-Wextra;-Wno-interrupt-service-routine>>

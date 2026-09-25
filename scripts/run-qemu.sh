@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-#
 # arg[1] = qemu command
 # arg[2] = kernel image
 # arg[3]? = additional arguments to qemu 0

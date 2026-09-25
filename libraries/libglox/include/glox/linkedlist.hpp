@@ -3,7 +3,6 @@
 #include "glox/macros.hpp"
 #include <cstddef>
 #include <glox/assert.hpp>
-#include <sys/types.h>
 namespace glox {
 // keep for now, remove and replace legacy code once intrusive_list is tested
 template <typename T> struct node : public T {

@@ -5,26 +5,6 @@
 set(OS_ARCH "x86_64" CACHE STRING "Architecture of OS to be compiled")
 set(PROTO_DISTRO "limine" CACHE STRING "Bootloader protocol to be used")
 set(OUTPUT_DIR "${CMAKE_SOURCE_DIR}/out" CACHE STRING "Use this directory to create an os image")
-list(APPEND KERNEL_COMPILE_FLAGS
-# Used to make linker be willing to put our code in high memory
-# alternatively we can use PIE and PIC magic
-# red zone is x86_64 abi thing
-# in kernel code it needs to be disabled because of interrupts
-    -mno-red-zone
-    -fno-stack-protector
-    -fno-exceptions
-    -fno-rtti
-    -ffreestanding
-    -fbuiltin
-    -fno-threadsafe-statics
-    -mgeneral-regs-only
-    -mno-mmx
-    -mno-sse
-    -mno-sse2
-    -nostdlib
-    -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=/
-)
-list(APPEND KERNEL_LINK_FLAGS -ffreestanding -nostdlib)
 
 set(LOG_LEVEL 3 CACHE STRING "Defines default log level; Fatal = 0, Trace = 1, Debug = 2")
 option(FORCE_DEBUG_CHECKS "Force debug checks, even in Release" ON)

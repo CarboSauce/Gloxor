@@ -18,6 +18,37 @@ set_target_properties(kernel PROPERTIES
                        SUFFIX .img
                        RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}
 )
+
+
+CPMAddPackage(
+    NAME cxxheaders
+    GIT_REPOSITORY "https://github.com/osdev0/freestanding-cxx-hdrs-gnu.git"
+    GIT_TAG "6fc33d66b123874631cf27bc9ab80a9ab3a43dd5"
+    DOWNLOAD_ONLY
+)
+
+if (cxxheaders_ADDED)
+    target_include_directories(kernel
+        SYSTEM PUBLIC
+            $<BUILD_INTERFACE:${cxxheaders_SOURCE_DIR}/${OS_ARCH}/include>
+    )
+endif()
+
+CPMAddPackage(
+    NAME cheaders
+    GIT_REPOSITORY "https://github.com/osdev0/freestanding-c-hdrs.git"
+    GIT_TAG "38fed4e1e3365733ddbfa03b0a28936243ad31e9"
+    DOWNLOAD_ONLY
+)
+
+if (cheaders_ADDED)
+    target_include_directories(kernel
+        SYSTEM PUBLIC
+            $<BUILD_INTERFACE:${cheaders_SOURCE_DIR}/${OS_ARCH}/include>
+    )
+endif()
+
+
 target_compile_definitions(kernel PRIVATE
     LIBGLOX_DEFAULT_ALLOCATOR_PATH="${CMAKE_CURRENT_SOURCE_DIR}/memory/alloc.hpp"
 )
