@@ -1,13 +1,10 @@
 #include "virtmem.hpp"
-#include "arch/addrspace.hpp"
 #include "arch/paging.hpp"
-#include "glox/linkedlist.hpp"
+#include "glox/intrusive_list.hpp"
 #include "glox/utilalgs.hpp"
-#include "gloxor/kinfo.hpp"
 #include "gloxor/test.hpp"
 #include "memory/alloc.hpp"
 #include "system/logging.hpp"
-#include "system/terminal.hpp"
 using namespace arch::vmem;
 using namespace gx;
 using namespace arch;
@@ -81,10 +78,12 @@ void* vmap_iomem(paddr base, size_t len, arch::vmem::PageCaching pc)
 }
 void vunmap_iomem(void* addr)
 {
-    auto res = glox::find_if(begin(vmapList), end(vmapList), [addr](auto&& it) {
-        return it.virt_base == (vaddr)addr;
-    });
-    if (res == end(vmapList))
+    auto res = glox::find_if(
+        std::begin(vmapList), std::end(vmapList), [addr](auto&& it) {
+            return it.virt_base == (vaddr)addr;
+        }
+    );
+    if (res == std::end(vmapList))
         return;
     vmapList.erase(res);
     gx::dealloc<VmapRegion>(res, 1);
