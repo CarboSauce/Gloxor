@@ -1,11 +1,21 @@
 function(glox_add_test param)
     add_executable(${param} ${param}Test.cpp)
-	target_compile_options(${param} PRIVATE $<$<BOOL:${LIBGLOX_SANITIZE}>:-fsanitize=address>)
+    target_compile_options(${param}
+        PRIVATE $<$<BOOL:${LIBGLOX_SANITIZE}>:-fsanitize=address>
+    )
     target_link_libraries(${param} PRIVATE libglox
-		$<$<BOOL:${LIBGLOX_SANITIZE}>:-fsanitize=address>)
+        $<$<BOOL:${LIBGLOX_SANITIZE}>:-fsanitize=address>
+    )
 endfunction()
-set(testList hash logger list vector tuple misc)
-foreach(test ${testList})
-    message(STATUS "Adding Test ${test}")
-    glox_add_test(${test})
-endforeach()
+
+CPMAddPackage("gh:doctest/doctest@2.5.3")
+
+add_executable(tests
+    vector.cpp
+)
+target_link_libraries(tests PRIVATE libglox doctest::doctest doctest_with_main
+    $<$<BOOL:${LIBGLOX_SANITIZE}>:-fsanitize=address>
+)
+target_compile_options(tests PRIVATE
+    $<$<BOOL:${LIBGLOX_SANITIZE}>:-fsanitize=address>
+)
