@@ -7,7 +7,7 @@
 namespace glox {
 // TODO: Factory based constructors
 // More member funcs
-template <typename T, typename Allocator = glox::default_allocator>
+template <typename T, glox::allocator Allocator = glox::default_allocator>
 class vector
 {
     T* start = nullptr;
@@ -16,19 +16,19 @@ class vector
 
 public:
     using allocator = Allocator;
-    vector() = default;
-    vector(size_t reserve)
+    constexpr vector() = default;
+    constexpr vector(size_t reserve)
     {
-        start = (T*)alloc.alloc(sizeof(T) * reserve);
+        start = glox::alloc_uninitialized<T>(alloc, reserve).ptr;
         if (!start)
             cap = 0;
         else
             cap = reserve;
         siz = 0;
     }
-    vector(const T& val, size_t size)
+    constexpr vector(const T& val, size_t size)
     {
-        start = (T*)alloc.alloc(sizeof(T) * size);
+        start = glox::alloc_uninitialized<T>(alloc, size).ptr;
         if (!start)
             return;
         cap = size;
@@ -37,10 +37,10 @@ public:
             ::new (start + i) T(val);
         }
     }
-    vector(const vector& other)
+    constexpr vector(const vector& other)
         : alloc(other.alloc)
     {
-        start = (T*)alloc.alloc(sizeof(T) * other.cap);
+        start = glox::alloc_uninitialized<T>(alloc, other.cap).ptr;
         if (!start)
             return;
         cap = other.cap;
@@ -49,7 +49,7 @@ public:
             ::new (start + i) T(other.start[i]);
         }
     }
-    vector& operator=(const vector& other)
+    constexpr vector& operator=(const vector& other)
     {
         start = realloc_buffer(cap, other.cap);
         if (!start) {
@@ -62,7 +62,7 @@ public:
             ::new (start + i) T(other.start[i]);
         }
     }
-    vector(vector&& other)
+    constexpr vector(vector&& other)
         : alloc(RVALUE(other.alloc))
     {
         start = other.start;
@@ -72,7 +72,7 @@ public:
         siz = other.siz;
         other.siz = 0;
     }
-    vector& operator=(vector&& other)
+    constexpr vector& operator=(vector&& other)
     {
         using glox::swap;
         swap(start, other.start);
@@ -82,14 +82,15 @@ public:
         siz = other.siz;
         other.siz = 0;
     }
-    ~vector()
+    constexpr ~vector()
     {
         for (size_t i = 0; i != siz; ++i) {
             start[i].~T();
         }
-        alloc.dealloc(start, cap * sizeof(T));
+        glox::dealloc(alloc, start, cap);
     }
-    static glox::result<glox::vector<T>, option_t> with_capacity(size_t cap)
+    constexpr static glox::result<glox::vector<T>, option_t>
+    with_capacity(size_t cap)
     {
         glox::vector<T> tmp(cap);
         if (tmp.is_null())
@@ -97,107 +98,102 @@ public:
         else
             return tmp;
     }
-    auto begin()
+    constexpr auto begin()
     {
         return start;
     }
-    auto end()
+    constexpr auto end()
     {
         return start + siz;
     }
-    auto& back()
+    constexpr auto& back()
     {
         return start[siz - 1];
     }
-    const auto& back() const
+    constexpr const auto& back() const
     {
         return start[siz - 1];
     }
-    auto& front()
+    constexpr auto& front()
     {
         return start[0];
     }
-    const auto& front() const
+    constexpr const auto& front() const
     {
         return start[0];
     }
-    auto begin() const
+    constexpr auto begin() const
     {
         return start;
     }
-    auto end() const
+    constexpr auto end() const
     {
         return start + siz;
     }
-    auto size() const
+    constexpr auto size() const
     {
         return siz;
     }
-    auto capacity() const
+    constexpr auto capacity() const
     {
         return cap;
     }
-    auto empty() const
+    constexpr auto empty() const
     {
         return siz == 0;
     }
-    auto is_null() const
+    constexpr auto is_null() const
     {
         return start == nullptr;
     }
 
     template <typename... Args>
-    bool emplace_back(Args&&... args)
+    constexpr bool emplace_back(Args&&... args)
     {
         if (!ensure_can_fit(siz + 1))
             return false;
-        new (start + siz++) T { FORWARD(args)... };
+        std::construct_at(start + siz++, FORWARD(args)...);
         return true;
     }
-    bool reserve(size_t new_cap)
+    constexpr bool reserve(size_t new_cap)
     {
         if (cap < new_cap)
             return realloc_buffer(cap, new_cap);
         return true;
     }
-    void pop_back()
+    constexpr void pop_back()
     {
         gloxAssert(siz > 0);
         start[--siz].~T();
     }
-    const T& operator[](size_t i) const
+    constexpr const T& operator[](size_t i) const
     {
         gloxAssert(i < size);
         return *(start + i);
     }
-    T& operator[](size_t i)
+    constexpr T& operator[](size_t i)
     {
         return const_cast<T&>(static_cast<const vector&>(*this)[i]);
     }
 
 private:
-    auto* realloc_buffer(size_t old, size_t news)
+    constexpr auto* realloc_buffer(size_t old, size_t news)
     {
-        if constexpr (std::is_trivially_copyable<T>::value) {
-            return (T*)alloc.realloc(start, sizeof(T) * old, sizeof(T) * news);
+
+        if (start != nullptr) {
+            return glox::grow_alloc(
+                alloc, start, old, alignof(T), news, alignof(T)
+            )
+                .ptr;
         } else {
-            T* newb = (T*)alloc.alloc(sizeof(T) * news);
-            if (!newb) {
-                alloc.dealloc(start, old * sizeof(T));
-                return newb;
-            }
-            for (size_t i = 0; i < old; ++i) {
-                ::new (newb + i) T(RVALUE(start[i]));
-            }
-            alloc.dealloc(start, old * sizeof(T));
-            return newb;
+            return glox::alloc_uninitialized<T>(alloc, news).ptr;
         }
     }
     /*
      * @brief Expands vector to fit new_size index
      * @param new_size new allocation size
      */
-    bool ensure_can_fit(size_t new_size)
+    constexpr bool ensure_can_fit(size_t new_size)
     {
         if (new_size > cap) {
             new_size = cap < 4 ? 4 : cap + cap / 2; // siz = siz * 1.5;

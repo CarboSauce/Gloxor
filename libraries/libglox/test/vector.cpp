@@ -5,6 +5,24 @@ static_assert(
     sizeof(glox::vector<alloc_tracker>)
     == sizeof(alloc_tracker*) + sizeof(size_t) * 2
 );
+
+constexpr int vector_constexpr_test(int n)
+{
+    glox::vector<int> v;
+    for (int i = 1; i != n; ++i) {
+        v.emplace_back(i);
+    }
+
+    int value = 0;
+    for (int i = 1; i != n; ++i) {
+        value += v[i - 1];
+    }
+
+    return value;
+}
+
+static_assert(vector_constexpr_test(11) == 55, "constexpr vector test");
+
 TEST_CASE("Vector default construction")
 {
     glox::vector<alloc_tracker> v;

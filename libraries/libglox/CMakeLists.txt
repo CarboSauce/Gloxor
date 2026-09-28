@@ -1,8 +1,4 @@
 cmake_minimum_required(VERSION 3.18)
-project(libglox VERSION 1.0 LANGUAGES CXX)
-
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
-
 option(USE_LTO "Should we use Link time optimizations" ON)
 option(COMPILE_TESTS "Enable tests?" ON)
 option(SET_INSTALL_TARGETS "Should we attach installation targets?" OFF)
@@ -14,6 +10,11 @@ and used as default allocator for containers that require them")
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+project(libglox VERSION 1.0 LANGUAGES CXX)
+
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
+
 add_library(libglox INTERFACE)
 
 include(cmake/get-cpm.cmake)
