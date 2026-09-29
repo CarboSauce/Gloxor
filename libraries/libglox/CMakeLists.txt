@@ -29,7 +29,7 @@ target_include_directories(libglox INTERFACE
 
 if (NOT DEFINED WARNING_FLAGS)
     set(WARNING_FLAGS
-     $<$<COMPILE_LANG_AND_ID:C,Clang,GNU,AppleClang>:$<BUILD_INTERFACE:-Wall;-Wextra>>
+        $<$<COMPILE_LANG_AND_ID:CXX,Clang,GNU,AppleClang>:$<BUILD_INTERFACE:-Wall;-Wextra;-Wzero-as-null-pointer-constant>>
     )
 endif()
 

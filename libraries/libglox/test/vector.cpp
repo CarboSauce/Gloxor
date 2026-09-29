@@ -87,6 +87,7 @@ TEST_CASE("Vector push 2 elements reserves space for 4")
     REQUIRE(v[1].value == 2);
 
     REQUIRE(alloc_tracker::move_ctor_counter == 2);
+    REQUIRE(alloc_tracker::dtor_counter == 2);
     REQUIRE(alloc_tracker::copy_ctor_counter == 0);
     REQUIRE(alloc_tracker::move_assignment_counter == 0);
     REQUIRE(alloc_tracker::copy_assignment_counter == 0);
@@ -114,10 +115,23 @@ TEST_CASE("Vector reallocation on new element moves only old elements")
     REQUIRE(alloc_tracker::copy_ctor_counter == 0);
     REQUIRE(alloc_tracker::move_assignment_counter == 0);
     REQUIRE(alloc_tracker::copy_assignment_counter == 0);
+    REQUIRE(alloc_tracker::dtor_counter == 4);
+}
+
+TEST_CASE("Vector push_back")
+{
+    alloc_tracker::reset_counters();
+    glox::vector<alloc_tracker> v;
+    v.push_back(0);
+
+    REQUIRE(v.size() == 1);
+    REQUIRE(v.capacity() >= 1);
+    REQUIRE(alloc_tracker::ctor_counter == 1);
 }
 
 TEST_CASE("Vector pop after push is size 0 and capacity non 0")
 {
+    alloc_tracker::reset_counters();
     glox::vector<int> v;
     v.emplace_back(0);
     v.pop_back();
@@ -171,4 +185,69 @@ TEST_CASE("Vector moves data from other vector")
     REQUIRE(v2.back().value == 5);
     REQUIRE(alloc_tracker::move_ctor_counter == 0);
     REQUIRE(alloc_tracker::copy_ctor_counter == 0);
+}
+
+TEST_CASE("Vector can shrink to fit")
+{
+    glox::vector<alloc_tracker> v;
+    v.emplace_back(1);
+    v.emplace_back(2);
+    v.emplace_back(3);
+    v.emplace_back(4);
+    v.emplace_back(5);
+    v.pop_back();
+    alloc_tracker::reset_counters();
+
+    REQUIRE(v.size() == 4);
+    REQUIRE(v.capacity() > 4);
+    v.shrink_to_fit();
+    REQUIRE(v.size() == 4);
+    REQUIRE(v.capacity() >= 4);
+    REQUIRE(alloc_tracker::move_ctor_counter == 4);
+    REQUIRE(alloc_tracker::dtor_counter == 4);
+}
+TEST_CASE("Vector can insert")
+{
+    glox::vector<alloc_tracker> v;
+    v.emplace_back(2);
+    v.emplace_back(3);
+    v.emplace_back(4);
+    v.emplace_back(5);
+    alloc_tracker::reset_counters();
+    v.insert(v.begin(), 1);
+
+    REQUIRE(v.size() == 5);
+    REQUIRE(v.capacity() >= 5);
+    REQUIRE(v[0].value == 1);
+    REQUIRE(v[1].value == 2);
+    REQUIRE(v[2].value == 3);
+    REQUIRE(v[3].value == 4);
+    REQUIRE(v[4].value == 5);
+    REQUIRE(alloc_tracker::move_ctor_counter == 4);
+    REQUIRE(alloc_tracker::move_assignment_counter == 5);
+    REQUIRE(alloc_tracker::ctor_counter == 2);
+}
+
+TEST_CASE("Vector can erase")
+{
+    glox::vector<alloc_tracker> v;
+    v.emplace_back(1);
+    v.emplace_back(2);
+    v.emplace_back(3);
+    v.emplace_back(3);
+    v.emplace_back(4);
+    v.emplace_back(5);
+    alloc_tracker::reset_counters();
+    v.erase(v.begin() + 2);
+
+    REQUIRE(v.size() == 5);
+    REQUIRE(v.capacity() >= 5);
+    REQUIRE(v[0].value == 1);
+    REQUIRE(v[1].value == 2);
+    REQUIRE(v[2].value == 3);
+    REQUIRE(v[3].value == 4);
+    REQUIRE(v[4].value == 5);
+    REQUIRE(alloc_tracker::move_ctor_counter == 0);
+    REQUIRE(alloc_tracker::move_assignment_counter == 3);
+    REQUIRE(alloc_tracker::ctor_counter == 0);
 }

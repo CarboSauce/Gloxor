@@ -7,7 +7,7 @@
 namespace glox {
 // TODO: Factory based constructors
 // More member funcs
-template <typename T, glox::allocator Allocator = glox::default_allocator>
+template <typename T, glox::allocator<T> Allocator = glox::default_allocator<T>>
 class vector
 {
     T* start = nullptr;
@@ -16,22 +16,31 @@ class vector
 
 public:
     using allocator = Allocator;
+    using size_type = std::size_t;
+    using reference = T&;
+    using const_reference = const T&;
+    using iterator = T*;
+    using const_iterator = const T*;
     constexpr vector() = default;
     constexpr vector(size_t reserve)
     {
-        start = glox::alloc_uninitialized<T>(alloc, reserve).ptr;
-        if (!start)
+        const auto mem = glox::alloc_uninitialized<T>(alloc, reserve);
+        if (!mem.ptr) {
+            start = nullptr;
             cap = 0;
-        else
-            cap = reserve;
+        } else {
+            start = mem.ptr;
+            cap = mem.count;
+        }
         siz = 0;
     }
     constexpr vector(const T& val, size_t size)
     {
-        start = glox::alloc_uninitialized<T>(alloc, size).ptr;
-        if (!start)
+        const auto mem = glox::alloc_uninitialized<T>(alloc, size);
+        if (!mem.ptr)
             return;
-        cap = size;
+        start = mem.ptr;
+        cap = mem.count;
         siz = size;
         for (size_t i = 0; i < size; ++i) {
             ::new (start + i) T(val);
@@ -40,9 +49,10 @@ public:
     constexpr vector(const vector& other)
         : alloc(other.alloc)
     {
-        start = glox::alloc_uninitialized<T>(alloc, other.cap).ptr;
-        if (!start)
+        const auto mem = glox::alloc_uninitialized<T>(alloc, other.cap);
+        if (!mem.ptr)
             return;
+        start = mem.ptr;
         cap = other.cap;
         siz = other.siz;
         for (size_t i = 0; i < siz; ++i) {
@@ -51,12 +61,14 @@ public:
     }
     constexpr vector& operator=(const vector& other)
     {
-        start = realloc_buffer(cap, other.cap);
-        if (!start) {
+        const auto mem = realloc_buffer(cap, other.cap);
+        if (!mem.ptr) {
+            start = nullptr;
             siz = cap = 0;
             return *this;
         }
-        cap = other.cap;
+        start = mem.ptr;
+        cap = mem.count;
         siz = other.siz;
         for (size_t i = 0; i < siz; ++i) {
             ::new (start + i) T(other.start[i]);
@@ -84,10 +96,7 @@ public:
     }
     constexpr ~vector()
     {
-        for (size_t i = 0; i != siz; ++i) {
-            start[i].~T();
-        }
-        glox::dealloc(alloc, start, cap);
+        clear();
     }
     constexpr static glox::result<glox::vector<T>, option_t>
     with_capacity(size_t cap)
@@ -98,13 +107,9 @@ public:
         else
             return tmp;
     }
-    constexpr auto begin()
+    constexpr auto get_allocator() const
     {
-        return start;
-    }
-    constexpr auto end()
-    {
-        return start + siz;
+        return alloc;
     }
     constexpr auto& back()
     {
@@ -122,11 +127,35 @@ public:
     {
         return start[0];
     }
-    constexpr auto begin() const
+    constexpr iterator begin()
     {
         return start;
     }
-    constexpr auto end() const
+    constexpr iterator end()
+    {
+        return start + siz;
+    }
+    constexpr const_iterator begin() const
+    {
+        return start;
+    }
+    constexpr const_iterator end() const
+    {
+        return start + siz;
+    }
+    constexpr const_iterator cbegin() const
+    {
+        return start;
+    }
+    constexpr const_iterator cend() const
+    {
+        return start + siz;
+    }
+    constexpr const_iterator cbegin()
+    {
+        return start;
+    }
+    constexpr const_iterator cend()
     {
         return start + siz;
     }
@@ -146,6 +175,20 @@ public:
     {
         return start == nullptr;
     }
+    constexpr auto shrink_to_fit()
+    {
+        const auto mem = glox::shrink_alloc(alloc, start, cap, siz, siz);
+        if (mem.ptr == nullptr)
+            return;
+        start = mem.ptr;
+        cap = mem.count;
+    }
+
+    template <typename... Args>
+    constexpr bool push_back(Args&&... args)
+    {
+        return emplace_back(FORWARD(args)...);
+    }
 
     template <typename... Args>
     constexpr bool emplace_back(Args&&... args)
@@ -157,9 +200,46 @@ public:
     }
     constexpr bool reserve(size_t new_cap)
     {
-        if (cap < new_cap)
-            return realloc_buffer(cap, new_cap);
+        if (cap < new_cap) {
+            const auto mem = realloc_buffer(cap, new_cap);
+            if (mem.ptr == nullptr) {
+                return false;
+            }
+            start = mem.ptr;
+            cap = mem.count;
+            return true;
+        }
         return true;
+    }
+    constexpr void clear()
+    {
+        for (size_t i = 0; i != siz; ++i) {
+            start[i].~T();
+        }
+        glox::dealloc(alloc, start, cap);
+        start = nullptr;
+        siz = 0;
+        cap = 0;
+    }
+    constexpr iterator insert(const_iterator pos, T val)
+    {
+        const auto index = pos - start;
+        if (pos == end()) {
+            emplace_back(RVALUE(val));
+            return start + index;
+        }
+        emplace_back();
+        auto mutIter = start + index;
+        glox::move_range_backward(mutIter, end() - 1, end());
+        *mutIter = RVALUE(val);
+        return mutIter;
+    }
+    constexpr iterator erase(const_iterator pos)
+    {
+        const auto p = start + (pos - start);
+        glox::move_range(p + 1, end(), p);
+        pop_back();
+        return p;
     }
     constexpr void pop_back()
     {
@@ -173,20 +253,17 @@ public:
     }
     constexpr T& operator[](size_t i)
     {
-        return const_cast<T&>(static_cast<const vector&>(*this)[i]);
+        gloxAssert(i < size);
+        return *(start + i);
     }
 
 private:
-    constexpr auto* realloc_buffer(size_t old, size_t news)
+    constexpr alloc_handle<T> realloc_buffer(size_t old, size_t news)
     {
-
         if (start != nullptr) {
-            return glox::grow_alloc(
-                alloc, start, old, alignof(T), news, alignof(T)
-            )
-                .ptr;
+            return glox::grow_alloc(alloc, start, old, news, old, alignof(T));
         } else {
-            return glox::alloc_uninitialized<T>(alloc, news).ptr;
+            return glox::alloc_uninitialized<T>(alloc, news);
         }
     }
     /*
@@ -197,11 +274,11 @@ private:
     {
         if (new_size > cap) {
             new_size = cap < 4 ? 4 : cap + cap / 2; // siz = siz * 1.5;
-            auto tmpPtr = realloc_buffer(cap, new_size);
-            if (!tmpPtr)
+            const auto mem = realloc_buffer(cap, new_size);
+            if (!mem.ptr)
                 return false;
-            start = tmpPtr;
-            cap = new_size;
+            start = mem.ptr;
+            cap = mem.count;
         }
         return true;
     }

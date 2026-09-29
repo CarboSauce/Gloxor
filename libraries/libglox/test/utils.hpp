@@ -3,6 +3,7 @@
 struct alloc_tracker
 {
     static inline int dtor_counter = 0;
+    static inline int ctor_counter = 0;
     static inline int copy_ctor_counter = 0;
     static inline int move_ctor_counter = 0;
     static inline int copy_assignment_counter = 0;
@@ -13,6 +14,7 @@ struct alloc_tracker
     alloc_tracker(int value = 0)
         : value(value)
     {
+        ctor_counter++;
     }
     alloc_tracker(const alloc_tracker& other)
     {
@@ -43,6 +45,7 @@ struct alloc_tracker
     static void reset_counters()
     {
         dtor_counter = 0;
+        ctor_counter = 0;
         copy_ctor_counter = 0;
         move_ctor_counter = 0;
         copy_assignment_counter = 0;

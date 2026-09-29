@@ -14,8 +14,9 @@ add_executable(tests
     vector.cpp
 )
 target_link_libraries(tests PRIVATE libglox doctest::doctest doctest_with_main
-    $<$<BOOL:${LIBGLOX_SANITIZE}>:-fsanitize=address>
+    $<$<BOOL:${LIBGLOX_SANITIZE}>:-fsanitize=address,undefined>
 )
 target_compile_options(tests PRIVATE
-    $<$<BOOL:${LIBGLOX_SANITIZE}>:-fsanitize=address>
+    $<$<BOOL:${LIBGLOX_SANITIZE}>:-fsanitize=address,undefined>
+    ${WARNING_FLAGS}
 )
