@@ -2,7 +2,7 @@
 #include "alloc.hpp"
 #include "assert.hpp"
 #include "detail/moveutils.hpp"
-#include "result.hpp"
+#include "option.hpp"
 
 namespace glox {
 // TODO: Factory based constructors
@@ -98,12 +98,11 @@ public:
     {
         clear();
     }
-    constexpr static glox::result<glox::vector<T>, option_t>
-    with_capacity(size_t cap)
+    constexpr static glox::option<glox::vector<T>> with_capacity(size_t cap)
     {
         glox::vector<T> tmp(cap);
         if (tmp.is_null())
-            return option_t::none;
+            return { };
         else
             return tmp;
     }

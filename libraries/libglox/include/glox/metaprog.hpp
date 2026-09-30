@@ -1,11 +1,5 @@
 #pragma once
 #include "detail/movesem.hpp"
-#include <functional>
-#ifdef _LIBCPP_VERSION
-#include <__functional/invoke.h>
-#else
-#include <bits/invoke.h>
-#endif
 
 #include <cstddef>
 

@@ -1,5 +1,4 @@
 #include "glox/result.hpp"
-#include <expected>
 #include <string>
 #include <type_traits>
 
@@ -111,3 +110,15 @@ constexpr auto divide_by_zero_transform_err(int a, int b)
 }
 static_assert(divide_by_zero_transform_err(10, 0).err() == 0);
 static_assert(divide_by_zero_and_then(10, 1).val() == 0);
+
+constexpr auto compare(div_result a, div_result b)
+{
+    return a == b;
+}
+
+static_assert(compare({ 1 }, { 1 }));
+static_assert(compare({ 0 }, { 1 }) == false);
+static_assert(
+    compare({ div_error::divide_by_zero }, { div_error::divide_by_zero })
+    == true
+);

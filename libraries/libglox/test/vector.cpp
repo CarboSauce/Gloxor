@@ -23,6 +23,17 @@ constexpr int vector_constexpr_test(int n)
 
 static_assert(vector_constexpr_test(11) == 55, "constexpr vector test");
 
+TEST_CASE("Vector static factory functions")
+{
+    alloc_tracker::reset_counters();
+    auto tmp = glox::vector<alloc_tracker>::with_capacity(10);
+    auto v = RVALUE(tmp).val();
+    REQUIRE(v.capacity() >= 10);
+    REQUIRE(v.size() == 0);
+    REQUIRE(alloc_tracker::move_ctor_counter == 0);
+    REQUIRE(alloc_tracker::dtor_counter == 0);
+}
+
 TEST_CASE("Vector default construction")
 {
     glox::vector<alloc_tracker> v;

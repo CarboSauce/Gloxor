@@ -77,6 +77,7 @@ public:
     constexpr result(const result& other)
         requires(not std::is_trivially_constructible_v<T>)
             and (not std::is_trivially_constructible_v<E>)
+        : hasValue(other.hasValue)
     {
         if (other.hasValue)
             std::construct_at(&_val, other._val);
@@ -88,6 +89,7 @@ public:
     constexpr result(result&& other)
         requires(not std::is_trivially_move_constructible_v<T>)
             and (not std::is_trivially_move_constructible_v<E>)
+        : hasValue(other.hasValue)
     {
         if (other.hasValue)
             std::construct_at(&_val, RVALUE(other._val));
@@ -122,6 +124,7 @@ public:
                 _err = other._err;
             }
         }
+        hasValue = other.hasValue;
     }
 
     constexpr result& operator=(result&&) = delete;
@@ -138,7 +141,7 @@ public:
     {
         if (hasValue) {
             if (other.hasValue) {
-                _val = other._val;
+                _val = RVALUE(other._val);
             } else {
                 std::destroy_at(_val);
                 std::construct_at(_err, RVALUE(other._err));
@@ -148,9 +151,10 @@ public:
                 std::destroy_at(_err);
                 std::construct_at(_val, RVALUE(other._val));
             } else {
-                _err = other._err;
+                _err = RVALUE(other._err);
             }
         }
+        hasValue = other.hasValue;
     }
 
     GLOX_ALWAYS_INLINE
@@ -237,7 +241,15 @@ public:
         else
             return false;
     }
-    constexpr bool operator==(const result&) const = default;
+    constexpr bool operator==(const result& b) const
+    {
+        if (hasValue and b.hasValue)
+            return _val == b._val;
+        else if (not hasValue and not b.hasValue)
+            return _err == b._err;
+        else
+            return false;
+    }
     constexpr bool operator==(const E& b) const
     {
         if (hasValue)
@@ -294,7 +306,7 @@ public:
     constexpr auto and_then(this Self&& self, Func&& f)
     {
         if (self.hasValue)
-            return std::invoke(FORWARD(f), FORWARD(self._val));
+            return FORWARD(f)(FORWARD(self._val));
         else
             return FORWARD(self);
     }
@@ -303,7 +315,7 @@ public:
     constexpr auto or_else(this Self&& self, Func&& f)
     {
         if (not self.hasValue)
-            return std::invoke(FORWARD(f), FORWARD(self._err));
+            return FORWARD(f)(FORWARD(self._err));
         else
             return FORWARD(self);
     }
@@ -311,9 +323,9 @@ public:
     template <typename Self, typename Func>
     constexpr auto transform(this Self&& self, Func&& f)
     {
-        using G = decltype(std::invoke(FORWARD(f), FORWARD(self._val)));
+        using G = decltype(FORWARD(f)(FORWARD(self._val)));
         if (self.hasValue)
-            return result<G, E> { std::invoke(FORWARD(f), FORWARD(self._val)) };
+            return result<G, E> { FORWARD(f)(FORWARD(self._val)) };
         else
             return result<G, E>(FORWARD(self));
     }
@@ -321,11 +333,9 @@ public:
     template <typename Self, typename Func>
     constexpr auto transform_err(this Self&& self, Func&& f)
     {
-        using G = decltype(std::invoke(FORWARD(f), FORWARD(self._err)));
+        using G = decltype(FORWARD(f)(FORWARD(self._err)));
         if (not self.hasValue)
-            return result<T, G>::from_err(
-                std::invoke(FORWARD(f), FORWARD(self._err))
-            );
+            return result<T, G>::from_err(FORWARD(f)(FORWARD(self._err)));
         else
             return result<T, G>(FORWARD(self));
     }
