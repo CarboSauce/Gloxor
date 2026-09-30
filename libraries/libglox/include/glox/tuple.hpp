@@ -1,10 +1,15 @@
 #ifndef GLOX_TUPLE
 #define GLOX_TUPLE
-#include "glox/macros.hpp"
 #include "glox/metaprog.hpp"
 #include <compare>
 #include <cstddef>
 #include <type_traits>
+#if defined(_LIBCPP_VERSION)
+#include <__tuple/tuple_element.h>
+#include <__tuple/tuple_size.h>
+#else
+#include <bits/utility.h>
+#endif
 /*
  * Based on:
  * https://www.youtube.com/watch?v=TyiiNVA1syk
@@ -18,7 +23,7 @@ template <std::size_t I, typename T>
 struct tuple_leaf
 {
     [[no_unique_address]] T val;
-    T& get(std::integral_constant<std::size_t, I>)
+    constexpr T& get(std::integral_constant<std::size_t, I>)
     {
         return val;
     }

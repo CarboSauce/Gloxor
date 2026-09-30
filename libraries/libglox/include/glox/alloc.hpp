@@ -1,10 +1,11 @@
 #pragma once
 #include "glox/assert.hpp"
+#include "glox/detail/memory.hpp"
 #include "glox/detail/movesem.hpp"
 #include <concepts>
 #include <cstdlib>
 #include <cstring>
-#include <memory>
+#include <type_traits>
 
 #ifdef LIBGLOX_DEFAULT_ALLOCATOR_PATH
 #include LIBGLOX_DEFAULT_ALLOCATOR_PATH
