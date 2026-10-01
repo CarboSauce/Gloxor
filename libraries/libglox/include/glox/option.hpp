@@ -6,6 +6,11 @@
 #include <type_traits>
 namespace glox {
 
+struct empty_option_t
+{ };
+
+constexpr inline auto empty_option = empty_option_t { };
+
 template <typename T>
 class [[nodiscard]] option
 {
@@ -16,41 +21,56 @@ class [[nodiscard]] option
     bool hasValue;
 
 public:
-    GLOX_ALWAYS_INLINE constexpr option(T&& val)
-        : _val { RVALUE(val) }
+    template <typename U = std::remove_cv_t<T>>
+    GLOX_ALWAYS_INLINE constexpr option(U&& val)
+        requires(std::is_constructible_v<U, T>)
+                and (not std::is_same_v<U, empty_option_t>)
+        : _val { FORWARD(val) }
         , hasValue(true)
     {
     }
-    GLOX_ALWAYS_INLINE constexpr option(const T& val)
-        : _val { val }
+    template <typename... Args>
+    GLOX_ALWAYS_INLINE constexpr explicit option(
+        glox::in_place_t,
+        Args&&... args
+    )
+        : _val { FORWARD(args)... }
         , hasValue(true)
     {
     }
+
     GLOX_ALWAYS_INLINE constexpr option()
         : hasValue(false)
     {
     }
+    GLOX_ALWAYS_INLINE constexpr option(empty_option_t)
+        : hasValue(false)
+    {
+    }
 
-    constexpr ~option() = default;
     constexpr ~option()
-        requires(not std::is_trivially_destructible_v<T>)
+        requires std::is_trivially_destructible_v<T>
+    = default;
+    constexpr ~option()
     {
         if (hasValue)
             _val.~T();
     }
 
-    constexpr option(const option&) = default;
+    constexpr option(const option&)
+        requires std::is_trivially_copy_constructible_v<T>
+    = default;
     constexpr option(const option& other)
-        requires(not std::is_trivially_constructible_v<T>)
         : hasValue(other.hasValue)
     {
         if (other.hasValue)
             std::construct_at(&_val, other._val);
     }
 
-    constexpr option(option&&) = default;
+    constexpr option(option&&)
+        requires std::is_trivially_move_constructible_v<T>
+    = default;
     constexpr option(option&& other)
-        requires(not std::is_trivially_move_constructible_v<T>)
         : hasValue(other.hasValue)
     {
         if (other.hasValue)
@@ -115,22 +135,22 @@ public:
 
     constexpr T& val() &
     {
-        gloxAssert(not hasValue, "Can't unwrap an error");
+        gloxAssert(hasValue, "Can't unwrap an error");
         return _val;
     }
     constexpr T&& val() &&
     {
-        gloxAssert(not hasValue, "Can't unwrap an error");
+        gloxAssert(hasValue, "Can't unwrap an error");
         return RVALUE(_val);
     }
     constexpr const T& val() const&
     {
-        gloxAssert(not hasValue, "Can't unwrap an error");
+        gloxAssert(hasValue, "Can't unwrap an error");
         return _val;
     }
     constexpr const T&& val() const&&
     {
-        gloxAssert(not hasValue, "Can't unwrap an error");
+        gloxAssert(hasValue, "Can't unwrap an error");
         return RVALUE(_val);
     }
 
@@ -225,6 +245,11 @@ public:
     }
 
     GLOX_ALWAYS_INLINE constexpr option()
+        : _val { nullptr }
+    {
+    }
+
+    GLOX_ALWAYS_INLINE constexpr option(empty_option_t)
         : _val { nullptr }
     {
     }
@@ -352,4 +377,18 @@ public:
 
 template <typename T>
 option(T) -> option<T>;
+
+template <typename T>
+GLOX_ALWAYS_INLINE constexpr empty_option_t
+try_propagate_err([[maybe_unused]] option<T>&& res)
+{
+    return { };
+}
+
+template <typename T>
+GLOX_ALWAYS_INLINE constexpr option<T>
+try_propagate_from_err(empty_option_t opt)
+{
+    return opt;
+}
 } // namespace glox

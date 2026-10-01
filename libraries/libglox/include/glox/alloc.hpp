@@ -86,7 +86,7 @@ namespace detail {
         )
         {
             gloxAssert(
-                old_size <= new_size,
+                old_count <= new_count,
                 "New size must be greater than or equal to old size"
             );
 
@@ -110,7 +110,7 @@ namespace detail {
         )
         {
             gloxAssert(
-                old_size <= new_size,
+                old_count <= new_count,
                 "New size must be greater than or equal to old size"
             );
 
@@ -137,7 +137,7 @@ namespace detail {
         )
         {
             gloxAssert(
-                old_size >= new_size,
+                old_count >= new_count,
                 "New size must be smaller than or equal to old size"
             );
 

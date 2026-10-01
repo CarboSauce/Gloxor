@@ -1,4 +1,7 @@
 #include "glox/option.hpp"
+#include "doctest.h"
+#include "glox/detail/try.hpp"
+#include "utils.hpp"
 #include <string>
 #include <type_traits>
 
@@ -94,3 +97,39 @@ constexpr auto test_option_const_ref()
 static_assert(test_option_ref() == 10);
 static_assert(test_option_transform_mutation().val() == 10);
 static_assert(test_option_const_ref() == 10);
+
+constexpr auto test_opt_try()
+{
+    glox::option<int> a = 5;
+
+    return glox::option(TRY(a) + 1);
+}
+
+static_assert(test_opt_try().val() == 6);
+
+constexpr glox::option<alloc_tracker> div_test_alloc(int a, int b)
+{
+    if (b == 0) {
+        return glox::empty_option;
+    } else {
+        return glox::option<alloc_tracker> {
+            { a / b },
+        };
+    }
+}
+auto test_func() -> glox::option<alloc_tracker>
+{
+    auto res = div_test_alloc(10, 1);
+    alloc_tracker::reset_counters();
+    auto tmp = TRY(res);
+    REQUIRE(alloc_tracker::move_ctor_counter == 1);
+    REQUIRE(alloc_tracker::copy_ctor_counter == 0);
+    REQUIRE(alloc_tracker::move_assignment_counter == 0);
+    REQUIRE(alloc_tracker::copy_assignment_counter == 0);
+    return { };
+}
+
+TEST_CASE("Option test alloc_tracker")
+{
+    (void)test_func();
+}

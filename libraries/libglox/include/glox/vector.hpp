@@ -100,8 +100,8 @@ public:
     }
     constexpr static glox::option<glox::vector<T>> with_capacity(size_t cap)
     {
-        glox::vector<T> tmp(cap);
-        if (tmp.is_null())
+        glox::option<glox::vector<T>> tmp(in_place, cap);
+        if (tmp.val().is_null())
             return { };
         else
             return tmp;
@@ -247,12 +247,12 @@ public:
     }
     constexpr const T& operator[](size_t i) const
     {
-        gloxAssert(i < size);
+        gloxAssert(i < siz);
         return *(start + i);
     }
     constexpr T& operator[](size_t i)
     {
-        gloxAssert(i < size);
+        gloxAssert(i < siz);
         return *(start + i);
     }
 

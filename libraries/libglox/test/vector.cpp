@@ -1,6 +1,18 @@
 #include "glox/vector.hpp"
 #include "doctest.h"
 #include "utils.hpp"
+#include <cstdio>
+#include <cstdlib>
+namespace glox {
+[[noreturn]] void
+exec_assert(const char* message, const char* file, const char* line)
+{
+    printf(
+        "Assert hit\nMessage: %s\nFile: %s\nLine: %s\n", message, file, line
+    );
+    exit(1);
+}
+}
 static_assert(
     sizeof(glox::vector<alloc_tracker>)
     == sizeof(alloc_tracker*) + sizeof(size_t) * 2

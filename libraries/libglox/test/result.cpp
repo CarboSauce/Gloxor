@@ -1,4 +1,7 @@
 #include "glox/result.hpp"
+#include "doctest.h"
+#include "utils.hpp"
+#include <expected>
 #include <string>
 #include <type_traits>
 
@@ -63,7 +66,7 @@ using div_result = glox::result<int, div_error>;
 constexpr div_result divide(int a, int b)
 {
     if (b == 0)
-        return div_result::from_err(div_error::divide_by_zero);
+        return div_result(glox::error_inplace, div_error::divide_by_zero);
     else
         return a / b;
 }
@@ -119,6 +122,92 @@ constexpr auto compare(div_result a, div_result b)
 static_assert(compare({ 1 }, { 1 }));
 static_assert(compare({ 0 }, { 1 }) == false);
 static_assert(
-    compare({ div_error::divide_by_zero }, { div_error::divide_by_zero })
+    compare(
+        glox::error { div_error::divide_by_zero },
+        glox::error { div_error::divide_by_zero }
+    )
     == true
 );
+
+constexpr div_result try_test()
+{
+    auto res1 = divide(10, 1);
+    auto res2 = divide(10, 2);
+    return div_result(TRY(res1) + TRY(res2));
+}
+static_assert(try_test().val() == 15);
+
+static_assert(not std::is_trivially_copy_assignable_v<std::string>);
+static_assert(std::is_trivially_copy_assignable_v<int>);
+
+constexpr glox::result<int, int> test_assignments()
+{
+    glox::result<std::string, int> a = std::string { "Test" };
+    glox::result<std::string, int> b = std::string { "Test" };
+    b = a;
+    return glox::result<int, int>(
+        (int)a.val().length() + (int)a.val().length()
+    );
+}
+
+static_assert(test_assignments().val() == 8);
+
+constexpr glox::result<alloc_tracker, div_error> div_test_alloc(int a, int b)
+{
+    if (b == 0) {
+        return glox::error { div_error::divide_by_zero };
+    } else {
+        return glox::result<alloc_tracker, div_error> {
+            { a / b },
+        };
+    }
+}
+auto test_func(int a, int b) -> glox::result<alloc_tracker, div_error>
+{
+    auto res = div_test_alloc(a, b);
+    alloc_tracker::reset_counters();
+    auto tmp = TRY(res);
+    REQUIRE(alloc_tracker::move_ctor_counter == 1);
+    REQUIRE(alloc_tracker::copy_ctor_counter == 0);
+    REQUIRE(alloc_tracker::move_assignment_counter == 0);
+    REQUIRE(alloc_tracker::copy_assignment_counter == 0);
+    alloc_tracker::reset_counters();
+    auto tmp2 = decltype(res)(RVALUE(tmp));
+    alloc_tracker::reset_counters();
+    return tmp2;
+};
+
+TEST_CASE("Test TRY macro for expected move count on value")
+{
+    alloc_tracker::reset_counters();
+    std::expected<alloc_tracker, int> a { 1 };
+    auto tmp = test_func(10, 1);
+    REQUIRE(alloc_tracker::copy_ctor_counter == 0);
+    REQUIRE(alloc_tracker::move_ctor_counter == 0);
+    REQUIRE(alloc_tracker::move_assignment_counter == 0);
+    REQUIRE(alloc_tracker::move_assignment_counter == 0);
+}
+
+TEST_CASE("Test TRY macro for expected move count on error")
+{
+    auto divtest = []([[maybe_unused]] int a,
+                       int b) -> glox::result<int, alloc_tracker> {
+        if (b == 0) {
+            return glox::result<int, alloc_tracker>(glox::error_inplace, 1);
+        } else
+            return glox::result<int, alloc_tracker>(glox::in_place, a / b);
+    };
+    auto testFunc = [=](int a, int b) -> glox::result<int, alloc_tracker> {
+        auto res = divtest(a, b);
+        alloc_tracker::reset_counters();
+        return decltype(res)(TRY(res) + 1);
+    };
+
+    auto res = testFunc(10, 0);
+
+    REQUIRE(res.err().value == 1);
+    REQUIRE(alloc_tracker::copy_ctor_counter == 0);
+    REQUIRE(alloc_tracker::move_ctor_counter == 2);
+    REQUIRE(alloc_tracker::move_assignment_counter == 0);
+    REQUIRE(alloc_tracker::move_assignment_counter == 0);
+}

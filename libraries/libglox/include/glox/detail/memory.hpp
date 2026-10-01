@@ -10,4 +10,10 @@
 #include <bits/stl_construct.h>
 #endif
 
+namespace glox {
+struct in_place_t
+{ };
+inline constexpr auto in_place = in_place_t { };
+}
+
 #endif
