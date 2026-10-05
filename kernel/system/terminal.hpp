@@ -15,7 +15,7 @@ void init_term(
 void write_str(const char* str, size_t size);
 inline void write_str(const char* str)
 {
-    write_str(str, strlen(str));
+    write_str(str, glox::strlen(str));
 }
 void set_fg_color(color_t);
 void set_bg_color(color_t);

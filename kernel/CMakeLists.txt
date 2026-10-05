@@ -1,5 +1,6 @@
 add_executable( kernel
     main.cpp
+    string.cpp
     gloxor/mutex.cpp
     system/danger.cpp
     system/logging.cpp
@@ -22,22 +23,22 @@ set_target_properties(kernel PROPERTIES
 
 CPMAddPackage(
     NAME cxxheaders
-    GIT_REPOSITORY "https://github.com/osdev0/freestanding-cxx-hdrs-gnu.git"
-    GIT_TAG "6fc33d66b123874631cf27bc9ab80a9ab3a43dd5"
+    GIT_REPOSITORY "https://github.com/CarboSauce/cxx-headers-freestanding.git"
+    GIT_TAG "a5dd2fdd90139a5fd7c8363711de6c2f95c4c7aa"
     DOWNLOAD_ONLY
 )
 
 if (cxxheaders_ADDED)
     target_include_directories(kernel
         SYSTEM PUBLIC
-            $<BUILD_INTERFACE:${cxxheaders_SOURCE_DIR}/${OS_ARCH}/include>
+            $<BUILD_INTERFACE:${cxxheaders_SOURCE_DIR}/include>
     )
 endif()
 
 CPMAddPackage(
     NAME cheaders
-    GIT_REPOSITORY "https://github.com/osdev0/freestanding-c-hdrs.git"
-    GIT_TAG "38fed4e1e3365733ddbfa03b0a28936243ad31e9"
+    GIT_REPOSITORY "https://github.com/osdev0/freestanding-c-hdrs-gnu.git"
+    GIT_TAG "7082a7596238932f20cf0013e8448f74b53e814c"
     DOWNLOAD_ONLY
 )
 

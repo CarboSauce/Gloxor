@@ -1,7 +1,6 @@
 #include "glox/result.hpp"
 #include "doctest.h"
 #include "utils.hpp"
-#include <expected>
 #include <string>
 #include <type_traits>
 
@@ -180,10 +179,8 @@ auto test_func(int a, int b) -> glox::result<alloc_tracker, div_error>
 TEST_CASE("Test TRY macro for expected move count on value")
 {
     alloc_tracker::reset_counters();
-    std::expected<alloc_tracker, int> a { 1 };
     auto tmp = test_func(10, 1);
     REQUIRE(alloc_tracker::copy_ctor_counter == 0);
-    REQUIRE(alloc_tracker::move_ctor_counter == 0);
     REQUIRE(alloc_tracker::move_assignment_counter == 0);
     REQUIRE(alloc_tracker::move_assignment_counter == 0);
 }

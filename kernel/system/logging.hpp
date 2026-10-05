@@ -2,7 +2,7 @@
 #include "glox/logger.hpp"
 #include "system/logging.hpp"
 namespace gx {
-struct LogStream : glox::b_stream
+struct LogStream : ::glox::b_stream
 {
     char buffer[512];
     uint32_t curLogLevel;

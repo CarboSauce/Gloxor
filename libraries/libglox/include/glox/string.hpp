@@ -30,8 +30,3 @@ inline void* memmove(void* dest, const void* src, size_t len)
 	return __builtin_memmove(dest, src, len);
 }
 } // namespace glox
-
-using glox::memcpy;
-using glox::memmove;
-using glox::memset;
-using glox::strlen;

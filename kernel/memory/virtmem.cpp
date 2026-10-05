@@ -15,11 +15,11 @@ struct VmapRegion
     vaddr virt_base;
     size_t len;
     size_t flags;
-    glox::list_node list_node;
+    ::glox::list_node list_node;
 };
 
-glox::intrusive_list<VmapRegion> vmapList;
-using VmapIter = glox::intrusive_list<VmapRegion>::iterator;
+::glox::intrusive_list<VmapRegion> vmapList;
+using VmapIter = ::glox::intrusive_list<VmapRegion>::iterator;
 inline bool
 is_overlapping(uintptr base, uintptr back, uintptr obase, uintptr oback)
 {
@@ -53,7 +53,7 @@ namespace gx {
 void* vmap_iomem(paddr base, size_t len, arch::vmem::PageCaching pc)
 {
     auto nvmap
-        = glox::find_if(vmapList.begin(), vmapList.end(), [len](auto&& it) {
+        = ::glox::find_if(vmapList.begin(), vmapList.end(), [len](auto&& it) {
               return it.virt_base + it.len + len
                    < VmapIter(&it).next()->virt_base;
           });
@@ -78,7 +78,7 @@ void* vmap_iomem(paddr base, size_t len, arch::vmem::PageCaching pc)
 }
 void vunmap_iomem(void* addr)
 {
-    auto res = glox::find_if(
+    auto res = ::glox::find_if(
         std::begin(vmapList), std::end(vmapList), [addr](auto&& it) {
             return it.virt_base == (vaddr)addr;
         }

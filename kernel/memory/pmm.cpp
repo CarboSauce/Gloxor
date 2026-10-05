@@ -58,7 +58,7 @@ void* page_alloc(usize pageCount)
 void* page_alloc_z(usize pageCount)
 {
     auto addr = page_alloc(pageCount);
-    memset(addr, 0, pageCount * gx::pmmChunkSize);
+    glox::memset(addr, 0, pageCount * gx::pmmChunkSize);
     return addr;
 }
 

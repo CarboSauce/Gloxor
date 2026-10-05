@@ -54,16 +54,12 @@ list(APPEND KERNEL_COMPILE_FLAGS
     -mno-sse
     -mno-sse2
     -nostdlib
-    -nostdlibinc
+    -nostdinc
     -nostdinc++
     -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=/
 )
 list(APPEND KERNEL_LINK_FLAGS -ffreestanding -nostdlib)
 
-set(WARNING_FLAGS
-    $<$<COMPILE_LANG_AND_ID:CXX,Clang,GNU,AppleClang>:$<BUILD_INTERFACE:-Wall;-Wextra;-Wno-interrupt-service-routine>>
-    $<$<COMPILE_LANG_AND_ID:C,Clang,GNU,AppleClang>:$<BUILD_INTERFACE:-Wall;-Wextra;-Wno-interrupt-service-routine>>
-)
 set(GLOX_COMPILE_FLAGS
     $<$<COMPILE_LANG_AND_ID:CXX,Clang,GNU,AppleClang>:$<BUILD_INTERFACE:${KERNEL_COMPILE_FLAGS}>>
     $<$<COMPILE_LANG_AND_ID:C,Clang,GNU,AppleClang>:$<BUILD_INTERFACE:${KERNEL_COMPILE_FLAGS}>>

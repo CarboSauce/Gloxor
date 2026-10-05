@@ -1,7 +1,9 @@
 #pragma once
-#include "glox/alloc.hpp"
+#include "glox/alloc_types.hpp"
+#include "glox/assert.hpp"
 #include "gloxor/types.hpp"
 #include "memory/pmm.hpp"
+#include <string.h>
 
 namespace gx {
 
@@ -13,18 +15,123 @@ void memdealloc(void* ptr, usize size);
     aligned(gx::pmmChunkSize)]] void*
 memalloc(usize bytes);
 
+template <typename T>
 struct KAllocator
 {
-    [[gnu::always_inline]] [[nodiscard]] static void* alloc(usize size)
+    glox::alloc_handle<T>
+    alloc(std::size_t count, [[maybe_unused]] std::size_t alignment)
     {
-        return gx::memalloc(size);
+        return { (T*)gx::memalloc(count * sizeof(T)), count };
     }
-    [[gnu::always_inline]] static void dealloc(void* p, usize s)
+    void dealloc(
+        T* p,
+        [[maybe_unused]] std::size_t count,
+        [[maybe_unused]] std::size_t alignment
+    )
     {
-        gx::memdealloc(p, s);
+        return gx::memdealloc(static_cast<void*>(p), sizeof(T) * count);
+    }
+    glox::alloc_handle<T>
+    alloc_zeroed(std::size_t count, [[maybe_unused]] std::size_t alignment)
+    {
+        auto ptr = (T*)gx::memalloc(sizeof(T) * count);
+        if (ptr == nullptr) {
+            return { nullptr, 0 };
+        }
+        return { ::memset(ptr, 0, sizeof(T) * count), count };
+    }
+
+    glox::alloc_handle<T> grow(
+        T* old_ptr,
+        std::size_t old_count,
+        std::size_t new_count,
+        std::size_t alignment
+    )
+    {
+        gloxAssert(
+            old_count <= new_count,
+            "New size must be greater than or equal to old size"
+        );
+
+        auto newPtr = (T*)gx::memalloc(sizeof(T) * new_count);
+        if (newPtr == nullptr) {
+            return { nullptr, 0 };
+        }
+
+        ::memcpy(newPtr, old_ptr, sizeof(T) * old_count);
+        dealloc(old_ptr, old_count, alignment);
+
+        return { newPtr, new_count };
+    }
+
+    glox::alloc_handle<T> grow_zeroed(
+        T* old_ptr,
+        std::size_t old_count,
+        std::size_t new_count,
+        std::size_t alignment
+    )
+    {
+        gloxAssert(
+            old_count <= new_count,
+            "New size must be greater than or equal to old size"
+        );
+
+        auto newPtr = (T*)gx::memalloc(sizeof(T) * new_count);
+        if (newPtr == nullptr) {
+            return { nullptr, 0 };
+        }
+
+        ::memcpy(newPtr, old_ptr, sizeof(T) * old_count);
+        ::memset(newPtr + old_count, 0, sizeof(T) * (new_count - old_count));
+        dealloc(old_ptr, old_count, alignment);
+
+        return { newPtr, new_count };
+    }
+
+    glox::alloc_handle<T> shrink(
+        T* old_ptr,
+        std::size_t old_count,
+        std::size_t new_count,
+        std::size_t alignment
+    )
+    {
+        gloxAssert(
+            old_count >= new_count,
+            "New size must be smaller than or equal to old size"
+        );
+
+        auto newPtr = gx::memalloc(sizeof(T) * new_count);
+        if (newPtr == nullptr) {
+            return { nullptr, 0 };
+        }
+
+        ::memcpy(newPtr, old_ptr, new_count);
+        dealloc(old_ptr, old_count, alignment);
+
+        return { newPtr, new_count };
+    }
+    glox::alloc_handle<T> grow_inplace(
+        [[maybe_unused]] T* old_ptr,
+        [[maybe_unused]] std::size_t old_size,
+        [[maybe_unused]] std::size_t new_size,
+        [[maybe_unused]] std::size_t alignment
+    )
+    {
+        // in std there isn't really a way to implement this
+        return { nullptr, 0 };
+    }
+
+    glox::alloc_handle<T> shrink_inplace(
+        [[maybe_unused]] T* old_ptr,
+        [[maybe_unused]] std::size_t old_count,
+        [[maybe_unused]] std::size_t new_count,
+        [[maybe_unused]] std::size_t alignment
+    )
+    {
+        // in std there isn't really a way to implement this
+        return { nullptr, 0 };
     }
 };
-using default_allocator = KAllocator;
 
 struct PmmAllocator
 {
@@ -61,3 +168,8 @@ void dealloc(T* ptr, size_t ele_count)
 }
 
 } // namespace gx
+
+namespace glox {
+template <typename T>
+using default_allocator = gx::KAllocator<T>;
+} // namespace glox

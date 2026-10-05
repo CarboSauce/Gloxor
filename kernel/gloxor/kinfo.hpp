@@ -31,9 +31,9 @@ struct BootInfo
         usize width;
     };
 
-    glox::span<MemoryMap> mmapEntries;
+    ::glox::span<MemoryMap> mmapEntries;
     FbInfo fbInfoEntry;
-    glox::span<u8> kernelCode;
+    ::glox::span<u8> kernelCode;
 };
 inline gx::BootInfo machineInfo;
 } // namespace gx

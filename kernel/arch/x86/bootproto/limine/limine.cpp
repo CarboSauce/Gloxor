@@ -3,14 +3,12 @@
 #include "arch/addrspace.hpp"
 #include "arch/archinfo.hpp"
 #include "arch/cpu.hpp"
+#include "glox/alloc.hpp"
 #include "gloxor/kinfo.hpp"
 #include "gloxor/types.hpp"
 #include "memory/alloc.hpp"
 #include "memory/pmm.hpp"
 #include "system/terminal.hpp"
-
-using namespace gx;
-using namespace arch;
 
 extern "C" void limine_main();
 extern "C" void gloxor_main();
@@ -70,9 +68,9 @@ inline void initialize_pmm(limine_memmap_response* m)
     }
 }
 
-inline BootInfo::MemTypes convert_mem_types(u32 type)
+inline gx::BootInfo::MemTypes convert_mem_types(u32 type)
 {
-    using mtype = BootInfo::MemTypes;
+    using mtype = gx::BootInfo::MemTypes;
     switch (type) {
     case LIMINE_MEMMAP_USABLE:
         return mtype::usable;
@@ -101,10 +99,11 @@ inline void setup_kernelmemmap(limine_memmap_response* m)
 {
     const auto* mMap = m->entries;
     const auto entryCount = m->entry_count;
-    auto* memmap = (BootInfo::MemoryMap*)gx::PmmAllocator::alloc(
-        sizeof(BootInfo::MemoryMap) * entryCount
+    auto* memmap = (gx::BootInfo::MemoryMap*)gx::PmmAllocator::alloc(
+        sizeof(gx::BootInfo::MemoryMap) * entryCount
     );
     glox::uninit_def_construct(memmap, memmap + entryCount);
+
     for (size_t i = 0; i != entryCount; ++i) {
         auto mTemp = mMap[i];
         memmap[i] = {
@@ -113,39 +112,40 @@ inline void setup_kernelmemmap(limine_memmap_response* m)
             .type = convert_mem_types(mTemp->type),
         };
     }
-    machineInfo.mmapEntries
-        = glox::span<BootInfo::MemoryMap>(memmap, memmap + entryCount);
+    gx::machineInfo.mmapEntries
+        = glox::span<gx::BootInfo::MemoryMap>(memmap, memmap + entryCount);
 }
 
 void limine_main()
 {
     if (rsdp_request.response != nullptr)
-        archInfo.acpiRsdp = (vaddr)rsdp_request.response->address;
+        arch::archInfo.acpiRsdp = (vaddr)rsdp_request.response->address;
 
     if (framebuffer_request.response != nullptr) {
         if (framebuffer_request.response->framebuffer_count >= 1) {
             auto fb = framebuffer_request.response->framebuffers[0];
-            machineInfo.fbInfoEntry.begin = (vaddr)fb->address;
-            machineInfo.fbInfoEntry.end
+            gx::machineInfo.fbInfoEntry.begin = (vaddr)fb->address;
+            gx::machineInfo.fbInfoEntry.end
                 = (uintptr_t)fb->address + fb->pitch * fb->height;
-            machineInfo.fbInfoEntry.pitch = fb->pitch / 4;
-            machineInfo.fbInfoEntry.height = fb->height;
-            machineInfo.fbInfoEntry.width = fb->width;
+            gx::machineInfo.fbInfoEntry.pitch = fb->pitch / 4;
+            gx::machineInfo.fbInfoEntry.height = fb->height;
+            gx::machineInfo.fbInfoEntry.width = fb->width;
 
             gx::term::init_term(
-                (color_t*)fb->address,
-                (color_t*)machineInfo.fbInfoEntry.end,
-                machineInfo.fbInfoEntry.pitch,
-                machineInfo.fbInfoEntry.width,
-                machineInfo.fbInfoEntry.height
+                (gx::color_t*)fb->address,
+                (gx::color_t*)gx::machineInfo.fbInfoEntry.end,
+                gx::machineInfo.fbInfoEntry.pitch,
+                gx::machineInfo.fbInfoEntry.width,
+                gx::machineInfo.fbInfoEntry.height
             );
         }
     }
 
     if (auto resp = exec_address_request.response; resp != nullptr) {
-        kernelPhysOffset = resp->physical_base;
-        kernelVirtOffset = resp->virtual_base;
-        kernelMappingOffset = kernelPhysOffset - kernelVirtOffset;
+        arch::kernelPhysOffset = resp->physical_base;
+        arch::kernelVirtOffset = resp->virtual_base;
+        arch::kernelMappingOffset
+            = arch::kernelPhysOffset - arch::kernelVirtOffset;
     }
 
     if (auto resp = memmap_request.response; resp != nullptr) {
@@ -153,7 +153,7 @@ void limine_main()
         setup_kernelmemmap(resp);
     }
 
-    machineInfo.kernelCode = { kernelFileBegin, kernelFileEnd };
+    gx::machineInfo.kernelCode = { kernelFileBegin, kernelFileEnd };
 
     gloxor_main();
 }

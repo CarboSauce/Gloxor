@@ -245,13 +245,13 @@ namespace gx {
 
 void* memalloc(usize size)
 {
-    glox::scoped_lock<IrqLock> _;
+    ::glox::scoped_lock<IrqLock> _;
     return alloc_mem(size);
 }
 
 void memdealloc(void* ptr, usize size)
 {
-    glox::scoped_lock<IrqLock> _;
+    ::glox::scoped_lock<IrqLock> _;
     if (!free_mem(ptr, size)) {
         // TODO: Add debuging capabilities
         gloxDebugLogln("Failed to free addr: ", ptr, " of size: ", size);

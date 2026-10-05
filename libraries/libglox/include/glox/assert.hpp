@@ -27,11 +27,6 @@ exec_assert(const char* message, const char* file, const char* line);
             );                                                         \
         }                                                              \
     } while (0)
-// (void)((!!(cond))                                                     \
-//        || (glox::exec_assert(                                         \
-//                #cond " " __VA_ARGS__, __FILE__, _mSTRINGIFY(__LINE__) \
-//            ),                                                         \
-//            0))
 #define gloxUnreachable()                       \
     gloxAssert(false, "unreachable() invoked"); \
     __builtin_unreachable()

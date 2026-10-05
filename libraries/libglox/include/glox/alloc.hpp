@@ -1,56 +1,16 @@
 #pragma once
+#include "alloc_types.hpp"
 #include "glox/assert.hpp"
 #include "glox/detail/memory.hpp"
 #include "glox/detail/movesem.hpp"
-#include <concepts>
 #include <cstdlib>
-#include <cstring>
+#include <string.h>
 #include <type_traits>
 
 #ifdef LIBGLOX_DEFAULT_ALLOCATOR_PATH
 #include LIBGLOX_DEFAULT_ALLOCATOR_PATH
 #else
-#define LIBGLOX_DEFAULT_ALLOCATOR_NAME glox::detail::default_allocator
 namespace glox {
-template <typename T>
-struct alloc_handle
-{
-    T* ptr;
-    std::size_t count;
-};
-template <typename Alloc, typename T>
-concept allocator
-    = std::copy_constructible<Alloc> and std::move_constructible<Alloc>
-  and std::destructible<Alloc>
-  and requires(
-      Alloc& allocator,
-      T* ptr,
-      std::size_t count,
-      std::size_t alignment
-  ) {
-          {
-              allocator.alloc(count, alignment)
-          } -> std::same_as<alloc_handle<T>>;
-          { allocator.dealloc(ptr, count, alignment) } -> std::same_as<void>;
-          {
-              allocator.alloc_zeroed(count, alignment)
-          } -> std::same_as<alloc_handle<T>>;
-          {
-              allocator.grow(ptr, count, count, alignment)
-          } -> std::same_as<alloc_handle<T>>;
-          {
-              allocator.grow_inplace(ptr, count, count, alignment)
-          } -> std::same_as<alloc_handle<T>>;
-          {
-              allocator.grow_zeroed(ptr, count, count, alignment)
-          } -> std::same_as<alloc_handle<T>>;
-          {
-              allocator.shrink(ptr, count, count, alignment)
-          } -> std::same_as<alloc_handle<T>>;
-          {
-              allocator.shrink_inplace(ptr, count, count, alignment)
-          } -> std::same_as<alloc_handle<T>>;
-      };
 namespace detail {
     template <typename T>
     struct default_allocator
@@ -75,7 +35,7 @@ namespace detail {
             if (ptr == nullptr) {
                 return { nullptr, 0 };
             }
-            return { std::memset(ptr, 0, sizeof(T) * count), count };
+            return { ::memset(ptr, 0, sizeof(T) * count), count };
         }
 
         alloc_handle<T> grow(
@@ -96,7 +56,7 @@ namespace detail {
                 return { nullptr, 0 };
             }
 
-            std::memcpy(newPtr, old_ptr, sizeof(T) * old_count);
+            ::memcpy(newPtr, old_ptr, sizeof(T) * old_count);
             dealloc(old_ptr, old_count, alignment);
 
             return { newPtr, new_count };
@@ -120,8 +80,8 @@ namespace detail {
                 return { nullptr, 0 };
             }
 
-            std::memcpy(newPtr, old_ptr, sizeof(T) * old_count);
-            std::memset(
+            ::memcpy(newPtr, old_ptr, sizeof(T) * old_count);
+            ::memset(
                 newPtr + old_count, 0, sizeof(T) * (new_count - old_count)
             );
             dealloc(old_ptr, old_count, alignment);
@@ -141,12 +101,12 @@ namespace detail {
                 "New size must be smaller than or equal to old size"
             );
 
-            auto newPtr = std::aligned_alloc(alignment, new_count);
+            auto newPtr = std::aligned_alloc(alignment, sizeof(T) * new_count);
             if (newPtr == nullptr) {
                 return { nullptr, 0 };
             }
 
-            std::memcpy(newPtr, old_ptr, new_count);
+            ::memcpy(newPtr, old_ptr, new_count);
             dealloc(old_ptr, old_count, alignment);
 
             return { newPtr, new_count };
@@ -175,13 +135,11 @@ namespace detail {
         }
     };
 } // namespace detail
+template <typename T>
+using default_allocator = glox::detail::default_allocator<T>;
 } // namespace glox
 #endif
 
-namespace glox {
-template <typename T>
-using default_allocator = LIBGLOX_DEFAULT_ALLOCATOR_NAME<T>;
-}; // namespace glox
 static_assert(
     glox::allocator<glox::default_allocator<int>, int>,
     "Default allocator satisfies allocator"
