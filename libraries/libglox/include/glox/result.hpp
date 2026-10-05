@@ -279,12 +279,6 @@ public:
         else
             return _err == b._err;
     }
-    constexpr T unwrap_or(T&& def) &&
-    {
-        if (hasValue)
-            return RVALUE(_val);
-        return RVALUE(def);
-    }
 
     template <typename U = std::remove_cv_t<T>>
     constexpr T val_or(U&& def) &&
@@ -360,6 +354,369 @@ public:
             return result<T, G>(error_inplace, FORWARD(f)(FORWARD(self._err)));
         else
             return result<T, G>(in_place, FORWARD(self));
+    }
+
+    template <result_type R>
+    friend constexpr decltype(auto) try_propagate_err(R& res);
+    template <result_type R>
+    friend constexpr decltype(auto) try_propagate_val(R& res);
+};
+
+template <typename T, typename E>
+class [[nodiscard]] result<T&, E>
+{
+    T* _val;
+    union
+    {
+        E _err;
+    };
+
+    template <typename ErrT>
+    static constexpr bool is_error = false;
+    template <typename Err>
+    static constexpr bool is_error<glox::error<Err>> = true;
+
+public:
+    template <typename U = std::remove_cv_t<T>>
+    GLOX_ALWAYS_INLINE constexpr explicit(
+        not std::is_convertible_v<U, T>
+    ) result(U& val)
+        requires(not std::is_same_v<std::remove_cvref_t<U>, error_inplace_t>)
+            and (std::is_constructible_v<U, T>) and (not is_error<U>)
+        : _val { &val }
+    {
+    }
+    template <typename... Args>
+    GLOX_ALWAYS_INLINE constexpr explicit result(
+        glox::error_inplace_t,
+        Args&&... args
+    )
+        : _val(nullptr)
+        , _err { FORWARD(args)... }
+    {
+    }
+    template <typename G>
+    GLOX_ALWAYS_INLINE constexpr explicit(
+        not std::is_convertible_v<G, E>
+    ) result(error<G>&& err)
+        : _val(nullptr)
+        , _err { RVALUE(err.err) }
+    {
+    }
+    template <typename G>
+    GLOX_ALWAYS_INLINE constexpr explicit(
+        not std::is_convertible_v<G, E>
+    ) result(const error<G>& err)
+        : _val(nullptr)
+        , _err { err.err }
+    {
+    }
+
+    constexpr ~result()
+        requires std::is_trivially_destructible_v<T>
+                 and std::is_trivially_destructible_v<E>
+    = default;
+    constexpr ~result()
+    {
+        if (has_val())
+            _val.~T();
+        else
+            _err.~E();
+    }
+
+    constexpr result(const result&)
+        requires std::is_trivially_copy_constructible_v<T>
+                 and std::is_trivially_copy_constructible_v<E>
+    = default;
+    constexpr result(const result& other)
+    {
+        if (other.has_val())
+            _val = other._val;
+        else {
+            _val = nullptr;
+            std::construct_at(&_err, other._err);
+        }
+    }
+
+    constexpr result(result&&)
+        requires std::is_trivially_move_constructible_v<E>
+    = default;
+    constexpr result(result&& other)
+    {
+        if (other.has_val())
+            _val = other._val;
+        else {
+            _val = nullptr;
+            std::construct_at(&_err, RVALUE(other._err));
+        }
+    }
+
+    constexpr result& operator=(const result&) = delete;
+    constexpr result& operator=(const result&)
+        requires std::is_trivially_copy_assignable_v<T>
+                 and std::is_trivially_copy_assignable_v<E>
+    = default;
+    constexpr result& operator=(const result& other)
+        requires(not std::is_trivially_copy_assignable_v<E>)
+            and std::is_destructible_v<E> and std::is_copy_constructible_v<E>
+    {
+        if (has_val()) {
+            if (other.has_val()) {
+                _val = other._val;
+            } else {
+                _val = nullptr;
+                std::construct_at(&_err, other._err);
+            }
+        } else {
+            if (other.has_val()) {
+                std::destroy_at(&_err);
+                _val = other._val;
+            } else {
+                _err = other._err;
+                _val = nullptr;
+            }
+        }
+        return *this;
+    }
+
+    constexpr result& operator=(result&&) = delete;
+    constexpr result& operator=(result&&)
+        requires std::is_trivially_move_assignable_v<T>
+                 and std::is_trivially_move_assignable_v<E>
+    = default;
+    constexpr result& operator=(result&& other)
+        requires(not std::is_trivially_move_assignable_v<T>
+                    or not std::is_trivially_move_assignable_v<E>)
+            and std::is_destructible_v<T> and std::is_destructible_v<E>
+            and std::is_move_constructible_v<T>
+            and std::is_move_constructible_v<E>
+    {
+        if (has_val()) {
+            if (other.has_val()) {
+                _val = other._val;
+            } else {
+                _val = nullptr;
+                std::construct_at(&_err, RVALUE(other._err));
+            }
+        } else {
+            if (other.has_val()) {
+                std::destroy_at(&_err);
+                _val = other._val;
+            } else {
+                _err = other._err;
+                _val = nullptr;
+            }
+        }
+        return *this;
+    }
+
+    GLOX_ALWAYS_INLINE
+    static constexpr result from_val(T&& val)
+    {
+        return result { RVALUE(val) };
+    }
+    GLOX_ALWAYS_INLINE
+    static constexpr result from_val(const T& val)
+    {
+        return result { val };
+    }
+
+    constexpr T& val() &
+    {
+        gloxAssert(has_val(), "Can't unwrap an error");
+        return *_val;
+    }
+    constexpr T&& val() &&
+    {
+        gloxAssert(has_val(), "Can't unwrap an error");
+        return RVALUE(*_val);
+    }
+    constexpr const T& val() const&
+    {
+        gloxAssert(has_val(), "Can't unwrap an error");
+        return *_val;
+    }
+    constexpr const T&& val() const&&
+    {
+        gloxAssert(has_val(), "Can't unwrap an error");
+        return RVALUE(*_val);
+    }
+
+    constexpr T& operator*() &
+    {
+        gloxAssert(has_val(), "Can't unwrap an error");
+        return *_val;
+    }
+    constexpr T&& operator*() &&
+    {
+        gloxAssert(has_val(), "Can't unwrap an error");
+        return RVALUE(*_val);
+    }
+    constexpr const T& operator*() const&
+    {
+        gloxAssert(has_val(), "Can't unwrap an error");
+        return *_val;
+    }
+    constexpr const T&& operator*() const&&
+    {
+        gloxAssert(has_val(), "Can't unwrap an error");
+        return RVALUE(*_val);
+    }
+
+    constexpr T& operator->() &
+    {
+        gloxAssert(has_val(), "Can't unwrap an error");
+        return _val;
+    }
+    constexpr T&& operator->() &&
+    {
+        gloxAssert(has_val(), "Can't unwrap an error");
+        return RVALUE(_val);
+    }
+    constexpr const T& operator->() const&
+    {
+        gloxAssert(has_val(), "Can't unwrap an error");
+        return _val;
+    }
+    constexpr const T&& operator->() const&&
+    {
+        gloxAssert(has_val(), "Can't unwrap an error");
+        return RVALUE(_val);
+    }
+
+    constexpr E& err() &
+    {
+        gloxAssert(is_err(), "Can't unwrap an error");
+        return _err;
+    }
+    constexpr E&& err() &&
+    {
+        gloxAssert(is_err(), "Can't unwrap an error");
+        return RVALUE(_err);
+    }
+    constexpr const E& err() const&
+    {
+        gloxAssert(is_err(), "Can't unwrap an error");
+        return _err;
+    }
+    constexpr const E&& err() const&&
+    {
+        gloxAssert(is_err(), "Can't unwrap an error");
+        return RVALUE(_err);
+    }
+
+    constexpr bool has_val() const
+    {
+        return _val != nullptr;
+    }
+    constexpr bool is_err() const
+    {
+        return _val == nullptr;
+    }
+    constexpr operator bool() const
+    {
+        return _val != nullptr;
+    }
+    constexpr auto operator<=>(const result& b)
+    {
+        if (has_val() and b.has_val())
+            return _val <=> b._val;
+        else if (is_err() and is_err())
+            return _err <=> b._err;
+        else
+            return false;
+    }
+    constexpr bool operator==(const result& b) const
+    {
+        if (has_val() and b.has_val())
+            return _val == b._val;
+        else if (is_err() and is_err())
+            return _err == b._err;
+        else
+            return false;
+    }
+    constexpr bool operator==(const E& b) const
+    {
+        if (has_val())
+            return false;
+        else
+            return _err == b._err;
+    }
+
+    template <typename U = std::remove_cv_t<T>>
+    constexpr T val_or(U&& def) &&
+    {
+        if (has_val()) {
+            return RVALUE(*_val);
+        } else {
+            return static_cast<T>(FORWARD(def));
+        }
+    }
+    template <typename U = std::remove_cv_t<T>>
+    constexpr T val_or(U&& def) const&
+    {
+        if (has_val()) {
+            return *_val;
+        } else {
+            return static_cast<T>(FORWARD(def));
+        }
+    }
+
+    template <typename U = E>
+    constexpr E err_or(U&& def) &&
+    {
+        if (has_val()) {
+            return FORWARD(def);
+        } else {
+            return RVALUE(err());
+        }
+    }
+    template <typename U = E>
+    constexpr E err_or(U&& def) const&
+    {
+        if (has_val()) {
+            return FORWARD(def);
+        } else {
+            return err();
+        }
+    }
+
+    template <typename Self, typename Func>
+    constexpr auto and_then(this Self&& self, Func&& f)
+    {
+        if (self.has_val())
+            return FORWARD(f)(FORWARD(*self._val));
+        else
+            return FORWARD(self);
+    }
+
+    template <typename Self, typename Func>
+    constexpr auto or_else(this Self&& self, Func&& f)
+    {
+        if (self.is_err())
+            return FORWARD(f)(FORWARD(self._err));
+        else
+            return FORWARD(self);
+    }
+
+    template <typename Self, typename Func>
+    constexpr auto transform(this Self&& self, Func&& f)
+    {
+        using G = decltype(FORWARD(f)(FORWARD(*self._val)));
+        if (self.has_val())
+            return result<G, E> { FORWARD(f)(FORWARD(*self._val)) };
+        else
+            return result<G, E>(FORWARD(self));
+    }
+
+    template <typename Self, typename Func>
+    constexpr auto transform_err(this Self&& self, Func&& f)
+    {
+        using G = decltype(FORWARD(f)(FORWARD(self._err)));
+        if (self.is_err())
+            return result<T, G>(error_inplace, FORWARD(f)(FORWARD(self._err)));
+        else
+            return result<T, G>(FORWARD(self));
     }
 
     template <result_type R>

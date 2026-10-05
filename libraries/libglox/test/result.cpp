@@ -208,3 +208,14 @@ TEST_CASE("Test TRY macro for expected move count on error")
     REQUIRE(alloc_tracker::move_assignment_counter == 0);
     REQUIRE(alloc_tracker::move_assignment_counter == 0);
 }
+
+TEST_CASE("Result of reference")
+{
+    int i = 0;
+    glox::result<int&, int> a = i;
+    *a = 1;
+    REQUIRE(a.val() == 1);
+
+    a.transform([](int& c) -> int& { return c = 2; });
+    REQUIRE(*a == 2);
+}
