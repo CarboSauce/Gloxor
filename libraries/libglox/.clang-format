@@ -36,3 +36,4 @@ AllowAllParametersOfDeclarationOnNextLine: false
 BreakTemplateDeclarations: Yes
 FixNamespaceComments: true
 PenaltyReturnTypeOnItsOwnLine: 100
+PenaltyBreakScopeResolution: 1000

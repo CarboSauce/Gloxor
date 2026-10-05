@@ -36,7 +36,6 @@ struct list_node
 template <typename T, list_node T::* NodePtr = &T::list_node>
 class intrusive_list
 {
-    static_assert(std::is_same_v<glox::list_node, decltype(T::list_node)>);
     // .prev is last element, .next is first
     list_node sentinel;
     size_t list_size;
