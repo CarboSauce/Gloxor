@@ -4,15 +4,18 @@
 #include <cstdio>
 #include <cstdlib>
 namespace glox {
-[[noreturn]] void
-exec_assert(const char* message, const char* file, const char* line)
+[[noreturn]] void exec_assert(const char* message, std::source_location loc)
 {
     printf(
-        "Assert hit\nMessage: %s\nFile: %s\nLine: %s\n", message, file, line
+        "Assert hit\nMessage:\nFunction: %s\n%s\nFile: %s\nLine: %d\n",
+        message,
+        loc.function_name(),
+        loc.file_name(),
+        loc.line()
     );
     exit(1);
 }
-}
+} // namespace glox
 static_assert(
     sizeof(glox::vector<alloc_tracker>)
     == sizeof(alloc_tracker*) + sizeof(size_t) * 2

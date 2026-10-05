@@ -133,36 +133,24 @@ public:
         return option { val };
     }
 
-    constexpr T& val() &
+    GLOX_ALWAYS_INLINE constexpr auto&& val(
+        this auto&& self,
+        std::source_location loc = std::source_location::current()
+    )
     {
-        gloxAssert(hasValue, "Can't unwrap an error");
-        return _val;
-    }
-    constexpr T&& val() &&
-    {
-        gloxAssert(hasValue, "Can't unwrap an error");
-        return RVALUE(_val);
-    }
-    constexpr const T& val() const&
-    {
-        gloxAssert(hasValue, "Can't unwrap an error");
-        return _val;
-    }
-    constexpr const T&& val() const&&
-    {
-        gloxAssert(hasValue, "Can't unwrap an error");
-        return RVALUE(_val);
+        GLOX_ASSERT(FORWARD(self).hasValue, "Can't unwrap an error", loc);
+        return FORWARD(self)._val;
     }
 
-    constexpr bool has_val() const
+    [[nodiscard]] constexpr bool has_val() const
     {
         return hasValue;
     }
-    constexpr operator bool() const
+    [[nodiscard]] constexpr operator bool() const
     {
         return static_cast<bool>(hasValue);
     }
-    constexpr auto operator<=>(const option& b)
+    [[nodiscard]] constexpr auto operator<=>(const option& b)
     {
         if (hasValue and b.hasValue)
             return _val <=> b._val;
@@ -208,7 +196,7 @@ public:
     constexpr auto and_then(this Self&& self, Func&& f)
     {
         if (self.hasValue)
-            return FORWARD(f)(FORWARD(self._val));
+            return FORWARD(f)(FORWARD(self)._val);
         else
             return FORWARD(self);
     }
@@ -225,9 +213,9 @@ public:
     template <typename Self, typename Func>
     constexpr auto transform(this Self&& self, Func&& f)
     {
-        using G = decltype(FORWARD(f)(FORWARD(self._val)));
+        using G = decltype(FORWARD(f)(FORWARD(self)._val));
         if (self.hasValue)
-            return option<G> { FORWARD(f)(FORWARD(self._val)) };
+            return option<G> { FORWARD(f)(FORWARD(self)._val) };
         else
             return FORWARD(self);
     }
@@ -267,62 +255,37 @@ public:
     }
     GLOX_ALWAYS_INLINE
 
-    constexpr T& val() const&
+    GLOX_ALWAYS_INLINE constexpr auto&& val(
+        this auto&& self,
+        std::source_location loc = std::source_location::current()
+    )
     {
-        gloxAssert(_val != nullptr, "Can't unwrap an error");
-        return *_val;
+        GLOX_ASSERT(
+            FORWARD(self)._val != nullptr, "Can't unwrap an error", loc
+        );
+        return *FORWARD(self)._val;
     }
-    constexpr T& val() &
+    GLOX_ALWAYS_INLINE constexpr T& operator*(this auto&& self)
     {
-        gloxAssert(_val != nullptr, "Can't unwrap an error");
-        return *_val;
+        GLOX_ASSERT(FORWARD(self)._val != nullptr, "Can't unwrap an error");
+        return *FORWARD(self)._val;
     }
-    constexpr const T&& val() const&&
+    GLOX_ALWAYS_INLINE constexpr const T* operator->() const
     {
-        gloxAssert(_val != nullptr, "Can't unwrap an error");
-        return RVALUE(*_val);
-    }
-    constexpr T&& val() &&
-    {
-        gloxAssert(_val != nullptr, "Can't unwrap an error");
-        return RVALUE(*_val);
-    }
-    constexpr T& operator*() const&
-    {
-        gloxAssert(_val != nullptr, "Can't unwrap an error");
-        return *_val;
-    }
-    constexpr T& operator*() &
-    {
-        gloxAssert(_val != nullptr, "Can't unwrap an error");
-        return *_val;
-    }
-    constexpr const T&& operator*() const&&
-    {
-        gloxAssert(_val != nullptr, "Can't unwrap an error");
-        return RVALUE(*_val);
-    }
-    constexpr T&& operator*() &&
-    {
-        gloxAssert(_val != nullptr, "Can't unwrap an error");
-        return RVALUE(*_val);
-    }
-    constexpr const T* operator->() const
-    {
-        gloxAssert(_val != nullptr, "Can't unwrap an error");
+        GLOX_ASSERT(_val != nullptr, "Can't unwrap an error");
         return _val;
     }
-    constexpr T* operator->()
+    GLOX_ALWAYS_INLINE constexpr T* operator->()
     {
-        gloxAssert(_val != nullptr, "Can't unwrap an error");
+        GLOX_ASSERT(_val != nullptr, "Can't unwrap an error");
         return _val;
     }
 
-    constexpr bool has_val() const
+    [[nodiscard]] constexpr bool has_val() const
     {
         return _val != nullptr;
     }
-    constexpr operator bool() const
+    [[nodiscard]] constexpr operator bool() const
     {
         return static_cast<bool>(_val != nullptr);
     }
@@ -348,7 +311,7 @@ public:
     template <typename Self, typename Func>
     constexpr auto and_then(this Self&& self, Func&& f)
     {
-        using G = decltype(FORWARD(f)(*self._val));
+        using G = decltype(FORWARD(f)(*FORWARD(self)._val));
         if (self.has_val())
             return FORWARD(f)(*self._val);
         else
@@ -367,9 +330,9 @@ public:
     template <typename Self, typename Func>
     constexpr auto transform(this Self&& self, Func&& f)
     {
-        using G = decltype(FORWARD(f)(*self._val));
+        using G = decltype(FORWARD(f)(*FORWARD(self)._val));
         if (self.has_val())
-            return option<G> { FORWARD(f)(*self._val) };
+            return option<G> { FORWARD(f)(*FORWARD(self)._val) };
         else
             return option<G> { };
     }
@@ -379,15 +342,17 @@ template <typename T>
 option(T) -> option<T>;
 
 template <typename T>
-GLOX_ALWAYS_INLINE constexpr empty_option_t
-try_propagate_err([[maybe_unused]] option<T>&& res)
+GLOX_ALWAYS_INLINE constexpr empty_option_t try_propagate_err(
+    [[maybe_unused]] option<T>&& res
+)
 {
     return { };
 }
 
 template <typename T>
-GLOX_ALWAYS_INLINE constexpr option<T>
-try_propagate_from_err(empty_option_t opt)
+GLOX_ALWAYS_INLINE constexpr option<T> try_propagate_from_err(
+    empty_option_t opt
+)
 {
     return opt;
 }

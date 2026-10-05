@@ -26,9 +26,13 @@ BreakAfterOpenBracketIf: true
 BreakBeforeCloseBracketBracedList: true
 BreakBeforeCloseBracketIf: true
 BreakBeforeCloseBracketFunction: true
+BreakBeforeCloseBracketLoop: true
+BreakBeforeCloseBracketSwitch: true
 BreakBeforeConceptDeclarations: Allowed
 BreakBeforeInlineASMColon: OnlyMultiline
 BreakBeforeTemplateCloser: true
 BreakBeforeTernaryOperators: true
 AllowAllParametersOfDeclarationOnNextLine: false
 BreakTemplateDeclarations: Yes
+FixNamespaceComments: true
+PenaltyReturnTypeOnItsOwnLine: 100

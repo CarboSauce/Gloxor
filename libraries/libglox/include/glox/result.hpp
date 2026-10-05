@@ -4,6 +4,7 @@
 #include "glox/detail/try.hpp"
 #include "macros.hpp"
 #include "metaprog.hpp"
+#include <source_location>
 #include <type_traits>
 namespace glox {
 
@@ -37,9 +38,9 @@ class [[nodiscard]] result
     bool hasValue;
 
     template <typename ErrT>
-    static constexpr bool is_error = false;
+    static constexpr bool IS_ERROR = false;
     template <typename Err>
-    static constexpr bool is_error<glox::error<Err>> = true;
+    static constexpr bool IS_ERROR<glox::error<Err>> = true;
 
 public:
     template <typename U = std::remove_cv_t<T>>
@@ -49,7 +50,7 @@ public:
         requires(not std::is_same_v<std::remove_cvref_t<U>, in_place_t>)
                 and (not std::
                         is_same_v<std::remove_cvref_t<U>, error_inplace_t>)
-                and (std::is_constructible_v<U, T>) and (not is_error<U>)
+                and (std::is_constructible_v<U, T>) and (not IS_ERROR<U>)
         : _val { FORWARD(val) }
         , hasValue(true)
     {
@@ -200,57 +201,33 @@ public:
         return result { val };
     }
 
-    constexpr T& val() &
+    GLOX_ALWAYS_INLINE constexpr auto&& val(
+        this auto&& self,
+        std::source_location loc = std::source_location::current()
+    )
     {
-        gloxAssert(hasValue, "Can't unwrap an error");
-        return _val;
-    }
-    constexpr T&& val() &&
-    {
-        gloxAssert(hasValue, "Can't unwrap an error");
-        return RVALUE(_val);
-    }
-    constexpr const T& val() const&
-    {
-        gloxAssert(hasValue, "Can't unwrap an error");
-        return _val;
-    }
-    constexpr const T&& val() const&&
-    {
-        gloxAssert(hasValue, "Can't unwrap an error");
-        return RVALUE(_val);
+        GLOX_ASSERT(FORWARD(self).hasValue, "Can't unwrap an error", loc);
+        return FORWARD(self)._val;
     }
 
-    constexpr E& err() &
+    GLOX_ALWAYS_INLINE constexpr auto&& err(
+        this auto&& self,
+        std::source_location loc = std::source_location::current()
+    )
     {
-        gloxAssert(not hasValue, "Can't unwrap an error");
-        return _err;
-    }
-    constexpr E&& err() &&
-    {
-        gloxAssert(not hasValue, "Can't unwrap an error");
-        return RVALUE(_err);
-    }
-    constexpr const E& err() const&
-    {
-        gloxAssert(not hasValue, "Can't unwrap an error");
-        return _err;
-    }
-    constexpr const E&& err() const&&
-    {
-        gloxAssert(not hasValue, "Can't unwrap an error");
-        return RVALUE(_err);
+        GLOX_ASSERT(not FORWARD(self).hasValue, "Can't unwrap an error", loc);
+        return FORWARD(self)._err;
     }
 
-    constexpr bool has_val() const
+    [[nodiscard]] constexpr bool has_val() const
     {
         return hasValue;
     }
-    constexpr bool is_err() const
+    [[nodiscard]] constexpr bool is_err() const
     {
         return not hasValue;
     }
-    constexpr operator bool() const
+    [[nodiscard]] constexpr operator bool() const
     {
         return static_cast<bool>(hasValue);
     }
@@ -322,7 +299,7 @@ public:
     constexpr auto and_then(this Self&& self, Func&& f)
     {
         if (self.hasValue)
-            return FORWARD(f)(FORWARD(self._val));
+            return FORWARD(f)(FORWARD(self)._val);
         else
             return FORWARD(self);
     }
@@ -331,7 +308,7 @@ public:
     constexpr auto or_else(this Self&& self, Func&& f)
     {
         if (not self.hasValue)
-            return FORWARD(f)(FORWARD(self._err));
+            return FORWARD(f)(FORWARD(self)._err);
         else
             return FORWARD(self);
     }
@@ -341,7 +318,7 @@ public:
     {
         using G = decltype(FORWARD(f)(FORWARD(self._val)));
         if (self.hasValue)
-            return result<G, E> { in_place, FORWARD(f)(FORWARD(self._val)) };
+            return result<G, E> { in_place, FORWARD(f)(FORWARD(self)._val) };
         else
             return result<G, E>(FORWARD(self));
     }
@@ -351,7 +328,7 @@ public:
     {
         using G = decltype(FORWARD(f)(FORWARD(self._err)));
         if (not self.hasValue)
-            return result<T, G>(error_inplace, FORWARD(f)(FORWARD(self._err)));
+            return result<T, G>(error_inplace, FORWARD(f)(FORWARD(self)._err));
         else
             return result<T, G>(in_place, FORWARD(self));
     }
@@ -372,9 +349,9 @@ class [[nodiscard]] result<T&, E>
     };
 
     template <typename ErrT>
-    static constexpr bool is_error = false;
+    static constexpr bool IS_ERROR = false;
     template <typename Err>
-    static constexpr bool is_error<glox::error<Err>> = true;
+    static constexpr bool IS_ERROR<glox::error<Err>> = true;
 
 public:
     template <typename U = std::remove_cv_t<T>>
@@ -382,7 +359,7 @@ public:
         not std::is_convertible_v<U, T>
     ) result(U& val)
         requires(not std::is_same_v<std::remove_cvref_t<U>, error_inplace_t>)
-            and (std::is_constructible_v<U, T>) and (not is_error<U>)
+            and (std::is_constructible_v<U, T>) and (not IS_ERROR<U>)
         : _val { &val }
     {
     }
@@ -521,95 +498,41 @@ public:
         return result { val };
     }
 
-    constexpr T& val() &
+    GLOX_ALWAYS_INLINE constexpr auto&& val(
+        this auto&& self,
+        std::source_location loc = std::source_location::current()
+    )
     {
-        gloxAssert(has_val(), "Can't unwrap an error");
-        return *_val;
-    }
-    constexpr T&& val() &&
-    {
-        gloxAssert(has_val(), "Can't unwrap an error");
-        return RVALUE(*_val);
-    }
-    constexpr const T& val() const&
-    {
-        gloxAssert(has_val(), "Can't unwrap an error");
-        return *_val;
-    }
-    constexpr const T&& val() const&&
-    {
-        gloxAssert(has_val(), "Can't unwrap an error");
-        return RVALUE(*_val);
+        GLOX_ASSERT(FORWARD(self).has_val(), "Can't unwrap an error", loc);
+        return *FORWARD(self)._val;
     }
 
-    constexpr T& operator*() &
+    GLOX_ALWAYS_INLINE constexpr E& err(
+        this auto&& self,
+        std::source_location loc = std::source_location::current()
+    )
     {
-        gloxAssert(has_val(), "Can't unwrap an error");
-        return *_val;
-    }
-    constexpr T&& operator*() &&
-    {
-        gloxAssert(has_val(), "Can't unwrap an error");
-        return RVALUE(*_val);
-    }
-    constexpr const T& operator*() const&
-    {
-        gloxAssert(has_val(), "Can't unwrap an error");
-        return *_val;
-    }
-    constexpr const T&& operator*() const&&
-    {
-        gloxAssert(has_val(), "Can't unwrap an error");
-        return RVALUE(*_val);
+        GLOX_ASSERT(FORWARD(self).is_err(), "Can't unwrap an error", loc);
+        return FORWARD(self)._err;
     }
 
-    constexpr T& operator->() &
+    GLOX_ALWAYS_INLINE constexpr auto&& operator*(this auto&& self)
     {
-        gloxAssert(has_val(), "Can't unwrap an error");
-        return _val;
-    }
-    constexpr T&& operator->() &&
-    {
-        gloxAssert(has_val(), "Can't unwrap an error");
-        return RVALUE(_val);
-    }
-    constexpr const T& operator->() const&
-    {
-        gloxAssert(has_val(), "Can't unwrap an error");
-        return _val;
-    }
-    constexpr const T&& operator->() const&&
-    {
-        gloxAssert(has_val(), "Can't unwrap an error");
-        return RVALUE(_val);
+        GLOX_ASSERT(FORWARD(self).has_val(), "Can't unwrap an error");
+        return *FORWARD(self)._val;
     }
 
-    constexpr E& err() &
+    GLOX_ALWAYS_INLINE constexpr auto&& operator->(this auto&& self)
     {
-        gloxAssert(is_err(), "Can't unwrap an error");
-        return _err;
-    }
-    constexpr E&& err() &&
-    {
-        gloxAssert(is_err(), "Can't unwrap an error");
-        return RVALUE(_err);
-    }
-    constexpr const E& err() const&
-    {
-        gloxAssert(is_err(), "Can't unwrap an error");
-        return _err;
-    }
-    constexpr const E&& err() const&&
-    {
-        gloxAssert(is_err(), "Can't unwrap an error");
-        return RVALUE(_err);
+        GLOX_ASSERT(FORWARD(self).has_val(), "Can't unwrap an error");
+        return FORWARD(self)._val;
     }
 
-    constexpr bool has_val() const
+    [[nodiscard]] constexpr bool has_val() const
     {
         return _val != nullptr;
     }
-    constexpr bool is_err() const
+    [[nodiscard]] constexpr bool is_err() const
     {
         return _val == nullptr;
     }
@@ -685,7 +608,7 @@ public:
     constexpr auto and_then(this Self&& self, Func&& f)
     {
         if (self.has_val())
-            return FORWARD(f)(FORWARD(*self._val));
+            return FORWARD(f)(*FORWARD(self)._val);
         else
             return FORWARD(self);
     }
@@ -694,7 +617,7 @@ public:
     constexpr auto or_else(this Self&& self, Func&& f)
     {
         if (self.is_err())
-            return FORWARD(f)(FORWARD(self._err));
+            return FORWARD(f)(FORWARD(self)._err);
         else
             return FORWARD(self);
     }
@@ -702,9 +625,9 @@ public:
     template <typename Self, typename Func>
     constexpr auto transform(this Self&& self, Func&& f)
     {
-        using G = decltype(FORWARD(f)(FORWARD(*self._val)));
+        using G = decltype(FORWARD(f)(*FORWARD(self)._val));
         if (self.has_val())
-            return result<G, E> { FORWARD(f)(FORWARD(*self._val)) };
+            return result<G, E> { FORWARD(f)(*FORWARD(self)._val) };
         else
             return result<G, E>(FORWARD(self));
     }
@@ -712,9 +635,9 @@ public:
     template <typename Self, typename Func>
     constexpr auto transform_err(this Self&& self, Func&& f)
     {
-        using G = decltype(FORWARD(f)(FORWARD(self._err)));
+        using G = decltype(FORWARD(f)(FORWARD(self)._err));
         if (self.is_err())
-            return result<T, G>(error_inplace, FORWARD(f)(FORWARD(self._err)));
+            return result<T, G>(error_inplace, FORWARD(f)(FORWARD(self)._err));
         else
             return result<T, G>(FORWARD(self));
     }

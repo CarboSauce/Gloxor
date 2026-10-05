@@ -144,9 +144,8 @@ constexpr glox::result<int, int> test_assignments()
     glox::result<std::string, int> a = std::string { "Test" };
     glox::result<std::string, int> b = std::string { "Test" };
     b = a;
-    return glox::result<int, int>(
-        (int)a.val().length() + (int)a.val().length()
-    );
+    decltype(auto) val = a.val();
+    return glox::result<int, int>((int)val.length() + (int)val.length());
 }
 
 static_assert(test_assignments().val() == 8);
