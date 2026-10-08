@@ -241,16 +241,12 @@ private:
     GLOX_ALWAYS_INLINE
     static const T* ptr_from_node(const list_node* const a)
     {
-        return reinterpret_cast<const T*>(
-            reinterpret_cast<const char*>(a) - offset_of(NodePtr)
-        );
+        return container_of(a, NodePtr);
     }
     GLOX_ALWAYS_INLINE
     static T* ptr_from_node(list_node* const a)
     {
-        return const_cast<T*>(
-            intrusive_list::ptr_from_node(static_cast<const list_node*>(a))
-        );
+        return container_of(a, NodePtr);
     }
     void impl_insert(list_node* new_next, list_node* new_current)
     {
