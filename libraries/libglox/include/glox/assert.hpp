@@ -28,6 +28,12 @@ namespace glox {
 #define GLOX_IMPL_STRINGIFY(x) #x
 
 #define GLOX_ASSERT(...) GLOX_OVERLOAD(GLOX_ASSERT, __VA_ARGS__)(__VA_ARGS__)
+#define GLOX_ASSERT1(cond)            \
+    do {                              \
+        if (!(cond)) {                \
+            glox::exec_assert(#cond); \
+        }                             \
+    } while (0)
 #define GLOX_ASSERT2(cond, msg)           \
     do {                                  \
         if (!(cond)) {                    \
