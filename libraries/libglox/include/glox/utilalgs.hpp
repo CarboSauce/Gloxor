@@ -1,11 +1,15 @@
 #pragma once
 #include "detail/moveutils.hpp"
-#include <concepts>
 #include <glox/metaprog.hpp>
 #include <glox/string.hpp>
+
+#ifndef USE_MODULES
+#include <concepts>
 #include <initializer_list>
+#endif
 
 namespace glox {
+GLOX_BEGIN_EXPORT
 
 template <typename iter, typename T>
 constexpr iter find(iter a, iter b, const T& val)
@@ -143,4 +147,5 @@ T* construct(T* at, Args&&... args)
         T(FWD(args)...);
 }
 
+GLOX_END_EXPORT
 } // namespace glox

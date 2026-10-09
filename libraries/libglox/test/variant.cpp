@@ -1,11 +1,15 @@
+#ifndef USE_MODULES
 #include "glox/variant.hpp"
-#include "doctest.h"
-#include "utils.hpp"
-
 #include <cstdint>
 #include <cstring>
 #include <new>
 #include <string>
+#else
+import std;
+import glox;
+#endif
+#include "doctest.h"
+#include "utils.hpp"
 
 using glox::variant;
 

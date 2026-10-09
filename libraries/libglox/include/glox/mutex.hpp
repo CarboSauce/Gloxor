@@ -1,6 +1,7 @@
 #pragma once
 namespace glox
 {
+GLOX_BEGIN_EXPORT
 template <typename T>
 class lock_guard
 {
@@ -35,4 +36,5 @@ class scoped_lock
 	scoped_lock(const scoped_lock&) = delete;
 	scoped_lock& operator=(const scoped_lock&) = delete;
 };
+GLOX_END_EXPORT
 } // namespace glox

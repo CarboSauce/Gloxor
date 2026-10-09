@@ -7,6 +7,7 @@ namespace glox
 {
 namespace detail
 {
+    GLOX_BEGIN_EXPORT
 
 	inline auto format(char* buffer, const void* addr)
 	{
@@ -55,6 +56,8 @@ namespace detail
 		*buffer = value;
 		return (size_t)1;
 	}
+
+	GLOX_END_EXPORT
 
 } // namespace detail
 } // namespace glox

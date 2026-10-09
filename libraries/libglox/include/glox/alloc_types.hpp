@@ -1,8 +1,11 @@
 #pragma once
+#ifndef USE_MODULES
 #include <concepts>
 #include <cstddef>
+#endif
 
 namespace glox {
+GLOX_BEGIN_EXPORT
 template <typename T>
 struct alloc_handle
 {
@@ -42,4 +45,5 @@ concept allocator
               allocator.shrink_inplace(ptr, count, count, alignment)
           } -> std::same_as<alloc_handle<T>>;
       };
+GLOX_END_EXPORT
 } // namespace glox

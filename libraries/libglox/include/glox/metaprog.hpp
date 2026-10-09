@@ -1,10 +1,13 @@
 #pragma once
 #include "detail/movesem.hpp"
-#include <initializer_list>
 
+#ifndef USE_MODULES
 #include <cstddef>
+#include <initializer_list>
+#endif
 
 namespace glox {
+GLOX_BEGIN_EXPORT
 template <typename T, T... I>
 struct integer_sequence
 {
@@ -32,11 +35,5 @@ constexpr T* launder(T* p) noexcept
 {
     return __builtin_launder(p);
 }
-
+GLOX_END_EXPORT
 } // namespace glox
-
-#if __has_builtin(__builtin_bit_cast)
-#define BITCAST(T, from) __builtin_bit_cast(T, from)
-#else
-#error Missing support for __builtin_bit_cast
-#endif

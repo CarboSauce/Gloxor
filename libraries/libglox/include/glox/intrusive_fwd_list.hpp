@@ -1,7 +1,10 @@
 #pragma once
 #include <glox/assert.hpp>
+#ifndef USE_MODULES
 #include <iterator>
+#endif
 namespace glox {
+GLOX_BEGIN_EXPORT
 
 // TODO: this is not a intrusive_fwd_list
 // should be rewritten to be, and add tests
@@ -134,4 +137,5 @@ public:
         }
     }
 };
+GLOX_END_EXPORT
 } // namespace glox

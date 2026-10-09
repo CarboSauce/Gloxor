@@ -2,6 +2,7 @@
 #include "glox/types.hpp"
 namespace glox
 {
+GLOX_BEGIN_EXPORT
 template <typename T, typename U>
 T bitmask(T a, U b)
 {
@@ -19,5 +20,5 @@ T checkbit(T a, unsigned int b)
 {
 	return a & (1 << b);
 }
-
+GLOX_END_EXPORT
 } // namespace glox

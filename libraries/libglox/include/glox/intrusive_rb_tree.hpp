@@ -5,11 +5,15 @@
 #include "intrusive.hpp"
 #include "option.hpp"
 #include "util.hpp"
+
+#ifndef USE_MODULES
 #include <cstddef>
 #include <iterator>
 #include <type_traits>
+#endif
 
 namespace glox {
+GLOX_BEGIN_EXPORT
 struct rb_tree_node
 {
     // maybe we can pack this into parent
@@ -1260,4 +1264,5 @@ private:
         };
     }
 };
+GLOX_END_EXPORT
 } // namespace glox

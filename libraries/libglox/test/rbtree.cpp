@@ -1,5 +1,4 @@
-
-#include "doctest.h"
+#ifndef USE_MODULES
 #include "glox/intrusive_rb_tree.hpp"
 #include <algorithm>
 #include <cassert>
@@ -8,6 +7,11 @@
 #include <random>
 #include <string>
 #include <vector>
+#else
+import std;
+import glox;
+#endif
+#include "doctest.h"
 
 using namespace glox;
 

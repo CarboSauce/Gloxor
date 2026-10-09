@@ -2,29 +2,33 @@
 #include "assert.hpp"
 #include "detail/movesem.hpp"
 #include "metaprog.hpp"
+
+#ifndef USE_MODULES
 #include <type_traits>
+#endif
 
 namespace glox {
+GLOX_BEGIN_EXPORT
 
-inline constexpr std::size_t npos = -1;
+inline constexpr ::std::size_t npos = -1;
 
 template <class... Ts>
 class variant
 {
     template <class T>
-    inline static constexpr std::size_t index_of_v = [] {
-        std::size_t i = 0;
-        (void)((std::is_same_v<T, Ts> || (++i, false)) || ...);
+    inline static constexpr ::std::size_t index_of_v = [] {
+        ::std::size_t i = 0;
+        (void)((::std::is_same_v<T, Ts> || (++i, false)) || ...);
         return i == sizeof...(Ts) ? npos : i;
     }();
 
     inline static constexpr bool all_unique_v
-        = []<std::size_t... I>(glox::index_sequence<I...>) {
+        = []<::std::size_t... I>(glox::index_sequence<I...>) {
               return ((index_of_v<Ts> == I) && ...);
           }(glox::index_sequence_for<Ts...> { });
 
     inline static constexpr std::size_t max_sizeof_v = [] {
-        std::size_t r = 0;
+        ::std::size_t r = 0;
         ((r = sizeof(Ts) > r ? sizeof(Ts) : r), ...);
         return r;
     }();
@@ -234,4 +238,5 @@ struct overload : Ts...
 template <typename... Ts>
 overload(Ts...) -> overload<Ts...>;
 
+GLOX_END_EXPORT
 } // namespace glox

@@ -1,8 +1,14 @@
+#ifndef USE_MODULES
 #include "glox/result.hpp"
-#include "doctest.h"
-#include "utils.hpp"
 #include <string>
 #include <type_traits>
+#else
+import std;
+import glox;
+#endif
+#include "doctest.h"
+#include "glox/macros.hpp"
+#include "utils.hpp"
 
 static_assert(std::is_trivially_destructible_v<glox::result<int, int>>);
 static_assert(std::is_trivially_copyable_v<glox::result<int, int>>);
@@ -40,10 +46,12 @@ static_assert(not std::is_trivially_copy_constructible_v<
 static_assert(not std::is_trivially_move_constructible_v<
     glox::result<std::string, std::string>
 >);
-static_assert(not std::
-        is_trivially_copy_assignable_v<glox::result<std::string, std::string>>);
-static_assert(not std::
-        is_trivially_move_assignable_v<glox::result<std::string, std::string>>);
+static_assert(not std::is_trivially_copy_assignable_v<
+    glox::result<std::string, std::string>
+>);
+static_assert(not std::is_trivially_move_assignable_v<
+    glox::result<std::string, std::string>
+>);
 
 static_assert(
     not std::is_trivially_destructible_v<glox::result<int, std::string>>

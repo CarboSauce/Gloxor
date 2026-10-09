@@ -1,8 +1,11 @@
 #pragma once
+
+#ifndef USE_MODULES
 #include <source_location>
+#endif
 
 namespace glox {
-[[noreturn]] void exec_assert(
+extern "C++" [[noreturn]] void exec_assert(
     const char* message,
     std::source_location = std::source_location::current()
 );

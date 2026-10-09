@@ -1,7 +1,13 @@
-#include "doctest.h"
+#ifndef USE_MODULES
 #include "glox/intrusive_list.hpp"
 #include <cassert>
 #include <cstdio>
+#else
+import std;
+import glox;
+#endif
+#include "doctest.h"
+
 struct test_struct
 {
     int x;

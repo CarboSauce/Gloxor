@@ -2,16 +2,20 @@
 #include "assert.hpp"
 #include "detail/moveutils.hpp"
 #include "metaprog.hpp"
-#include "type_traits"
 #include "types.hpp"
+
+#ifndef USE_MODULES
+#include "type_traits"
 #if defined(_LIBCPP_VERSION)
 #include <__tuple/tuple_element.h>
 #include <__tuple/tuple_size.h>
 #else
 #include <bits/utility.h>
 #endif
+#endif
 
 namespace glox {
+GLOX_BEGIN_EXPORT
 template <typename T, typename U>
 struct pair
 {
@@ -96,9 +100,11 @@ struct less<void>
         return FORWARD(l) < FORWARD(r);
     }
 };
+GLOX_END_EXPORT
 } // namespace glox
 
 namespace std {
+GLOX_BEGIN_EXPORT
 
 template <typename T>
 struct tuple_size<glox::span<T>> : ::std::integral_constant<size_t, 2>
@@ -113,4 +119,6 @@ struct tuple_element<1, glox::span<T>>
 {
     using type = T*;
 };
+
+GLOX_END_EXPORT
 } // namespace std

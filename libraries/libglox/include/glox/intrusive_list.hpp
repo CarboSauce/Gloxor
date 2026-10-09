@@ -2,11 +2,15 @@
 #include "glox/assert.hpp"
 #include "glox/intrusive.hpp"
 #include "glox/macros.hpp"
+
+#ifndef USE_MODULES
 #include <cstddef>
 #include <iterator>
 #include <type_traits>
+#endif
 
 namespace glox {
+GLOX_BEGIN_EXPORT
 /*
  * @brief List node type, if used for intrusive_list
  * 		  define it as 'list_node'
@@ -253,4 +257,5 @@ private:
         list_size += 1;
     }
 };
+GLOX_END_EXPORT
 } // namespace glox

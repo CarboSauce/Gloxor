@@ -13,6 +13,7 @@
 
 namespace glox
 {
+GLOX_BEGIN_EXPORT
 inline size_t strlen(const char* str)
 {
 	return __builtin_strlen(str);
@@ -29,4 +30,5 @@ inline void* memmove(void* dest, const void* src, size_t len)
 {
 	return __builtin_memmove(dest, src, len);
 }
+GLOX_END_EXPORT
 } // namespace glox

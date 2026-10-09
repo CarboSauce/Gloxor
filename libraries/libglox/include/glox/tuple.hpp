@@ -1,6 +1,8 @@
 #ifndef GLOX_TUPLE
 #define GLOX_TUPLE
 #include "glox/metaprog.hpp"
+
+#ifndef USE_MODULES
 #include <compare>
 #include <cstddef>
 #include <type_traits>
@@ -10,12 +12,14 @@
 #else
 #include <bits/utility.h>
 #endif
+#endif
 /*
  * Based on:
  * https://www.youtube.com/watch?v=TyiiNVA1syk
  */
 
 namespace glox {
+GLOX_BEGIN_EXPORT
 template <typename... T>
 struct type_pack
 { };
@@ -94,8 +98,10 @@ template <typename... T>
 {
     return { FORWARD(args)... };
 }
+GLOX_END_EXPORT
 }; // namespace glox
 namespace std {
+GLOX_BEGIN_EXPORT
 template <typename... T>
 struct tuple_size<glox::tuple<T...>>
     : std::integral_constant<std::size_t, sizeof...(T)>
@@ -107,5 +113,6 @@ struct tuple_element<I, glox::tuple<T...>>
         std::integral_constant<std::size_t, I> { }
     ));
 };
+GLOX_END_EXPORT
 } // namespace std
 #endif

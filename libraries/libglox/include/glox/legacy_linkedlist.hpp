@@ -1,6 +1,7 @@
 #pragma once
 #include <glox/assert.hpp>
 namespace glox {
+GLOX_BEGIN_EXPORT
 // keep for now, remove and replace legacy code once intrusive_list is tested
 template <typename T>
 struct node : public T
@@ -99,4 +100,5 @@ struct list
         return { nullptr };
     }
 };
+GLOX_END_EXPORT
 } // namespace glox

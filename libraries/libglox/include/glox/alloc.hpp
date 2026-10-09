@@ -3,16 +3,19 @@
 #include "glox/assert.hpp"
 #include "glox/detail/memory.hpp"
 #include "glox/detail/movesem.hpp"
+
+#ifndef USE_MODULES
 #include <cstdlib>
 #include <string.h>
 #include <type_traits>
+#endif
 
 #ifdef LIBGLOX_DEFAULT_ALLOCATOR_PATH
 #include LIBGLOX_DEFAULT_ALLOCATOR_PATH
 #else
 namespace glox {
 namespace detail {
-    template <typename T>
+    GLOX_EXPORT template <typename T>
     struct default_allocator
     {
         alloc_handle<T> alloc(std::size_t count, std::size_t alignment)
@@ -135,7 +138,7 @@ namespace detail {
         }
     };
 } // namespace detail
-template <typename T>
+GLOX_EXPORT template <typename T>
 using default_allocator = glox::detail::default_allocator<T>;
 } // namespace glox
 #endif
@@ -146,6 +149,7 @@ static_assert(
 );
 
 namespace glox {
+GLOX_BEGIN_EXPORT
 template <typename T>
     requires std::is_pointer_v<T>
 void uninit_def_construct(T first, T last)
@@ -321,4 +325,5 @@ constexpr alloc_handle<T> shrink_alloc(
         return mem;
     }
 }
+GLOX_END_EXPORT
 }; // namespace glox

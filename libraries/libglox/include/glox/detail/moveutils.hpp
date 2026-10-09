@@ -1,8 +1,8 @@
-#ifndef LIBGLOX_MOVEUTILS
-#define LIBGLOX_MOVEUTILS
+#pragma once
 #include "movesem.hpp"
 
 namespace glox {
+GLOX_BEGIN_EXPORT
 template <typename T>
 constexpr void swap(T& l, T& r)
 {
@@ -32,5 +32,5 @@ constexpr Out move_range_backward(First first, Last last, Out dest_last)
         *(--dest_last) = RVALUE(*(--last));
     return dest_last;
 }
+GLOX_END_EXPORT
 } // namespace glox
-#endif

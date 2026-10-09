@@ -3,8 +3,8 @@
 #include "glox/string.hpp"
 #include "glox/types.hpp"
 
-namespace glox
-{
+namespace glox {
+GLOX_BEGIN_EXPORT
 // constexpr auto whatever = ([]() constexpr
 // 						   {
 // 							   char buf[30];
@@ -17,31 +17,30 @@ using namespace glox::detail;
  * write function
  */
 struct b_stream
-{
-};
+{ };
 
 template <typename BStream, typename T>
 inline BStream& operator,(BStream& out, const T& val)
 {
-	write(out, out.buffer, format(out.buffer, val));
-	return out;
+    write(out, out.buffer, format(out.buffer, val));
+    return out;
 }
 
-#define defineComma(x)                                 \
-	template <typename BStream>                         \
-	constexpr BStream& operator,(BStream& out, x val)   \
-	{                                                   \
-		write(out, out.buffer, format(out.buffer, val)); \
-		return out;                                      \
-	}
+#define defineComma(x)                                   \
+    template <typename BStream>                          \
+    constexpr BStream& operator,(BStream& out, x val)    \
+    {                                                    \
+        write(out, out.buffer, format(out.buffer, val)); \
+        return out;                                      \
+    }
 
-#define defineCommaCast(x, to)                             \
-	template <typename BStream>                             \
-	constexpr BStream& operator,(BStream& out, x val)       \
-	{                                                       \
-		write(out, out.buffer, format(out.buffer, (to)val)); \
-		return out;                                          \
-	}
+#define defineCommaCast(x, to)                               \
+    template <typename BStream>                              \
+    constexpr BStream& operator,(BStream& out, x val)        \
+    {                                                        \
+        write(out, out.buffer, format(out.buffer, (to)val)); \
+        return out;                                          \
+    }
 // clang-format off
 		defineComma(char)
 		defineComma(uintmax_t)
@@ -75,4 +74,5 @@ inline BStream& operator,(BStream& out, const T& val)
 #undef defineComma
 #undef defineCommaCast
 
+GLOX_END_EXPORT
 } // namespace glox

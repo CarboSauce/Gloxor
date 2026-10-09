@@ -1,9 +1,15 @@
+#ifndef USE_MODULES
 #include "glox/option.hpp"
-#include "doctest.h"
 #include "glox/detail/try.hpp"
-#include "utils.hpp"
 #include <string>
 #include <type_traits>
+#else
+import std;
+import glox;
+#endif
+#include "doctest.h"
+#include "glox/macros.hpp"
+#include "utils.hpp"
 
 static_assert(std::is_trivially_destructible_v<glox::option<int>>);
 static_assert(std::is_trivially_copyable_v<glox::option<int>>);

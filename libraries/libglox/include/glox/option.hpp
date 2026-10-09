@@ -3,8 +3,11 @@
 #include "detail/memory.hpp"
 #include "macros.hpp"
 #include "metaprog.hpp"
+#ifndef USE_MODULES
 #include <type_traits>
+#endif
 namespace glox {
+GLOX_BEGIN_EXPORT
 
 struct empty_option_t
 { };
@@ -356,4 +359,6 @@ GLOX_ALWAYS_INLINE constexpr option<T> try_propagate_from_err(
 {
     return opt;
 }
+
+GLOX_END_EXPORT
 } // namespace glox

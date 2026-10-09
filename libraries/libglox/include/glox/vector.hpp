@@ -5,6 +5,7 @@
 #include "option.hpp"
 
 namespace glox {
+GLOX_BEGIN_EXPORT
 // TODO: Factory based constructors
 // More member funcs
 template <typename T, glox::allocator<T> Allocator = glox::default_allocator<T>>
@@ -282,4 +283,5 @@ private:
         return true;
     }
 };
+GLOX_END_EXPORT
 } // namespace glox

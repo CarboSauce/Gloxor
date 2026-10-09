@@ -1,7 +1,15 @@
+#ifndef USE_MODULES
 #include "glox/tuple.hpp"
+#else
+import std;
+import glox;
+#endif
 #include "doctest.h"
 
-static_assert(std::is_trivial_v<glox::tuple<int, int, int>> == true);
+static_assert(
+    std::is_trivially_default_constructible_v<glox::tuple<int, int, int>>
+    and std::is_trivially_copyable_v<glox::tuple<int, int, int>> == true
+);
 
 constexpr auto test_tuple()
 {

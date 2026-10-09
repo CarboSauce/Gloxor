@@ -1,24 +1,31 @@
+#ifndef USE_MODULES
 #include "glox/vector.hpp"
-#include "doctest.h"
-#include "utils.hpp"
 #include <cstdio>
 #include <cstdlib>
+#else
+import std;
+import glox;
+#endif
+#include "doctest.h"
+#include "glox/macros.hpp"
+#include "utils.hpp"
+
 namespace glox {
 [[noreturn]] void exec_assert(const char* message, std::source_location loc)
 {
-    printf(
+    std::printf(
         "Assert hit\nMessage:\nFunction: %s\n%s\nFile: %s\nLine: %d\n",
         message,
         loc.function_name(),
         loc.file_name(),
         loc.line()
     );
-    exit(1);
+    std::exit(1);
 }
 } // namespace glox
 static_assert(
     sizeof(glox::vector<alloc_tracker>)
-    == sizeof(alloc_tracker*) + sizeof(size_t) * 2
+    == sizeof(alloc_tracker*) + sizeof(std::size_t) * 2
 );
 
 constexpr int vector_constexpr_test(int n)

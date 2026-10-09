@@ -4,9 +4,12 @@
 #include "glox/detail/try.hpp"
 #include "macros.hpp"
 #include "metaprog.hpp"
+#ifndef USE_MODULES
 #include <source_location>
 #include <type_traits>
+#endif
 namespace glox {
+GLOX_BEGIN_EXPORT
 
 template <typename R>
 struct result_traits;
@@ -48,8 +51,10 @@ public:
         not std::is_convertible_v<U, T>
     ) result(U&& val)
         requires(not std::is_same_v<std::remove_cvref_t<U>, in_place_t>)
-                and (not std::
-                        is_same_v<std::remove_cvref_t<U>, error_inplace_t>)
+                and (not std::is_same_v<
+                    std::remove_cvref_t<U>,
+                    error_inplace_t
+                >)
                 and (std::is_constructible_v<U, T>) and (not IS_ERROR<U>)
         : _val { FORWARD(val) }
         , hasValue(true)
@@ -666,4 +671,6 @@ GLOX_ALWAYS_INLINE constexpr result<T, E> try_propagate_from_err(E&& res)
 {
     return result<T, E> { error_inplace, FORWARD(res) };
 }
+
+GLOX_END_EXPORT
 } // namespace glox
