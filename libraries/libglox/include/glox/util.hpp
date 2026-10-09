@@ -79,7 +79,23 @@ public:
             return sp.to;
     }
 };
-// boiler plate for structure bindings
+template <typename T>
+struct less
+{
+    constexpr bool operator()(const T& l, const T& r)
+    {
+        return l < r;
+    }
+};
+template <>
+struct less<void>
+{
+    template <typename T, typename U>
+    constexpr decltype(auto) operator()(T&& l, U&& r)
+    {
+        return FORWARD(l) < FORWARD(r);
+    }
+};
 } // namespace glox
 
 namespace std {
