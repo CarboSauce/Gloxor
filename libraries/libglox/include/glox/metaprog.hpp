@@ -1,5 +1,6 @@
 #pragma once
 #include "detail/movesem.hpp"
+#include <initializer_list>
 
 #include <cstddef>
 
@@ -23,6 +24,15 @@ using make_index_sequence =
 #else
     index_sequence<__integer_pack(I)...>;
 #endif
+template <class... T>
+using index_sequence_for = make_index_sequence<sizeof...(T)>;
+
+template <typename T>
+constexpr T* launder(T* p) noexcept
+{
+    return __builtin_launder(p);
+}
+
 } // namespace glox
 
 #if __has_builtin(__builtin_bit_cast)

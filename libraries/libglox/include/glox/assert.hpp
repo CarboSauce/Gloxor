@@ -50,11 +50,15 @@ namespace glox {
 #define gloxDebugError(...) \
     (glox::exec_assert(__VA_ARGS__, __FILE__, _mSTRINGIFY(__LINE__)))
 #define gloxAssert(cond, ...) GLOX_ASSERT(cond, __VA_ARGS__)
-#define gloxUnreachable()                       \
-    gloxAssert(false, "unreachable() invoked"); \
+#define gloxUnreachable()                          \
+    gloxAssert(false, "unreachable code invoked"); \
+    __builtin_unreachable()
+#define GLOX_UNREACHABLE()                         \
+    gloxAssert(false, "Unreachable code invoked"); \
     __builtin_unreachable()
 #else
 #define gloxAssert(cond, ...) ((void)0)
-#define gloxUnreachable() __builtin_unreachable();
+#define gloxUnreachable() __builtin_unreachable()
+#define GLOX_UNREACHABLE() __builtin_unreachable()
 #define gloxDebugError(...) ((void)0)
 #endif

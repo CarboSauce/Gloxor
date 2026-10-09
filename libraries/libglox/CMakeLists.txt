@@ -8,8 +8,8 @@ set(DEFAULT_ALLOCATOR_PATH "" CACHE STRING
 and used as default allocator for containers that require them")
 
 set(CMAKE_C_STANDARD 23)
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_EXTENSIONS ON)
 
 project(libglox VERSION 1.0 LANGUAGES CXX)
 

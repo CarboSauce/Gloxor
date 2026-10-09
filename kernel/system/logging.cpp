@@ -2,10 +2,10 @@
 #include "asm/e9.hpp"
 #include "danger.hpp"
 #include "system/terminal.hpp"
-void glox::exec_assert(const char* message, const char* file, const char* line)
+void glox::exec_assert(const char* message, std::source_location loc)
 {
-    gx::outStream, "Assertion failed: \n (", message, ")\n ", file, ":", line,
-        '\n';
+    gx::outStream, "Assertion failed: \n (", message, ")\n ", loc.file_name(),
+        ":", loc.line(), '\n';
     gx::kernel_panic();
 }
 namespace gx {
