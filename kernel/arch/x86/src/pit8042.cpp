@@ -1,9 +1,7 @@
-#include "asm/pit8042.hpp"
-#include "asm/asmstubs.hpp"
-#include "asm/idt.hpp"
-#include "asm/pic8042contr.hpp"
+import arch_asm;
+import gloxor:system;
+
 #include "gloxor/modules.hpp"
-#include "system/logging.hpp"
 
 static u64 tick = 0;
 using namespace gx::pit;

@@ -10,6 +10,10 @@ set(CMAKE_SYSTEM_NAME "Generic")
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_EXTENSIONS ON)
+set(USE_MODULES ON)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CMAKE_CXX_COMPILE_OBJECT "${CMAKE_CXX_COMPILE_OBJECT} @<OBJECT>.modmap")
+endif()
 
 project(Gloxor VERSION 1.0 LANGUAGES C CXX ASM_NASM)
 
@@ -46,7 +50,6 @@ list(APPEND KERNEL_COMPILE_FLAGS
     -fno-stack-protector
     -fno-exceptions
     -fno-rtti
-    -ffreestanding
     -fbuiltin
     -fno-threadsafe-statics
     -mgeneral-regs-only
@@ -56,6 +59,7 @@ list(APPEND KERNEL_COMPILE_FLAGS
     -nostdlib
     -nostdinc
     -nostdinc++
+    -ffreestanding
     -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=/
 )
 list(APPEND KERNEL_LINK_FLAGS -ffreestanding -nostdlib)
@@ -69,6 +73,7 @@ if (USE_LTO)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${USE_LTO})
 endif()
 
+set(USE_CUSTOM_DEFAULT_ALLOCATOR ON)
 add_subdirectory(libraries)
 add_subdirectory(kernel)
 

@@ -1,14 +1,7 @@
-#include "arch/cpu.hpp"
-#include "arch/feature.hpp"
-#include "arch/irq.hpp"
-#include "asm/asmstubs.hpp"
-#include "asm/gdt.hpp"
-#include "asm/idt.hpp"
-#include "asm/msr.hpp"
-#include "gloxor/test.hpp"
-#include "memory/virtmem.hpp"
-#include "system/danger.hpp"
-#include "system/logging.hpp"
+import gloxor : system;
+import gloxor : memory;
+import arch;
+import arch_asm;
 
 /*
 [[gnu::no_caller_saved_registers]] extern "C" void _gloxAsmLongJump(); */

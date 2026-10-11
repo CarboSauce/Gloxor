@@ -1,13 +1,13 @@
-#include "arch/addrspace.hpp"
-#include "arch/cpu.hpp"
-#include "arch/irq.hpp"
 #include "cpuid.h"
-#include "gloxor/kinfo.hpp"
-#include "gloxor/modules.hpp"
-#include "gloxor/test.hpp"
-#include "memory/virtmem.hpp"
-#include "system/logging.hpp"
-#include "system/terminal.hpp"
+
+import std;
+import glox;
+import gloxor : system;
+import gloxor : memory;
+import gloxor : arch;
+import arch : irq;
+import arch : cpu;
+import arch : addrspace;
 
 using ctor_t = void (*)();
 using namespace arch;

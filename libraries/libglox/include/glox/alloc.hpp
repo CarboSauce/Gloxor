@@ -10,138 +10,229 @@
 #include <type_traits>
 #endif
 
-#ifdef LIBGLOX_DEFAULT_ALLOCATOR_PATH
-#include LIBGLOX_DEFAULT_ALLOCATOR_PATH
-#else
 namespace glox {
-namespace detail {
-    GLOX_EXPORT template <typename T>
-    struct default_allocator
-    {
-        alloc_handle<T> alloc(std::size_t count, std::size_t alignment)
-        {
-            return { (T*)std::aligned_alloc(alignment, count * sizeof(T)),
-                count };
-        }
-        void dealloc(
-            T* p,
-            [[maybe_unused]] std::size_t count,
-            [[maybe_unused]] std::size_t alignment
-        )
-        {
-            return std::free(static_cast<void*>(p));
-        }
-        alloc_handle<T>
-        alloc_zeroed(std::size_t count, [[maybe_unused]] std::size_t alignment)
-        {
-            auto ptr = (T*)std::aligned_alloc(alignment, sizeof(T) * count);
-            if (ptr == nullptr) {
-                return { nullptr, 0 };
-            }
-            return { ::memset(ptr, 0, sizeof(T) * count), count };
-        }
+#ifdef CUSTOM_DEFAULT_ALLOCATOR
+namespace custom {
+    alloc_handle<void>
+    alloc(std::size_t count, std::size_t objsize, std::size_t alignment);
+    void dealloc(
+        void* p,
+        std::size_t count,
+        std::size_t objsize,
+        std::size_t alignment
+    );
+    alloc_handle<void>
+    alloc_zeroed(std::size_t count, std::size_t objsize, std::size_t alignment);
 
-        alloc_handle<T> grow(
-            T* old_ptr,
-            std::size_t old_count,
-            std::size_t new_count,
-            std::size_t alignment
-        )
-        {
-            gloxAssert(
-                old_count <= new_count,
-                "New size must be greater than or equal to old size"
-            );
+    alloc_handle<void> grow(
+        void* old_ptr,
+        std::size_t old_count,
+        std::size_t new_count,
+        std::size_t objsize,
+        std::size_t alignment
+    );
 
-            auto newPtr
-                = (T*)std::aligned_alloc(alignment, sizeof(T) * new_count);
-            if (newPtr == nullptr) {
-                return { nullptr, 0 };
-            }
+    alloc_handle<void> grow_zeroed(
+        void* old_ptr,
+        std::size_t old_count,
+        std::size_t new_count,
+        std::size_t objsize,
+        std::size_t alignment
+    );
 
-            ::memcpy(newPtr, old_ptr, sizeof(T) * old_count);
-            dealloc(old_ptr, old_count, alignment);
+    alloc_handle<void> shrink(
+        void* old_ptr,
+        std::size_t old_count,
+        std::size_t new_count,
+        std::size_t objsize,
+        std::size_t alignment
+    );
 
-            return { newPtr, new_count };
-        }
+    alloc_handle<void> grow_inplace(
+        void* old_ptr,
+        std::size_t old_size,
+        std::size_t new_size,
+        std::size_t objsize,
+        std::size_t alignment
+    );
 
-        alloc_handle<T> grow_zeroed(
-            T* old_ptr,
-            std::size_t old_count,
-            std::size_t new_count,
-            std::size_t alignment
-        )
-        {
-            gloxAssert(
-                old_count <= new_count,
-                "New size must be greater than or equal to old size"
-            );
+    alloc_handle<void> shrink_inplace(
+        void* old_ptr,
+        std::size_t old_count,
+        std::size_t new_count,
+        std::size_t objsize,
+        std::size_t alignment
+    );
 
-            auto newPtr
-                = (T*)std::aligned_alloc(alignment, sizeof(T) * new_count);
-            if (newPtr == nullptr) {
-                return { nullptr, 0 };
-            }
-
-            ::memcpy(newPtr, old_ptr, sizeof(T) * old_count);
-            ::memset(
-                newPtr + old_count, 0, sizeof(T) * (new_count - old_count)
-            );
-            dealloc(old_ptr, old_count, alignment);
-
-            return { newPtr, new_count };
-        }
-
-        alloc_handle<T> shrink(
-            T* old_ptr,
-            std::size_t old_count,
-            std::size_t new_count,
-            std::size_t alignment
-        )
-        {
-            gloxAssert(
-                old_count >= new_count,
-                "New size must be smaller than or equal to old size"
-            );
-
-            auto newPtr = std::aligned_alloc(alignment, sizeof(T) * new_count);
-            if (newPtr == nullptr) {
-                return { nullptr, 0 };
-            }
-
-            ::memcpy(newPtr, old_ptr, new_count);
-            dealloc(old_ptr, old_count, alignment);
-
-            return { newPtr, new_count };
-        }
-
-        alloc_handle<T> grow_inplace(
-            [[maybe_unused]] T* old_ptr,
-            [[maybe_unused]] std::size_t old_size,
-            [[maybe_unused]] std::size_t new_size,
-            [[maybe_unused]] std::size_t alignment
-        )
-        {
-            // in std there isn't really a way to implement this
-            return { nullptr, 0 };
-        }
-
-        alloc_handle<T> shrink_inplace(
-            [[maybe_unused]] T* old_ptr,
-            [[maybe_unused]] std::size_t old_count,
-            [[maybe_unused]] std::size_t new_count,
-            [[maybe_unused]] std::size_t alignment
-        )
-        {
-            // in std there isn't really a way to implement this
-            return { nullptr, 0 };
-        }
-    };
-} // namespace detail
-GLOX_EXPORT template <typename T>
-using default_allocator = glox::detail::default_allocator<T>;
-} // namespace glox
+} // namespace custom
 #endif
+
+GLOX_EXPORT template <typename T>
+struct default_allocator
+{
+    alloc_handle<T> alloc(std::size_t count, std::size_t alignment)
+    {
+#ifdef CUSTOM_DEFAULT_ALLOCATOR
+        auto mem = glox::custom::alloc(count, sizeof(T), alignment);
+        return { (T*)mem.ptr, mem.count };
+#else
+        return { (T*)std::aligned_alloc(alignment, count * sizeof(T)), count };
+#endif
+    }
+    void dealloc(
+        T* p,
+        [[maybe_unused]] std::size_t count,
+        [[maybe_unused]] std::size_t alignment
+    )
+    {
+#ifdef CUSTOM_DEFAULT_ALLOCATOR
+        return glox::custom::dealloc(p, count, sizeof(T), alignment);
+#else
+        return std::free(static_cast<void*>(p));
+#endif
+    }
+    alloc_handle<T>
+    alloc_zeroed(std::size_t count, [[maybe_unused]] std::size_t alignment)
+    {
+#ifdef CUSTOM_DEFAULT_ALLOCATOR
+        auto mem = glox::custom::alloc_zeroed(count, sizeof(T), alignment);
+        return { (T*)mem.ptr, mem.count };
+#else
+        auto ptr = (T*)std::aligned_alloc(alignment, sizeof(T) * count);
+        if (ptr == nullptr) {
+            return { nullptr, 0 };
+        }
+        return { memset(ptr, 0, sizeof(T) * count), count };
+#endif
+    }
+
+    alloc_handle<T> grow(
+        T* old_ptr,
+        std::size_t old_count,
+        std::size_t new_count,
+        std::size_t alignment
+    )
+    {
+        gloxAssert(
+            old_count <= new_count,
+            "New size must be greater than or equal to old size"
+        );
+#ifdef CUSTOM_DEFAULT_ALLOCATOR
+        auto mem = glox::custom::grow(
+            old_ptr, old_count, new_count, sizeof(T), alignment
+        );
+        return { (T*)mem.ptr, mem.count };
+#else
+        auto newPtr = (T*)aligned_alloc(alignment, sizeof(T) * new_count);
+        if (newPtr == nullptr) {
+            return { nullptr, 0 };
+        }
+
+        ::memcpy(newPtr, old_ptr, sizeof(T) * old_count);
+        dealloc(old_ptr, old_count, alignment);
+
+        return { newPtr, new_count };
+#endif
+    }
+
+    alloc_handle<T> grow_zeroed(
+        T* old_ptr,
+        std::size_t old_count,
+        std::size_t new_count,
+        std::size_t alignment
+    )
+    {
+        gloxAssert(
+            old_count <= new_count,
+            "New size must be greater than or equal to old size"
+        );
+
+#ifdef CUSTOM_DEFAULT_ALLOCATOR
+        auto mem = glox::custom::grow_zeroed(
+            old_ptr, old_count, new_count, sizeof(T), alignment
+        );
+        return { (T*)mem.ptr, mem.count };
+#else
+        auto newPtr = (T*)std::aligned_alloc(alignment, sizeof(T) * new_count);
+        if (newPtr == nullptr) {
+            return { nullptr, 0 };
+        }
+
+        ::memcpy(newPtr, old_ptr, sizeof(T) * old_count);
+        ::memset(newPtr + old_count, 0, sizeof(T) * (new_count - old_count));
+        dealloc(old_ptr, old_count, alignment);
+
+        return { newPtr, new_count };
+#endif
+    }
+
+    alloc_handle<T> shrink(
+        T* old_ptr,
+        std::size_t old_count,
+        std::size_t new_count,
+        std::size_t alignment
+    )
+    {
+        gloxAssert(
+            old_count >= new_count,
+            "New size must be smaller than or equal to old size"
+        );
+
+#ifdef CUSTOM_DEFAULT_ALLOCATOR
+        auto mem = glox::custom::shrink(
+            old_ptr, old_count, new_count, sizeof(T), alignment
+        );
+        return { (T*)mem.ptr, mem.count };
+#else
+        auto newPtr = std::aligned_alloc(alignment, sizeof(T) * new_count);
+        if (newPtr == nullptr) {
+            return { nullptr, 0 };
+        }
+
+        ::memcpy(newPtr, old_ptr, new_count);
+        dealloc(old_ptr, old_count, alignment);
+
+        return { newPtr, new_count };
+#endif
+    }
+
+    alloc_handle<T> grow_inplace(
+        [[maybe_unused]] T* old_ptr,
+        [[maybe_unused]] std::size_t old_count,
+        [[maybe_unused]] std::size_t new_count,
+        [[maybe_unused]] std::size_t alignment
+    )
+    {
+#ifdef CUSTOM_DEFAULT_ALLOCATOR
+        auto mem = glox::custom::grow_inplace(
+            old_ptr, old_count, new_count, sizeof(T), alignment
+        );
+        return { (T*)mem.ptr, mem.count };
+#else
+        // in std there isn't really a way to implement this
+        return { nullptr, 0 };
+#endif
+    }
+
+    alloc_handle<T> shrink_inplace(
+        [[maybe_unused]] T* old_ptr,
+        [[maybe_unused]] std::size_t old_count,
+        [[maybe_unused]] std::size_t new_count,
+        [[maybe_unused]] std::size_t alignment
+    )
+    {
+#ifdef CUSTOM_DEFAULT_ALLOCATOR
+        auto mem = glox::custom::shrink_inplace(
+            old_ptr, old_count, new_count, sizeof(T), alignment
+        );
+        return { (T*)mem.ptr, mem.count };
+#else
+        // in std there isn't really a way to implement this
+        return { nullptr, 0 };
+#endif
+    }
+};
+} // namespace glox
 
 static_assert(
     glox::allocator<glox::default_allocator<int>, int>,

@@ -1,6 +1,5 @@
-#include "system/danger.hpp"
-#include "arch/cpu.hpp"
-#include "system/logging.hpp"
+import arch;
+import gloxor : system;
 static inline void draw_panic()
 {
     gx::outStream, "\nKernel Panic moment";

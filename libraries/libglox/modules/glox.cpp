@@ -8,6 +8,7 @@ import std.compat;
 #define GLOX_EXPORT export
 #define GLOX_BEGIN_EXPORT export {
 #define GLOX_END_EXPORT }
+#define GLOX_MODULE_BUILD
 
 #include "glox/algo.hpp"
 #include "glox/alloc.hpp"

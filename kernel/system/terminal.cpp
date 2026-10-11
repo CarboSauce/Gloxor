@@ -1,10 +1,6 @@
-#include "terminal.hpp"
-#include "arch/cpu.hpp"
-#include "glox/string.hpp"
-#include "gloxor/graphics.hpp"
-#include "system/logging.hpp"
+import
 
-using namespace gx;
+    using namespace gx;
 
 const extern uint8_t fontBitmap[];
 constexpr int scaleX = 1;

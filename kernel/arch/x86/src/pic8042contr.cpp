@@ -1,7 +1,8 @@
-#include "asm/pic8042contr.hpp"
-#include "asm/asmstubs.hpp"
+import arch_asm;
+import gloxor : system;
+
 #include "gloxor/modules.hpp"
-#include "system/logging.hpp"
+
 // everything is masked on startup
 static gx::PicContext picCtx { 0xFF, 0xFF };
 

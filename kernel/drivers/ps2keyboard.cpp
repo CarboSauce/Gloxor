@@ -1,10 +1,6 @@
-#include "asm/asmstubs.hpp"
-#include "asm/idt.hpp"
-#include "asm/pic8042contr.hpp"
+import arch_asm;
+import gloxor : system;
 #include "gloxor/modules.hpp"
-#include "system/logging.hpp"
-#include "system/terminal.hpp"
-
 [[gnu::interrupt]] static void kbd_handler(InterruptFrame* frame)
 {
     auto val = inb(0x60);

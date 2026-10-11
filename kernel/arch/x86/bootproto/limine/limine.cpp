@@ -1,14 +1,10 @@
 #include "limine.h"
 
-#include "arch/addrspace.hpp"
-#include "arch/archinfo.hpp"
-#include "arch/cpu.hpp"
-#include "glox/alloc.hpp"
-#include "gloxor/kinfo.hpp"
-#include "gloxor/types.hpp"
-#include "memory/alloc.hpp"
-#include "memory/pmm.hpp"
-#include "system/terminal.hpp"
+import arch;
+import glox;
+import gloxor;
+import gloxor : memory;
+import gloxor : system;
 
 extern "C" void limine_main();
 extern "C" void gloxor_main();

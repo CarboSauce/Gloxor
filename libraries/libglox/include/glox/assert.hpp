@@ -2,13 +2,17 @@
 
 #ifndef USE_MODULES
 #include <source_location>
+#else
+#ifndef GLOX_MODULE_BUILD
+namespace std {
+struct source_location;
+}
+#endif
 #endif
 
 namespace glox {
-extern "C++" [[noreturn]] void exec_assert(
-    const char* message,
-    std::source_location = std::source_location::current()
-);
+extern "C++" [[noreturn]] void
+exec_assert(const char* message, std::source_location);
 }
 
 #define gloxUnimplemented() glox::exec_assert("The function is unimplemented")
@@ -31,17 +35,17 @@ extern "C++" [[noreturn]] void exec_assert(
 #define GLOX_IMPL_STRINGIFY(x) #x
 
 #define GLOX_ASSERT(...) GLOX_OVERLOAD(GLOX_ASSERT, __VA_ARGS__)(__VA_ARGS__)
-#define GLOX_ASSERT1(cond)            \
-    do {                              \
-        if (!(cond)) {                \
-            glox::exec_assert(#cond); \
-        }                             \
+#define GLOX_ASSERT1(cond)                                             \
+    do {                                                               \
+        if (!(cond)) {                                                 \
+            glox::exec_assert(#cond, std::source_location::current()); \
+        }                                                              \
     } while (0)
-#define GLOX_ASSERT2(cond, msg)           \
-    do {                                  \
-        if (!(cond)) {                    \
-            glox::exec_assert(#cond " "); \
-        }                                 \
+#define GLOX_ASSERT2(cond, msg)                                            \
+    do {                                                                   \
+        if (!(cond)) {                                                     \
+            glox::exec_assert(#cond " ", std::source_location::current()); \
+        }                                                                  \
     } while (0)
 #define GLOX_ASSERT3(cond, msg, loc)                \
     do {                                            \

@@ -1,13 +1,11 @@
-#include "asm/paging.hpp"
-#include "arch/addrspace.hpp"
-#include "arch/paging.hpp"
-#include "asm/asmstubs.hpp"
+import gloxor:types;
+import gloxor:system;
+import gloxor:memory;
+import arch_asm;
+import arch;
+
 #include "glox/assert.hpp"
-#include "gloxor/types.hpp"
-#include "memory/pmm.hpp"
-#include "memory/virtmem.hpp"
-#include "system/logging.hpp"
-#include "system/terminal.hpp"
+
 /*
     on x86, paging looks like a tree, so we need to traverse the tree of height
    5

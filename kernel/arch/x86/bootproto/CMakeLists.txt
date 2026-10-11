@@ -9,8 +9,6 @@ if (PROTO_DISTRO STREQUAL "limine")
     target_sources(kernel PRIVATE
         limine/limine.cpp
     )
-elseif (PROTO_DISTRO STREQUAL "stivale")
-    add_subdirectory(stivale)
 elseif( PROTO_DISTRO STREQUAL "egg")
     target_sources(kernel PRIVATE
         egg/kernel_entry.asm

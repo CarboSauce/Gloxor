@@ -1,7 +1,6 @@
-#include "logging.hpp"
-#include "asm/e9.hpp"
-#include "danger.hpp"
-#include "system/terminal.hpp"
+import arch_asm;
+import gloxor:system;
+import gloxor:logging;
 void glox::exec_assert(const char* message, std::source_location loc)
 {
     gx::outStream, "Assertion failed: \n (", message, ")\n ", loc.file_name(),

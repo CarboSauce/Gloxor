@@ -1,15 +1,6 @@
-#include "alloc.hpp"
 #include "glox/assert.hpp"
-#include "gloxor/mutex.hpp"
-#include "llallocator.hpp"
-#include "memory/pmm.hpp"
-#include "system/danger.hpp"
-#include "system/logging.hpp"
-#include <glox/array.hpp>
-#include <glox/math.hpp>
-#include <glox/mutex.hpp>
-#include <glox/util.hpp>
-#include <gloxor/test.hpp>
+
+import gloxor : memory;
 
 /*
     Allocator idea is pretty simple, its similar in idea to slab
@@ -47,6 +38,129 @@ void operator delete[](void* p, size_t size)
 {
     gx::memdealloc(p, size);
 }
+
+namespace glox::custom {
+
+glox::alloc_handle<void> alloc(
+    std::size_t count,
+    std::size_t objsize,
+    [[maybe_unused]] std::size_t alignment
+)
+{
+    return { gx::memalloc(count * objsize), count };
+}
+void dealloc(
+    void* p,
+    [[maybe_unused]] std::size_t count,
+    std::size_t objsize,
+    [[maybe_unused]] std::size_t alignment
+)
+{
+    return gx::memdealloc(static_cast<void*>(p), objsize * count);
+}
+glox::alloc_handle<void> alloc_zeroed(
+    std::size_t count,
+    std::size_t objsize [[maybe_unused]] std::size_t alignment
+)
+{
+    auto ptr = (void*)gx::memalloc(objsize * count);
+    if (ptr == nullptr) {
+        return { nullptr, 0 };
+    }
+    return { ::memset(ptr, 0, objsize * count), count };
+}
+
+glox::alloc_handle<void> grow(
+    void* old_ptr,
+    std::size_t old_count,
+    std::size_t new_count,
+    std::size_t objsize std::size_t alignment
+)
+{
+    gloxAssert(
+        old_count <= new_count,
+        "New size must be greater than or equal to old size"
+    );
+
+    auto newPtr = (void*)gx::memalloc(objsize * new_count);
+    if (newPtr == nullptr) {
+        return { nullptr, 0 };
+    }
+
+    ::memcpy(newPtr, old_ptr, objsize * old_count);
+    dealloc(old_ptr, old_count, alignment);
+
+    return { newPtr, new_count };
+}
+
+glox::alloc_handle<void> grow_zeroed(
+    void* old_ptr,
+    std::size_t old_count,
+    std::size_t new_count,
+    std::size_t objsize std::size_t alignment
+)
+{
+    gloxAssert(
+        old_count <= new_count,
+        "New size must be greater than or equal to old size"
+    );
+
+    auto newPtr = (void*)gx::memalloc(objsize * new_count);
+    if (newPtr == nullptr) {
+        return { nullptr, 0 };
+    }
+
+    ::memcpy(newPtr, old_ptr, objsize * old_count);
+    ::memset(newPtr + old_count, 0, objsize * (new_count - old_count));
+    dealloc(old_ptr, old_count, alignment);
+
+    return { newPtr, new_count };
+}
+
+glox::alloc_handle<void> shrink(
+    void* old_ptr,
+    std::size_t old_count,
+    std::size_t new_count,
+    std::size_t objsize std::size_t alignment
+)
+{
+    gloxAssert(
+        old_count >= new_count,
+        "New size must be smaller than or equal to old size"
+    );
+
+    auto newPtr = gx::memalloc(objsize * new_count);
+    if (newPtr == nullptr) {
+        return { nullptr, 0 };
+    }
+
+    ::memcpy(newPtr, old_ptr, new_count);
+    dealloc(old_ptr, old_count, alignment);
+
+    return { newPtr, new_count };
+}
+glox::alloc_handle<void> grow_inplace(
+    [[maybe_unused]] void* old_ptr,
+    [[maybe_unused]] std::size_t old_size,
+    [[maybe_unused]] std::size_t new_size,
+    std::size_t objsize [[maybe_unused]] std::size_t alignment
+)
+{
+    // in std there isn't really a way to implement this
+    return { nullptr, 0 };
+}
+
+glox::alloc_handle<void> shrink_inplace(
+    [[maybe_unused]] void* old_ptr,
+    [[maybe_unused]] std::size_t old_count,
+    [[maybe_unused]] std::size_t new_count,
+    std::size_t objsize [[maybe_unused]] std::size_t alignment
+)
+{
+    // in std there isn't really a way to implement this
+    return { nullptr, 0 };
+}
+} // namespace glox::custom
 
 struct Freelist
 {

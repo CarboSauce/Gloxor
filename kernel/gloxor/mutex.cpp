@@ -1,5 +1,5 @@
-#include "gloxor/mutex.hpp"
-#include "arch/irq.hpp"
+import arch;
+
 namespace gx {
 void IrqLock::lock()
 {

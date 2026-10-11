@@ -1,10 +1,6 @@
-#include "virtmem.hpp"
-#include "arch/paging.hpp"
-#include "glox/intrusive_list.hpp"
-#include "glox/utilalgs.hpp"
-#include "gloxor/test.hpp"
-#include "memory/alloc.hpp"
-#include "system/logging.hpp"
+import arch;
+import glox;
+import gloxor : memory;
 using namespace arch::vmem;
 using namespace gx;
 using namespace arch;

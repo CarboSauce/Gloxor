@@ -5,6 +5,7 @@ option(USE_COMPILERS_IMPORT_STD "Enable import std support from compiler in libg
 option(COMPILE_TESTS "Enable tests?" ON)
 option(SET_INSTALL_TARGETS "Should we attach installation targets?" OFF)
 option(LIBGLOX_SANITIZE "Use sanitizers" OFF)
+option(USE_CUSTOM_DEFAULT_ALLOCATOR "Use custom default allocator routines" OFF)
 set(DEFAULT_ALLOCATOR_PATH "" CACHE STRING
  "Header file path with default allocator that will be included in glox/alloc.hpp
 and used as default allocator for containers that require them")
@@ -50,10 +51,16 @@ if (NOT DEFINED LIBGLOX_COMPILE_OPTIONS)
     message(TRACE "No additional libglox options specified")
 endif()
 
-if (DEFAULT_ALLOCATOR_PATH)
-    target_compile_definitions(libglox INTERFACE
-        LIBGLOX_DEFAULT_ALLOCATOR_PATH="${DEFAULT_ALLOCATOR_PATH}"
-    )
+if (USE_CUSTOM_DEFAULT_ALLOCATOR)
+    if (USE_MODULES)
+        target_compile_definitions(libglox PUBLIC
+            CUSTOM_DEFAULT_ALLOCATOR
+        )
+    else()
+        target_compile_definitions(libglox INTERFACE
+            CUSTOM_DEFAULT_ALLOCATOR
+        )
+    endif()
 endif()
 if (USE_MODULES)
     target_compile_definitions(libglox PUBLIC
@@ -66,6 +73,9 @@ if (USE_MODULES)
     target_include_directories(libglox PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     )
+    target_compile_features(libglox
+    PRIVATE cxx_std_26
+)
 else()
     target_compile_definitions(libglox INTERFACE
         GLOX_EXPORT= GLOX_BEGIN_EXPORT= GLOX_END_EXPORT=

@@ -1,9 +1,10 @@
-#include "pmm.hpp"
-#include "arch/addrspace.hpp"
-#include "system/logging.hpp"
+import glox;
+import gloxor : memory;
+import gloxor : system;
+import arch;
+
 #include <glox/assert.hpp>
 #include <gloxor/test.hpp>
-#include <memory/llallocator.hpp>
 
 using namespace gx;
 
