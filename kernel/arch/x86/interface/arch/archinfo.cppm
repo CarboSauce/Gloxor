@@ -1,5 +1,5 @@
-export module arch:archinfo;
-import gloxor : types;
+export module arch.archinfo;
+import gloxor.types;
 
 export namespace arch {
 struct Kinfo

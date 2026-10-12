@@ -1,8 +1,10 @@
-export module gloxor:virtmem;
+export module gloxor.memory.virtmem;
 import arch;
-import gloxor : types;
+import gloxor.types;
+import std.compat;
+import arch.paging;
 
-namespace gx {
+export namespace gx {
 class alignas(arch::vmem::pageSize) VSpace
 {
     // arch defined handle

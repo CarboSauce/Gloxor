@@ -1,7 +1,11 @@
+module gloxor.memory.pmm;
 import glox;
-import gloxor : memory;
-import gloxor : system;
+import gloxor.memory;
+import gloxor.types;
+import gloxor.system;
 import arch;
+import std.compat;
+import std;
 
 #include <glox/assert.hpp>
 #include <gloxor/test.hpp>

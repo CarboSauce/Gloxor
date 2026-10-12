@@ -1,5 +1,5 @@
-export module gloxor:system;
+export module gloxor.system;
 
-export import gloxor : logging;
-export import gloxor : terminal;
-export import gloxor : danger;
+export import gloxor.system.logging;
+export import gloxor.system.terminal;
+export import gloxor.system.danger;

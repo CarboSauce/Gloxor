@@ -1,7 +1,6 @@
 export module gloxor.memory;
 
-export import :pmm;
-export import :virtmem;
-export import :memory;
-export import :alloc;
-export import :llallocator;
+export import gloxor.memory.pmm;
+export import gloxor.memory.virtmem;
+export import gloxor.memory.alloc;
+export import gloxor.memory.llallocator;

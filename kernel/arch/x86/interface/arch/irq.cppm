@@ -1,7 +1,7 @@
-export module arch:irq;
-import gloxor : types;
+export module arch.irq;
+import gloxor.types;
 
-namespace arch {
+export namespace arch {
 
 using irqT = u64;
 

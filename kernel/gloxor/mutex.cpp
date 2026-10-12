@@ -1,3 +1,4 @@
+module gloxor.mutex;
 import arch;
 
 namespace gx {

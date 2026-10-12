@@ -1,6 +1,10 @@
+module gloxor.memory.virtmem;
 import arch;
 import glox;
-import gloxor : memory;
+import gloxor.memory;
+import gloxor.types;
+import std.compat;
+
 using namespace arch::vmem;
 using namespace gx;
 using namespace arch;
@@ -91,11 +95,11 @@ inline auto to_mask(PagePrivileges p, PageCaching c)
 }
 bool gx::VSpace::map(vaddr from, paddr to, Privileges pv, CacheMode cm)
 {
-    return arch::vmem::map(kAddrSpace.ptable, from, to, VMEM_MASK(pv, cm));
+    return arch::vmem::map(kAddrSpace.ptable, from, to, vmem_mask(pv, cm));
 }
 bool gx::VSpace::map_huge(vaddr from, paddr to, Privileges pv, CacheMode cm)
 {
-    return arch::vmem::map(kAddrSpace.ptable, from, to, VMEM_MASK(pv, cm));
+    return arch::vmem::map(kAddrSpace.ptable, from, to, vmem_mask(pv, cm));
 }
 void gx::VSpace::make_current()
 {

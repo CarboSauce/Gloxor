@@ -1,10 +1,13 @@
-#include "limine.h"
-
 import arch;
 import glox;
 import gloxor;
-import gloxor : memory;
-import gloxor : system;
+import gloxor.system;
+import gloxor.memory;
+import std.compat;
+
+#include "limine.h"
+#include "glox/assert.hpp"
+#include "system/logging.hpp"
 
 extern "C" void limine_main();
 extern "C" void gloxor_main();

@@ -1,6 +1,9 @@
 import arch_asm;
-import gloxor : system;
+import gloxor.system;
+import std.compat;
+#include "glox/assert.hpp"
 #include "gloxor/modules.hpp"
+#include "system/logging.hpp"
 [[gnu::interrupt]] static void kbd_handler(InterruptFrame* frame)
 {
     auto val = inb(0x60);

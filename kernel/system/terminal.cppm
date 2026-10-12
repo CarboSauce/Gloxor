@@ -1,5 +1,8 @@
+export module gloxor.system.terminal;
+import std.compat;
 import glox;
-export module gloxor:terminal;
+import gloxor.types;
+import gloxor.graphics;
 
 export namespace gx::term {
 void init_term(

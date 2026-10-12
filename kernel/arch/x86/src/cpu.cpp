@@ -1,7 +1,16 @@
-import gloxor : system;
-import gloxor : memory;
+module arch.cpu;
+import gloxor.system;
+import gloxor.memory;
 import arch;
 import arch_asm;
+import gloxor.types;
+import std.compat;
+import arch_asm.msr;
+
+#include "asm/asmstubs.hpp"
+#include "cpuid.h"
+#include "gloxor/test.hpp"
+#include "system/logging.hpp"
 
 /*
 [[gnu::no_caller_saved_registers]] extern "C" void _gloxAsmLongJump(); */

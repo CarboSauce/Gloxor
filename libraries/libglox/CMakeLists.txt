@@ -74,8 +74,8 @@ if (USE_MODULES)
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     )
     target_compile_features(libglox
-    PRIVATE cxx_std_26
-)
+        PUBLIC cxx_std_26
+    )
 else()
     target_compile_definitions(libglox INTERFACE
         GLOX_EXPORT= GLOX_BEGIN_EXPORT= GLOX_END_EXPORT=

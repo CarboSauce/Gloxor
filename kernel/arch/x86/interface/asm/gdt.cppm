@@ -1,6 +1,7 @@
-export module arch_asm:gdt;
+export module arch_asm.gdt;
 import std.compat;
 
+export {
 struct [[gnu::packed]] Gdt
 {
     uint16_t limit;
@@ -25,4 +26,5 @@ inline void load_gdt(GdtPointer& ptr)
 inline void get_gdt(GdtPointer& ptr)
 {
     asm("sgdt %0" : "=m"(ptr));
+}
 }

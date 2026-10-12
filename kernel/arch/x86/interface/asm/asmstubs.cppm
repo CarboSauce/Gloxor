@@ -1,9 +1,10 @@
-export module arch_asm:asmstubs;
+export module arch_asm.asmstubs;
 import std.compat;
 
 #include "cpuid.h"
 
-export namespace statusFlags { // clang-format off
+export {
+namespace statusFlags { // clang-format off
 	enum Eflags
 	{ 
 		carry       = 0x00000001,
@@ -99,11 +100,4 @@ inline auto cpuid(uint32_t code)
         : "0"(code));
     return val;
 }
-
-#define readCr(which)                              \
-    ({                                             \
-        size_t val;                                \
-        asm("mov %%cr" #which ", %0" : "=r"(val)); \
-        val;                                       \
-    })
-#define writeCr(which, val) ({ asm("mov %0,%%cr" #which::"r"(val)); })
+}

@@ -1,6 +1,6 @@
-export module gloxor:llallocator;
+export module gloxor.memory.llallocator;
 import glox;
-import gloxor : types;
+import gloxor.types;
 /*
     Both of those functions actually return nullptr on OOM situations
     Single chunk allocator is seperate for purpouses of optimization.
@@ -8,8 +8,10 @@ import gloxor : types;
     Loop doesnt need to be there because we can guarantee that if
     node is present in the list, it has atleast 1 free page
 */
+export {
+
 template <typename T>
-inline void* alloc_from_chunk(glox::list<T>& chunk, size_t chunkSize)
+inline void* alloc_from_chunk(glox::list<T>& chunk, usize chunkSize)
 {
     const auto& it = *chunk.front;
     it.size -= chunkSize;
@@ -31,7 +33,7 @@ inline void* alloc_from_chunk(glox::list<T>& chunk, size_t chunkSize)
 
 template <typename T>
 inline void*
-alloc_from_chunk(glox::list<T>& chunk, size_t chunkSize, usize pageCount)
+alloc_from_chunk(glox::list<T>& chunk, usize chunkSize, usize pageCount)
 {
     const auto allocSize = chunkSize * pageCount;
     for (auto& it : chunk) {
@@ -131,4 +133,5 @@ inline void insert_chunk(T*& from, T* chunk, usize length)
         return;
     }
     chunk->insert(it->prev, it);
+}
 }

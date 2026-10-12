@@ -1,4 +1,5 @@
-export module arch:cpu;
+export module arch.cpu;
+import gloxor.types;
 
 export namespace arch {
 
@@ -21,4 +22,15 @@ void initialize_cpu();
     }
 }
 
+enum class FeatureBit
+{
+    avx,
+    xsave,
+};
+constexpr FeatureBit operator|(FeatureBit l, FeatureBit r)
+{
+    return FeatureBit(static_cast<u64>(l) | static_cast<u64>(r));
+}
+
+bool is_feature_supported(FeatureBit);
 } // namespace arch

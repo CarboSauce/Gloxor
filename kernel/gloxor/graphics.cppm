@@ -1,6 +1,6 @@
-export module gloxor:graphics;
+export module gloxor.graphics;
 import glox;
-import gloxor : types;
+import gloxor.types;
 
 export namespace gx {
 using color_t = u32;
@@ -9,15 +9,15 @@ struct Framebuffer
 {
     color_t* fbBeg;
     color_t* fbEnd;
-    size_t width;
-    size_t height;
-    size_t pitch;
+    usize width;
+    usize height;
+    usize pitch;
 };
 
 template <typename iter, typename T>
 void draw_rectangle(
     iter beg,
-    size_t fbwidth,
+    usize fbwidth,
     ::glox::vec2<T> pos,
     ::glox::vec2<T> size,
     T color

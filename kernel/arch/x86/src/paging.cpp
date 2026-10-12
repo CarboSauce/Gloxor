@@ -1,8 +1,12 @@
-import gloxor:types;
-import gloxor:system;
-import gloxor:memory;
+module arch.paging;
+import gloxor.types;
+import gloxor.system;
+import gloxor.memory;
 import arch_asm;
 import arch;
+import std;
+import glox;
+import std.compat;
 
 #include "glox/assert.hpp"
 

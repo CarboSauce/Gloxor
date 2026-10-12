@@ -1,12 +1,16 @@
-export module arch:paging;
-import asm : paging;
+export module arch.paging;
+import arch_asm.paging;
 import glox;
-import gloxor : types;
+import arch.addrspace;
+import gloxor.types;
 
-#define VMEM_MASK(a, b) ((u64)(a) | (u64)(b))
-namespace arch::vmem {
+export namespace arch::vmem {
 using paging_t = u64;
 using vpage_flags = u64;
+constexpr auto vmem_mask(auto a, auto b)
+{
+    return (u64)a | (u64)b;
+}
 enum class PagePrivileges : u64
 {
     readOnly = x86::vmem::noexec, // read
@@ -25,8 +29,7 @@ enum class PageCaching
     writeCombine = 3
 };
 constexpr u64 pageSize = 0x1000;
-static constexpr vpage_flags defFlags
-    = x86::vmem::writable | x86::vmem::present;
+constexpr vpage_flags defFlags = x86::vmem::writable | x86::vmem::present;
 /**
  * @brief class for managing virtual memory context
  *

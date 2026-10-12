@@ -1,5 +1,6 @@
-export module glox:pmm;
+export module gloxor.memory.pmm;
 import std;
+import gloxor.types;
 
 #if defined(__GNUC__) && !defined(__clang__)
 #define mallocAttribute(...) malloc(__VA_ARGS__)
@@ -7,7 +8,7 @@ import std;
 #define mallocAttribute(...)
 #endif
 
-namespace gx {
+export namespace gx {
 /**
  * @brief use this incase you need access to internals of pmm,
  * its temporary workaround of not having proper initilalization functions

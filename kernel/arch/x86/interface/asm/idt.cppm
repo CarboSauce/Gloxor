@@ -1,8 +1,10 @@
-export module arch_asm:idt;
+export module arch_asm.idt;
 import std.compat;
-#define IDT_INTERRUPTGATE 0b10001110
-#define IDT_CALLGATE 0b10001100
-#define IDT_TRAPGATE 0b10001111
+
+export {
+constexpr auto IDT_INTERRUPTGATE = 0b10001110;
+constexpr auto IDT_CALLGATE = 0b10001100;
+constexpr auto IDT_TRAPGATE = 0b10001111;
 
 struct InterruptFrame
 {
@@ -62,4 +64,5 @@ inline IdtPointer get_idt()
     IdtPointer ptr;
     asm("sidt %0" : "=m"(ptr));
     return ptr;
+}
 }

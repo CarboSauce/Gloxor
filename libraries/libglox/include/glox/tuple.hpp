@@ -57,6 +57,7 @@ template <typename... T>
 tuple(T...) -> tuple<std::remove_reference_t<T>...>;
 
 template <std::size_t I, typename Tup>
+    requires glox::is_specialization<Tup, glox::tuple>::value
 [[nodiscard]] constexpr decltype(auto) get(Tup&& tpl)
 {
     return FORWARD(tpl).template get<I>();

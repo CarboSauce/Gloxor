@@ -1,8 +1,7 @@
 export module arch;
 
-export import :addrspace;
-export import :archinfo;
-export import :cpu;
-export import :feature;
-export import :irq;
-export import :paging;
+export import arch.addrspace;
+export import arch.archinfo;
+export import arch.cpu;
+export import arch.irq;
+export import arch.paging;

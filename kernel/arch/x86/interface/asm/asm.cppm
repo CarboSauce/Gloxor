@@ -1,10 +1,10 @@
 export module arch_asm;
 
-export import :asmstubs;
-export import :e9;
-export import :gdt;
-export import :idt;
-export import :msr;
-export import :paging;
-export import :pic8042contr;
-export import :pit8042;
+export import arch_asm.asmstubs;
+export import arch_asm.e9;
+export import arch_asm.gdt;
+export import arch_asm.idt;
+export import arch_asm.msr;
+export import arch_asm.paging;
+export import arch_asm.pic8042contr;
+export import arch_asm.pit8042;

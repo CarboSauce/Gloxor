@@ -1,8 +1,12 @@
-import
+module gloxor.system.terminal;
+import gloxor.graphics;
+import gloxor.types;
+import std.compat;
+import glox;
 
-    using namespace gx;
+using namespace gx;
 
-const extern uint8_t fontBitmap[];
+extern "C++" const uint8_t fontBitmap[];
 constexpr int scaleX = 1;
 constexpr int scaleY = 1;
 constexpr int fontWidth = 8 * scaleX;

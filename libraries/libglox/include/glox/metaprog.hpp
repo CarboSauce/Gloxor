@@ -4,6 +4,7 @@
 #ifndef USE_MODULES
 #include <cstddef>
 #include <initializer_list>
+#include <type_traits>
 #endif
 
 namespace glox {
@@ -35,5 +36,14 @@ constexpr T* launder(T* p) noexcept
 {
     return __builtin_launder(p);
 }
+
+template <typename Test, template <typename...> class Templ>
+struct is_specialization : std::false_type
+{ };
+
+template <template <typename...> class Templ, typename... Args>
+struct is_specialization<Templ<Args...>, Templ> : std::true_type
+{ };
+
 GLOX_END_EXPORT
 } // namespace glox

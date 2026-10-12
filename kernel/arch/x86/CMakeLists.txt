@@ -6,7 +6,7 @@ target_sources(kernel PRIVATE
     # src/cpuHelpers.asm #Not needed for now
 )
 target_include_directories(kernel PRIVATE
-    ./inc
+    ./interface
 )
 target_sources(kernel
     PUBLIC
@@ -17,7 +17,6 @@ target_sources(kernel
         interface/arch/addrspace.cppm
         interface/arch/archinfo.cppm
         interface/arch/cpu.cppm
-        interface/arch/feature.cppm
         interface/arch/irq.cppm
         interface/arch/paging.cppm
         interface/arch/arch.cppm

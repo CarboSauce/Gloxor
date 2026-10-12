@@ -1,7 +1,8 @@
-export module arch_asm:msr;
-import gloxor : types;
+export module arch_asm.msr;
+import gloxor.types;
+import std.compat;
 
-namespace msr {
+export namespace msr {
 enum Msr : uint32_t
 {
     ia32PAT = 0x00000277, // Page Attribute Table
@@ -10,8 +11,9 @@ enum Msr : uint32_t
     gsBase = 0xC0000101, // GS Base register, used for cpu local vars
     kgsBase = 0xC0000102, // Kernel GS Base
 };
-};
+}; // namespace msr
 
+export {
 inline uint64_t rdmsr(uint32_t msr)
 {
     uint32_t low, high;
@@ -27,4 +29,5 @@ inline void wrmsr(uint32_t msr, uint64_t value)
 inline void wrmsr(uint32_t msr, uint32_t low, uint32_t high)
 {
     asm volatile("wrmsr" ::"c"(msr), "a"(low), "d"(high));
+}
 }

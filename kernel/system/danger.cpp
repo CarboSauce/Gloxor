@@ -1,12 +1,15 @@
+module gloxor.system.danger;
 import arch;
-import gloxor : system;
+import gloxor.system.logging;
 static inline void draw_panic()
 {
     gx::outStream, "\nKernel Panic moment";
 }
 
-void gx::kernel_panic()
+namespace gx {
+void kernel_panic()
 {
     draw_panic();
     arch::halt_forever();
 }
+} // namespace gx

@@ -1,8 +1,8 @@
-export module gloxor:logging;
+export module gloxor.system.logging;
 import glox;
 import std.compat;
 
-namespace gx {
+export namespace gx {
 struct LogStream : ::glox::b_stream
 {
     char buffer[512];

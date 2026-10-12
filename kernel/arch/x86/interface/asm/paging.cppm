@@ -1,10 +1,10 @@
-export module arch_asm:paging;
-import arch : addrspace;
-import gloxor : types;
+export module arch_asm.paging;
+import arch.addrspace;
+import gloxor.types;
 import std.compat;
 
 // TODO: this namespace name is so bad, change it
-namespace x86::vmem {
+export namespace x86::vmem {
 enum PagingBits
 {
     present = 1,

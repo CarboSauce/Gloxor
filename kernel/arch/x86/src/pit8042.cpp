@@ -1,7 +1,12 @@
-import arch_asm;
-import gloxor:system;
+module arch_asm.pit8042;
+import gloxor.system;
+import arch_asm.asmstubs;
+import arch_asm.idt;
+import arch_asm.pic8042contr;
+import std.compat;
 
 #include "gloxor/modules.hpp"
+#include "system/logging.hpp"
 
 static u64 tick = 0;
 using namespace gx::pit;
@@ -14,15 +19,15 @@ namespace gx::pit {
  */
 void set_divisor(u16 divisor)
 {
-
     outb(0x40, divisor & 0xFF);
     io_wait();
     outb(0x40, (divisor & 0xFF00) >> 8);
 }
 } // namespace gx::pit
 
-[[gnu::interrupt]] static void
-timer_handler([[maybe_unused]] InterruptFrame* frame)
+[[gnu::interrupt]] static void timer_handler(
+    [[maybe_unused]] InterruptFrame* frame
+)
 {
     tick += 1;
     gx::pic::send_eoi_master();

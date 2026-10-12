@@ -1,6 +1,6 @@
-export module gloxor:kinfo;
+export module gloxor.kinfo;
 import glox;
-import gloxor : types;
+import gloxor.types;
 
 export namespace gx {
 struct BootInfo

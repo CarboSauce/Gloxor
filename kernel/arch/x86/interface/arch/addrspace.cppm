@@ -1,9 +1,15 @@
-export module arch:addrspace;
-import gloxor : system;
-import gloxor : types;
+export module arch.addrspace;
+import gloxor.system;
+import gloxor.types;
+import std;
 
-extern u8 kernelFileBegin[];
-extern u8 kernelFileEnd[];
+#include "glox/assert.hpp"
+
+extern "C++"
+{
+export extern u8 kernelFileBegin[];
+export extern u8 kernelFileEnd[];
+}
 export namespace arch {
 constexpr u64 kernelMemBase = 0xffffffff80000000;
 constexpr u64 physicalMemBase = 0xffff800000000000;

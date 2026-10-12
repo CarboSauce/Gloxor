@@ -3,11 +3,11 @@
 #ifndef USE_MODULES
 #include <source_location>
 #else
-#ifndef GLOX_MODULE_BUILD
-namespace std {
-struct source_location;
-}
-#endif
+// #ifndef GLOX_MODULE_BUILD
+// namespace std {
+// struct source_location;
+// }
+// #endif
 #endif
 
 namespace glox {

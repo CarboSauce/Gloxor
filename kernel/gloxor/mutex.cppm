@@ -1,6 +1,7 @@
-export module gloxor : mutex;
+export module gloxor.mutex;
 import glox;
 import arch;
+import arch.irq;
 
 export namespace gx {
 class IrqLock

@@ -35,5 +35,8 @@ BreakBeforeTernaryOperators: true
 AllowAllParametersOfDeclarationOnNextLine: false
 BreakTemplateDeclarations: Yes
 FixNamespaceComments: true
+IndentExportBlock: false
+IndentExternBlock: NoIndent
 PenaltyReturnTypeOnItsOwnLine: 100
 PenaltyBreakScopeResolution: 1000
+

@@ -39,8 +39,6 @@ target_sources(kernel
         gloxor/gloxor.cppm
 )
 
-
-
 add_subdirectory(arch)
 add_subdirectory(drivers)
 

@@ -1,13 +1,19 @@
-#include "cpuid.h"
-
 import std;
 import glox;
-import gloxor : system;
-import gloxor : memory;
-import gloxor : arch;
-import arch : irq;
-import arch : cpu;
-import arch : addrspace;
+import gloxor.system;
+import gloxor.memory;
+import gloxor.types;
+import gloxor.kinfo;
+import arch;
+import arch.irq;
+import arch.cpu;
+import arch.addrspace;
+import std.compat;
+
+#include "cpuid.h"
+#include "glox/assert.hpp"
+#include "gloxor/test.hpp"
+#include "system/logging.hpp"
 
 using ctor_t = void (*)();
 using namespace arch;
@@ -18,6 +24,8 @@ extern ctor_t _ctorArrayEnd[];
 extern ctor_t _modulePreCpuBegin[];
 extern ctor_t _moduleDriverBegin[];
 extern ctor_t _moduleDriverEnd[];
+extern gx::Ktest _moduleTesting[];
+extern gx::Ktest _moduleTestingEnd[];
 
 extern "C" void call_ctor_pointers(ctor_t* begin, ctor_t* end)
 {
@@ -141,8 +149,6 @@ extern "C" void gloxor_main()
     call_driver_inits();
     call_global_ctors();
 #ifdef GLOXTESTING
-    extern gx::Ktest _moduleTesting[];
-    extern gx::Ktest _moduleTestingEnd[];
     gx::term::set_fg_color(0xadd8e6);
     gloxPrint(
         "Unit tests:\nThere are ",

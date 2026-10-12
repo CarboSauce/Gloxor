@@ -1,6 +1,15 @@
-#include "glox/assert.hpp"
+module gloxor.memory.alloc;
+import gloxor.memory;
+import glox;
+import gloxor.system.logging;
+import gloxor.mutex;
+import gloxor.types;
+import gloxor.memory.pmm;
+import std;
+import std.compat;
 
-import gloxor : memory;
+#include "glox/assert.hpp"
+#include "system/logging.hpp"
 
 /*
     Allocator idea is pretty simple, its similar in idea to slab
@@ -19,6 +28,13 @@ import gloxor : memory;
    speedup freeing -	Massive fragmentation might occur if lot of chunks are
    partially filled
 */
+namespace gx {
+void* memalloc(usize size);
+void memdealloc(void* ptr, usize size);
+} // namespace gx
+
+extern "C++"
+{
 void* operator new(size_t size)
 {
     return gx::memalloc(size);
@@ -37,6 +53,7 @@ void operator delete(void* p, size_t size)
 void operator delete[](void* p, size_t size)
 {
     gx::memdealloc(p, size);
+}
 }
 
 namespace glox::custom {
@@ -60,21 +77,23 @@ void dealloc(
 }
 glox::alloc_handle<void> alloc_zeroed(
     std::size_t count,
-    std::size_t objsize [[maybe_unused]] std::size_t alignment
+    std::size_t objsize,
+    [[maybe_unused]] std::size_t alignment
 )
 {
     auto ptr = (void*)gx::memalloc(objsize * count);
     if (ptr == nullptr) {
         return { nullptr, 0 };
     }
-    return { ::memset(ptr, 0, objsize * count), count };
+    return { glox::memset(ptr, 0, objsize * count), count };
 }
 
 glox::alloc_handle<void> grow(
     void* old_ptr,
     std::size_t old_count,
     std::size_t new_count,
-    std::size_t objsize std::size_t alignment
+    std::size_t objsize,
+    std::size_t alignment
 )
 {
     gloxAssert(
@@ -87,8 +106,8 @@ glox::alloc_handle<void> grow(
         return { nullptr, 0 };
     }
 
-    ::memcpy(newPtr, old_ptr, objsize * old_count);
-    dealloc(old_ptr, old_count, alignment);
+    glox::memcpy(newPtr, old_ptr, objsize * old_count);
+    glox::custom::dealloc(old_ptr, old_count, objsize, alignment);
 
     return { newPtr, new_count };
 }
@@ -97,7 +116,8 @@ glox::alloc_handle<void> grow_zeroed(
     void* old_ptr,
     std::size_t old_count,
     std::size_t new_count,
-    std::size_t objsize std::size_t alignment
+    std::size_t objsize,
+    std::size_t alignment
 )
 {
     gloxAssert(
@@ -110,9 +130,11 @@ glox::alloc_handle<void> grow_zeroed(
         return { nullptr, 0 };
     }
 
-    ::memcpy(newPtr, old_ptr, objsize * old_count);
-    ::memset(newPtr + old_count, 0, objsize * (new_count - old_count));
-    dealloc(old_ptr, old_count, alignment);
+    glox::memcpy(newPtr, old_ptr, objsize * old_count);
+    glox::memset(
+        (u8*)newPtr + objsize * old_count, 0, objsize * (new_count - old_count)
+    );
+    glox::custom::dealloc(old_ptr, old_count, objsize, alignment);
 
     return { newPtr, new_count };
 }
@@ -121,7 +143,8 @@ glox::alloc_handle<void> shrink(
     void* old_ptr,
     std::size_t old_count,
     std::size_t new_count,
-    std::size_t objsize std::size_t alignment
+    std::size_t objsize,
+    std::size_t alignment
 )
 {
     gloxAssert(
@@ -134,8 +157,8 @@ glox::alloc_handle<void> shrink(
         return { nullptr, 0 };
     }
 
-    ::memcpy(newPtr, old_ptr, new_count);
-    dealloc(old_ptr, old_count, alignment);
+    glox::memcpy(newPtr, old_ptr, new_count);
+    glox::custom::dealloc(old_ptr, old_count, objsize, alignment);
 
     return { newPtr, new_count };
 }
@@ -143,7 +166,8 @@ glox::alloc_handle<void> grow_inplace(
     [[maybe_unused]] void* old_ptr,
     [[maybe_unused]] std::size_t old_size,
     [[maybe_unused]] std::size_t new_size,
-    std::size_t objsize [[maybe_unused]] std::size_t alignment
+    [[maybe_unused]] std::size_t objsize,
+    [[maybe_unused]] std::size_t alignment
 )
 {
     // in std there isn't really a way to implement this
@@ -154,7 +178,8 @@ glox::alloc_handle<void> shrink_inplace(
     [[maybe_unused]] void* old_ptr,
     [[maybe_unused]] std::size_t old_count,
     [[maybe_unused]] std::size_t new_count,
-    std::size_t objsize [[maybe_unused]] std::size_t alignment
+    [[maybe_unused]] std::size_t objsize,
+    [[maybe_unused]] std::size_t alignment
 )
 {
     // in std there isn't really a way to implement this
@@ -291,7 +316,9 @@ inline bool free_chunk(ChunkPtr& it, void* ptr, usize size)
     auto newentry = (Freelist*)ptr;
     it.bytesUsed -= size;
     if (it.bytesUsed == 0) {
-        gx::page_dealloc((void*)ALIGN((uintptr)it.list, gx::pmmChunkSize));
+        gx::page_dealloc(
+            (void*)glox::align((uintptr)it.list, gx::pmmChunkSize)
+        );
         return true;
     }
     newentry->next = it.list;
@@ -310,10 +337,10 @@ inline bool free_mem(void* ptr, usize size)
     auto tbindex = size2bucket(size);
     auto realsize = tinyBuckets[tbindex];
     auto* curlist = globalHeap.buckets[tbindex].list;
-    auto allignedptr = ALIGN((uintptr)ptr, gx::pmmChunkSize);
+    auto allignedptr = glox::align((uintptr)ptr, gx::pmmChunkSize);
     for (auto iter = curlist; iter; iter = iter->next) {
         for (auto& it : iter->chunkHeaders) {
-            if (allignedptr == ALIGN((uintptr)it.list, gx::pmmChunkSize))
+            if (allignedptr == glox::align((uintptr)it.list, gx::pmmChunkSize))
                 return free_chunk(it, ptr, realsize);
         }
     }

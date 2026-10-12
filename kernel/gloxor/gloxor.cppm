@@ -1,5 +1,5 @@
 export module gloxor;
-export import :kinfo;
-export import :graphics;
-export import :mutex;
-export import :types;
+export import gloxor.kinfo;
+export import gloxor.graphics;
+export import gloxor.mutex;
+export import gloxor.types;
