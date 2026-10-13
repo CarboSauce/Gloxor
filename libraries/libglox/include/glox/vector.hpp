@@ -1,8 +1,12 @@
 #pragma once
+
+#ifndef USE_MODULES
 #include "alloc.hpp"
-#include "assert.hpp"
 #include "detail/moveutils.hpp"
 #include "option.hpp"
+#endif
+
+#include "assert.hpp"
 
 namespace glox {
 GLOX_BEGIN_EXPORT
@@ -89,7 +93,7 @@ public:
     {
         using glox::swap;
         swap(start, other.start);
-        swap(static_cast<Allocator&>(*this), static_cast<Allocator&>(other));
+        swap(this->alloc, other->alloc);
         cap = other.cap;
         other.cap = 0;
         siz = other.siz;

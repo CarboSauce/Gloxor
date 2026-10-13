@@ -1,11 +1,12 @@
 #pragma once
-#include "assert.hpp"
-#include "detail/memory.hpp"
-#include "macros.hpp"
-#include "metaprog.hpp"
 #ifndef USE_MODULES
+#include "detail/memory.hpp"
+#include "metaprog.hpp"
 #include <type_traits>
 #endif
+
+#include "assert.hpp"
+#include "macros.hpp"
 namespace glox {
 GLOX_BEGIN_EXPORT
 

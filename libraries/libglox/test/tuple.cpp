@@ -11,6 +11,13 @@ static_assert(
     and std::is_trivially_copyable_v<glox::tuple<int, int, int>> == true
 );
 
+static_assert(
+    glox::is_specialization<
+        std::remove_reference_t<glox::tuple<const char*, const char*, int>&>,
+        glox::tuple
+    >::value
+    == true
+);
 constexpr auto test_tuple()
 {
     auto tpl = glox::tuple { 1, 2, 3 };

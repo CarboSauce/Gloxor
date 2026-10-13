@@ -7,6 +7,7 @@ add_executable(tests
     option.cpp
     list.cpp
     rbtree.cpp
+    box.cpp
     variant.cpp
 )
 
