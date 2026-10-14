@@ -72,13 +72,16 @@ struct formatter<T>
 {
     void format(formattable_to<char> auto& buffer, T value)
     {
-        auto digCount = glox::log10(value);
-        while (digCount > 0) {
-            auto pten = (digCount * 10);
-            auto c = value / pten;
-            buffer.write('0' + c);
-            value = value - c * pten;
-            digCount--;
+        char buf[20];
+        size_t i = 0;
+        do {
+            auto digit = value % 10;
+            value /= 10;
+            buf[i++] = '0' + digit;
+        } while (value > 0);
+        // glox::reverse(buf, buf + i);
+        for (; --i != (size_t)-1;) {
+            buffer.write(buf[i]);
         }
     }
 };
