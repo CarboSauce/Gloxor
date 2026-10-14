@@ -9,6 +9,7 @@ add_executable(tests
     rbtree.cpp
     box.cpp
     variant.cpp
+    format.cpp
 )
 
 target_compile_features(tests
