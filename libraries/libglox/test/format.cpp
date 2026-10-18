@@ -27,7 +27,7 @@ struct string_buffer
 TEST_CASE("Basic hello world fmt")
 {
     string_buffer str;
-    auto res = glox::format_to(str, "Hello {}", "World");
+    auto res = glox::format_to(str, "Hello %", "World");
     REQUIRE(str.buf == "Hello World");
 }
 
@@ -35,7 +35,7 @@ TEST_CASE("Basic hello world fmt string view")
 {
     using namespace std::literals;
     string_buffer str;
-    auto res = glox::format_to(str, "Hello {}", "World"sv);
+    auto res = glox::format_to(str, "Hello %", "World"sv);
     REQUIRE(str.buf == "Hello World");
 }
 
@@ -43,19 +43,40 @@ TEST_CASE("Basic integer formatting")
 {
     using namespace std::literals;
     string_buffer str;
-    auto res = glox::format_to(str, "{} {}", -1, 1);
+    auto res = glox::format_to(str, "% %", -1, 1);
     REQUIRE(str.buf == "-1 1");
     str.flush();
-    res = glox::format_to(str, "{} {}", -1212, 1212);
+    res = glox::format_to(str, "% %", -1212, 1212);
     REQUIRE(str.buf == "-1212 1212");
     auto min = std::numeric_limits<int>::min();
     auto max = std::numeric_limits<int>::max();
     str.flush();
-    res = glox::format_to(str, "{} {}", min, max);
+    res = glox::format_to(str, "% %", min, max);
     REQUIRE(str.buf == std::format("{} {}", min, max));
     auto minl = std::numeric_limits<int64_t>::min();
     auto maxl = std::numeric_limits<uint64_t>::max();
     str.flush();
-    res = glox::format_to(str, "{} {}", minl, maxl);
+    res = glox::format_to(str, "% %", minl, maxl);
     REQUIRE(str.buf == std::format("{} {}", minl, maxl));
+}
+
+TEST_CASE("Format as hex")
+{
+    string_buffer str;
+    auto res = glox::format_to(str, "%x %x", 102, 113);
+    REQUIRE(res.buf == std::format("{:#x} {:#x}", 102, 113));
+}
+
+TEST_CASE("Format as binary")
+{
+    string_buffer str;
+    auto res = glox::format_to(str, "%b %b", 102, 113);
+    REQUIRE(res.buf == std::format("{:#b} {:#b}", 102, 113));
+}
+
+TEST_CASE("Format ptr")
+{
+    string_buffer str;
+    auto res = glox::format_to(str, "%x", &str);
+    REQUIRE(not res.buf.empty());
 }

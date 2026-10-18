@@ -64,22 +64,47 @@ concept formattable_to = requires(T& buffer, C val) {
     { buffer.flush() } -> std::same_as<size_t>;
 };
 
+enum class format_options
+{
+    hex,
+    bin,
+    dec,
+};
+
 template <typename T>
 struct formatter;
 
 template <std::unsigned_integral T>
 struct formatter<T>
 {
-    void format(formattable_to<char> auto& buffer, T value)
+    void format(formattable_to<char> auto& buffer, format_options opts, T value)
     {
-        char buf[20];
+        char buf[64];
         size_t i = 0;
-        do {
-            auto digit = value % 10;
-            value /= 10;
-            buf[i++] = '0' + digit;
-        } while (value > 0);
-        // glox::reverse(buf, buf + i);
+        if (opts == format_options::dec) {
+            do {
+                auto digit = value % 10;
+                value /= 10;
+                buf[i++] = '0' + digit;
+            } while (value > 0);
+        } else if (opts == format_options::hex) {
+            buffer.write('0');
+            buffer.write('x');
+            do {
+                auto digit = value % 16;
+                value /= 16;
+                char hexDigit = "0123456789ABCDEF"[digit];
+                buf[i++] = hexDigit;
+            } while (value > 0);
+        } else if (opts == format_options::bin) {
+            buffer.write('0');
+            buffer.write('b');
+            do {
+                auto digit = value & 1;
+                value >>= 1;
+                buf[i++] = digit ? '1' : '0';
+            } while (value > 0);
+        }
         for (; --i != (size_t)-1;) {
             buffer.write(buf[i]);
         }
@@ -89,21 +114,27 @@ struct formatter<T>
 template <std::signed_integral T>
 struct formatter<T>
 {
-    void format(formattable_to<char> auto& buffer, T value)
+    void format(formattable_to<char> auto& buffer, format_options opts, T value)
     {
         uintmax_t uvalue = value;
         if (value < 0) {
             buffer.write('-');
             uvalue = -(uintmax_t)value;
         }
-        return glox::formatter<decltype(uvalue)> { }.format(buffer, uvalue);
+        return glox::formatter<decltype(uvalue)> { }.format(
+            buffer, opts, uvalue
+        );
     }
 };
 
 template <>
 struct formatter<std::string_view>
 {
-    void format(formattable_to<char> auto& buffer, std::string_view value)
+    void format(
+        formattable_to<char> auto& buffer,
+        format_options opts,
+        std::string_view value
+    )
     {
         for (const auto c : value) {
             buffer.write(c);
@@ -114,7 +145,11 @@ struct formatter<std::string_view>
 template <>
 struct formatter<const char*>
 {
-    void format(formattable_to<char> auto& buffer, const char* value)
+    void format(
+        formattable_to<char> auto& buffer,
+        format_options opts,
+        const char* value
+    )
     {
         while (char c = *value++) {
             buffer.write(c);
@@ -122,25 +157,60 @@ struct formatter<const char*>
     }
 };
 
+template <typename T>
+    requires std::is_pointer_v<T>
+struct formatter<T>
+{
+    void
+    format(formattable_to<char> auto& buffer, format_options opts, void* value)
+    {
+        return glox::formatter<uintptr_t> { }.format(
+            buffer, opts, reinterpret_cast<uintptr_t>(value)
+        );
+    }
+};
+
 template <formattable_to<char> Buffer, typename... Args>
 constexpr auto format_to(Buffer& buffer, std::string_view templ, Args&&... args)
 {
     auto beg = templ.begin();
+    const auto end = templ.end();
+
+    auto next = [&]() -> char { return beg == end ? '\0' : *beg++; };
+
+    auto peek = [&]() -> char { return beg == end ? '\0' : *beg; };
+
     auto parse = [&](auto&& arg) {
-        while (beg != templ.end() && *beg != '{') {
-            buffer.write(*beg++);
+        while (beg != end) {
+            char c = next();
+
+            if (c != '%') {
+                buffer.write(c);
+                continue;
+            }
+
+            if (peek() == '%') {
+                next();
+                buffer.write('%');
+                continue;
+            }
+
+            format_options opts = format_options::dec;
+
+            if (peek() == 'b') {
+                next();
+                opts = format_options::bin;
+            } else if (peek() == 'x') {
+                next();
+                opts = format_options::hex;
+            }
+
+            glox::formatter<std::decay_t<decltype(arg)>> { }.format(
+                buffer, opts, FORWARD(arg)
+            );
+
+            return;
         }
-        if (beg == templ.end())
-            return;
-        ++beg;
-
-        if (beg == templ.end() || *beg != '}')
-            return;
-
-        glox::formatter<std::decay_t<decltype(arg)>> { }.format(
-            buffer, FORWARD(arg)
-        );
-        ++beg;
     };
 
     (parse(FORWARD(args)), ...);
