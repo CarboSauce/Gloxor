@@ -1,10 +1,12 @@
 #ifndef USE_MODULES
 #include "glox/format.hpp"
 #include <format>
+#include <regex>
 #include <string>
 #include <string_view>
 #else
 import std;
+import std.compat;
 import glox;
 #endif
 #include "doctest.h"
@@ -77,6 +79,7 @@ TEST_CASE("Format as binary")
 TEST_CASE("Format ptr")
 {
     string_buffer str;
-    auto res = glox::format_to(str, "%x", &str);
-    REQUIRE(not res.buf.empty());
+    auto res = glox::format_to(str, "%", &str);
+    std::regex ptr_regex("0x[0-9a-fA-F]+");
+    REQUIRE(std::regex_search(res.buf, ptr_regex));
 }

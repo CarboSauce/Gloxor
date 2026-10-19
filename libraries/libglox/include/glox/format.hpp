@@ -66,6 +66,7 @@ concept formattable_to = requires(T& buffer, C val) {
 
 enum class format_options
 {
+    def,
     hex,
     bin,
     dec,
@@ -81,7 +82,7 @@ struct formatter<T>
     {
         char buf[64];
         size_t i = 0;
-        if (opts == format_options::dec) {
+        if (opts == format_options::dec or opts == format_options::def) {
             do {
                 auto digit = value % 10;
                 value /= 10;
@@ -164,6 +165,7 @@ struct formatter<T>
     void
     format(formattable_to<char> auto& buffer, format_options opts, void* value)
     {
+        opts = opts == format_options::def ? format_options::hex : opts;
         return glox::formatter<uintptr_t> { }.format(
             buffer, opts, reinterpret_cast<uintptr_t>(value)
         );
@@ -177,7 +179,6 @@ constexpr auto format_to(Buffer& buffer, std::string_view templ, Args&&... args)
     const auto end = templ.end();
 
     auto next = [&]() -> char { return beg == end ? '\0' : *beg++; };
-
     auto peek = [&]() -> char { return beg == end ? '\0' : *beg; };
 
     auto parse = [&](auto&& arg) {
@@ -195,12 +196,16 @@ constexpr auto format_to(Buffer& buffer, std::string_view templ, Args&&... args)
                 continue;
             }
 
-            format_options opts = format_options::dec;
+            format_options opts = format_options::def;
 
-            if (peek() == 'b') {
+            char cpeeked = peek();
+            if (cpeeked == 'd') {
+                next();
+                opts = format_options::dec;
+            } else if (cpeeked == 'b') {
                 next();
                 opts = format_options::bin;
-            } else if (peek() == 'x') {
+            } else if (cpeeked == 'x') {
                 next();
                 opts = format_options::hex;
             }
