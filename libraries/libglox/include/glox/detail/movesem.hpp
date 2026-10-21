@@ -1,6 +1,7 @@
 #ifndef LIBGLOX_MOVESEM
 #define LIBGLOX_MOVESEM
 
+#ifndef USE_MODULES
 namespace glox::detail {
 template <typename T>
 struct remove_ref
@@ -18,6 +19,29 @@ struct remove_ref<T&&>
     using type = T;
 };
 } // namespace glox::detail
+#else
+#ifdef USE_MODULES
+#ifdef GLOX_COMPILING_MODULE
+namespace glox::detail {
+template <typename T>
+struct remove_ref
+{
+    using type = T;
+};
+template <typename T>
+struct remove_ref<T&>
+{
+    using type = T;
+};
+template <typename T>
+struct remove_ref<T&&>
+{
+    using type = T;
+};
+} // namespace glox::detail
+#endif
+#endif
+#endif
 
 #ifndef RVALUE
 #define RVALUE(...)                                                      \

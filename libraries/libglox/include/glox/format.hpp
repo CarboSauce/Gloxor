@@ -2,6 +2,7 @@
 #ifndef USE_MODULES
 #include "glox/array.hpp"
 #include "glox/math.hpp"
+#include "glox/string.hpp"
 #include "glox/types.hpp"
 #include "glox/utilalgs.hpp"
 #include <concepts>
@@ -133,7 +134,7 @@ struct formatter<std::string_view>
 {
     void format(
         formattable_to<char> auto& buffer,
-        format_options opts,
+        [[maybe_unused]] format_options opts,
         std::string_view value
     )
     {
@@ -148,11 +149,26 @@ struct formatter<const char*>
 {
     void format(
         formattable_to<char> auto& buffer,
-        format_options opts,
+        [[maybe_unused]] format_options opts,
         const char* value
     )
     {
         while (char c = *value++) {
+            buffer.write(c);
+        }
+    }
+};
+
+template <glox::allocator<char> Alloc>
+struct formatter<glox::string<Alloc>>
+{
+    void format(
+        formattable_to<char> auto& buffer,
+        [[maybe_unused]] format_options opts,
+        const glox::string<Alloc>& value
+    )
+    {
+        for (const auto c : value) {
             buffer.write(c);
         }
     }
@@ -199,7 +215,11 @@ constexpr auto format_to(Buffer& buffer, std::string_view templ, Args&&... args)
             format_options opts = format_options::def;
 
             char cpeeked = peek();
-            if (cpeeked == 'd') {
+
+            if (cpeeked == 's') {
+                next();
+                opts = format_options::def;
+            } else if (cpeeked == 'd') {
                 next();
                 opts = format_options::dec;
             } else if (cpeeked == 'b') {

@@ -17,10 +17,6 @@ target_sources(kernel
     TYPE CXX_MODULES
     BASE_DIRS ${CMAKE_SOURCE_DIR}
     FILES
-        system/danger.cppm
-        system/logging.cppm
-        system/terminal.cppm
-
         memory/memory.cppm
         memory/pmm.cppm
         memory/alloc.cppm

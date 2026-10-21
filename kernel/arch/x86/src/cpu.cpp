@@ -1,6 +1,7 @@
 module arch.cpu;
 import gloxor.system;
 import gloxor.memory;
+import gloxor.system.logging;
 import arch;
 import arch_asm;
 import gloxor.types;
@@ -10,7 +11,6 @@ import arch_asm.msr;
 #include "asm/asmstubs.hpp"
 #include "cpuid.h"
 #include "gloxor/test.hpp"
-#include "system/logging.hpp"
 
 /*
 [[gnu::no_caller_saved_registers]] extern "C" void _gloxAsmLongJump(); */
@@ -45,26 +45,26 @@ static u64 cpuFeatures;
 [[gnu::interrupt]]
 static void div_zero_handle(InterruptFrame*)
 {
-    gloxFatalLogln("You Fool Divided By Zero!\n");
+    gx::log_fatal("You Fool Divided By Zero!\n");
     gx::kernel_panic();
 }
 
 [[gnu::interrupt]]
 static void double_fault(InterruptFrame*)
 {
-    gloxFatalLogln("Double fault!\n");
+    gx::log_fatal("Double fault!\n");
     gx::kernel_panic();
 }
 [[gnu::interrupt]]
 static void nmi_handler(InterruptFrame*)
 {
-    gloxFatalLogln("Non Maskable Interrupt!\n");
+    gx::log_fatal("Non Maskable Interrupt!\n");
 }
 
 [[gnu::interrupt]]
 static void gp_fault(InterruptFrame* frame, size_t /* errc */)
 {
-    gloxFatalLogln("General Protection Fault!\nRIP = ", (void*)frame->ip);
+    gx::log_fatal("General Protection Fault!\nRIP = %\n", (void*)frame->ip);
     gx::kernel_panic();
 }
 
@@ -72,9 +72,9 @@ static void gp_fault(InterruptFrame* frame, size_t /* errc */)
 static void page_fault(InterruptFrame*, size_t /* errc */)
 {
     void* errorAdr = (void*)readCr(2);
-    gloxFatalLogln("Page Fault at address: ", errorAdr);
+    gx::log_fatal("Page Fault at address: %\n", errorAdr);
     if (errorAdr < (u8*)0x1000) {
-        gloxTraceLog("Null pointer access\n");
+        gx::log_fatal("Null pointer access\n");
     }
     gx::kernel_panic();
 }
@@ -82,14 +82,14 @@ static void page_fault(InterruptFrame*, size_t /* errc */)
 [[gnu::interrupt]]
 static void illegal_opcode(InterruptFrame* frame)
 {
-    gloxFatalLogln("Illegal opcode! RIP = ", (void*)frame->ip);
+    gx::log_fatal("Illegal opcode! RIP = %\n", (void*)frame->ip);
     arch::halt_forever();
 }
 
 [[gnu::interrupt]]
 static void debug_handler(InterruptFrame* frame)
 {
-    gloxPrintln("Debug handler, RIP: ", (void*)frame->ip);
+    gx::println("Debug handler, RIP: %", (void*)frame->ip);
 }
 
 inline void initialize_gdt();
@@ -109,7 +109,7 @@ inline bool setup_pat()
     if (!(info.edx & (1 << 16)))
         return false;
     // WC UC WT WB the CPU default
-    gloxDebugLogln("Current ia32PAT is: ", (void*)rdmsr(msr::ia32PAT));
+    gx::log_debug("Current ia32PAT is: %\n", (void*)rdmsr(msr::ia32PAT));
     u32 patlow = 0x01000406;
     // UC UC- WP WC
     u32 pathigh = 0x00070105;
@@ -122,9 +122,9 @@ void initialize_cpu()
     initialize_interrupts();
     initialize_cpu_extensions();
     if (setup_pat())
-        gloxDebugLogln("PAT supported on boot cpu");
+        gx::log_debug("PAT supported on boot cpu\n");
 
-    gloxTraceLogln("Cpu features:", cpuFeatures);
+    gx::log_debug("Cpu features:\n", cpuFeatures);
 }
 
 } // namespace arch
@@ -215,14 +215,21 @@ static bool testing()
 {
     u32 eax, ebx, ecx, edx;
     __cpuid(0x1, eax, ebx, ecx, edx);
-    gloxTraceLogln("CPUID ECX = ", ecx);
-    gloxTraceLogln("Is SSE supported? ", (edx & (1 << 25)) != 0);
-    gloxTraceLogln("Is XSAVE supported? ", (ecx & (1 << 26)) != 0);
-    gloxTraceLogln("Is OSXSAVE supported? ", (ecx & (1 << 27)) != 0);
-    gloxTraceLogln("Is RDRAND supported? ", ((ecx >> 30) & 1));
-    gloxTraceLogln("Is AVX supported? ", (ecx & (1 << 28)) != 0);
+    gx::log_trace("CPUID ECX = %\n", ecx);
+    gx::log_trace("Is SSE supported? %\n", (edx & (1 << 25)) != 0);
+    gx::log_trace("Is XSAVE supported? %\n", (ecx & (1 << 26)) != 0);
+    gx::log_trace("Is OSXSAVE supported? %\n", (ecx & (1 << 27)) != 0);
+    gx::log_trace("Is RDRAND supported? %\n", ((ecx >> 30) & 1));
+    gx::log_trace("Is AVX supported? %\n", (ecx & (1 << 28)) != 0);
     return true;
 }
 
 registerTest("Cpu flags", testing);
+
+static bool tst()
+{
+    // gx::println("AHA %", 1);
+    return true;
+}
+registerTest("TEST", tst);
 #endif

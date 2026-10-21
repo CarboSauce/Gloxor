@@ -1,10 +1,10 @@
 #pragma once
-#include "detail/moveutils.hpp"
-#include <glox/metaprog.hpp>
-#include <glox/string.hpp>
 
 #ifndef USE_MODULES
+#include "detail/moveutils.hpp"
 #include <concepts>
+#include <glox/metaprog.hpp>
+#include <glox/string.hpp>
 #include <initializer_list>
 #endif
 

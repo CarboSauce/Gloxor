@@ -1,7 +1,11 @@
 #pragma once
+
+#ifndef USE_MODULES
 #include "glox/format.hpp"
+#include "glox/string.h"
 #include "glox/string.hpp"
 #include "glox/types.hpp"
+#endif
 
 namespace glox {
 GLOX_BEGIN_EXPORT

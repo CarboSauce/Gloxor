@@ -1,6 +1,8 @@
 #ifndef USE_MODULES
 #include "glox/format.hpp"
+#include "glox/string.hpp"
 #include <format>
+#include <iostream>
 #include <regex>
 #include <string>
 #include <string_view>
@@ -33,9 +35,9 @@ TEST_CASE("Basic hello world fmt")
     REQUIRE(str.buf == "Hello World");
 }
 
+using namespace std::literals;
 TEST_CASE("Basic hello world fmt string view")
 {
-    using namespace std::literals;
     string_buffer str;
     auto res = glox::format_to(str, "Hello %", "World"sv);
     REQUIRE(str.buf == "Hello World");
@@ -80,6 +82,15 @@ TEST_CASE("Format ptr")
 {
     string_buffer str;
     auto res = glox::format_to(str, "%", &str);
-    std::regex ptr_regex("0x[0-9a-fA-F]+");
-    REQUIRE(std::regex_search(res.buf, ptr_regex));
+    std::regex ptrRegex("0x[0-9a-fA-F]+");
+    REQUIRE(std::regex_search(res.buf, ptrRegex));
+}
+
+TEST_CASE("Format glox string")
+{
+    string_buffer str;
+    auto res = glox::format_to(
+        str, "%s %s", glox::string { "Hello" }, glox::string { "World" }
+    );
+    REQUIRE_EQ(res.buf.length(), 11);
 }

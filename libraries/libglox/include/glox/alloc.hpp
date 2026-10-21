@@ -1,10 +1,10 @@
 #pragma once
-#include "alloc_types.hpp"
 #include "glox/assert.hpp"
-#include "glox/detail/memory.hpp"
-#include "glox/detail/movesem.hpp"
 
 #ifndef USE_MODULES
+#include "alloc_types.hpp"
+#include "glox/detail/memory.hpp"
+#include "glox/detail/movesem.hpp"
 #include <cstdlib>
 #include <string.h>
 #include <type_traits>

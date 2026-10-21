@@ -10,6 +10,7 @@ add_executable(tests
     box.cpp
     variant.cpp
     format.cpp
+    string.cpp
 )
 
 target_compile_features(tests
