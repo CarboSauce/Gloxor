@@ -274,7 +274,7 @@ void uninit_val_construct(T first, std::size_t count)
 }
 
 template <typename T, glox::allocator<T> Allocator>
-T* alloc(Allocator a, size_t size = 1, size_t alignment = alignof(T))
+T* alloc(Allocator& a, size_t size = 1, size_t alignment = alignof(T))
 {
     T* ptr = (T*)(a.alloc(sizeof(T) * size, alignment).ptr);
     if (ptr == nullptr)

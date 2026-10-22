@@ -78,6 +78,7 @@ public:
         for (size_t i = 0; i < siz; ++i) {
             ::new (start + i) T(other.start[i]);
         }
+        return *this;
     }
     constexpr vector(vector&& other)
         : alloc(RVALUE(other.alloc))
@@ -93,11 +94,12 @@ public:
     {
         using glox::swap;
         swap(start, other.start);
-        swap(this->alloc, other->alloc);
+        swap(this->alloc, other.alloc);
         cap = other.cap;
         other.cap = 0;
         siz = other.siz;
         other.siz = 0;
+        return *this;
     }
     constexpr ~vector()
     {

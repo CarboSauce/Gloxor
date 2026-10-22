@@ -1206,7 +1206,8 @@ public:
     {
         map_entry* e = const_cast<map_entry*>(&*pos.base());
         iterator following { tree.erase(pos.base()) };
-        delete e;
+        e->~map_entry();
+        glox::dealloc(alloc, e, 1);
         return following;
     }
 
@@ -1222,7 +1223,10 @@ public:
 
     void clear()
     {
-        tree.clear([](map_entry* e) { delete e; });
+        tree.clear([this](map_entry* e) {
+            e->~map_entry();
+            glox::dealloc(alloc, e, 1);
+        });
     }
 
     void swap(rb_tree_map& other)

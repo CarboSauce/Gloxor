@@ -11,6 +11,7 @@ add_executable(tests
     variant.cpp
     format.cpp
     string.cpp
+    hash_map.cpp
 )
 
 target_compile_features(tests

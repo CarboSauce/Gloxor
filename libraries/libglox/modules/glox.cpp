@@ -16,6 +16,7 @@ import std.compat;
 #include "glox/utilalgs.hpp"
 #include "glox/detail/moveutils.hpp"
 #include "glox/detail/memory.hpp"
+#include "glox/hash.hpp"
 #include "glox/detail/movesem.hpp"
 #include "glox/string.h"
 #include "glox/metaprog.hpp"
@@ -42,3 +43,4 @@ import std.compat;
 #include "glox/string.hpp"
 #include "glox/format.hpp"
 #include "glox/logger.hpp"
+#include "glox/hash_map.hpp"
