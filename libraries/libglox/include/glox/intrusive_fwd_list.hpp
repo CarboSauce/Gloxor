@@ -19,22 +19,25 @@ class intrusive_fwd_list
 {
     T* first_node = nullptr;
 
-public:
-    struct iterator
+    template <bool IsConst>
+    struct iter_base
     {
-        T* it;
+        using iter = std::conditional_t<IsConst, const T*, T*>;
+        iter it;
 
     public:
+        using pointer = std::conditional_t<IsConst, const T*, T*>;
+        using reference = std::conditional_t<IsConst, const T&, T&>;
         using iterator_category = std::forward_iterator_tag;
-        iterator() = default;
-        iterator(T* p)
+        iter_base() = default;
+        iter_base(pointer p)
             : it(p)
         {
         }
-        iterator(const iterator&) = default;
-        iterator(iterator&&) = default;
-        iterator& operator=(const iterator&) = default;
-        iterator& operator=(iterator&&) = default;
+        iter_base(const iter_base&) = default;
+        iter_base(iter_base&&) = default;
+        iter_base& operator=(const iter_base&) = default;
+        iter_base& operator=(iter_base&&) = default;
         auto operator++()
         {
             return it = it->fwd_list_node.next;
@@ -45,16 +48,20 @@ public:
             it = it->list_node.next;
             return tmp;
         }
-        friend bool operator==(iterator l, iterator r) = default;
-        auto& operator*() const
+        friend bool operator==(iter_base l, iter_base r) = default;
+        reference operator*() const
         {
             return *it;
         }
-        auto& operator->() const
+        pointer operator->() const
         {
             return it;
         }
     };
+
+public:
+    using iterator = iter_base<false>;
+    using const_iterator = iter_base<true>;
     intrusive_fwd_list() = default;
     intrusive_fwd_list(T* pb)
         : first_node(pb)

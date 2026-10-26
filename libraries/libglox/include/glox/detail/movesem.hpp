@@ -22,7 +22,7 @@ struct remove_ref<T&&>
 #else
 #ifdef USE_MODULES
 #ifdef GLOX_COMPILING_MODULE
-namespace glox::detail {
+export namespace glox::detail {
 template <typename T>
 struct remove_ref
 {

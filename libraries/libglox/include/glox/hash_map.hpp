@@ -44,7 +44,6 @@ public:
 
 private:
     using bucket = intrusive_fwd_list<node_type>;
-
     vector<bucket> buckets_;
     size_t size_ = 0;
     [[no_unique_address]] Hash hash_;
@@ -125,6 +124,80 @@ private:
             rehash(buckets_.size() * 2);
     }
 
+private:
+    template <bool IsConst>
+    class iter_base
+    {
+        friend class hash_map;
+        friend class iter_base<!IsConst>;
+
+        const vector<bucket>* buckets_ = nullptr;
+        size_t idx_ = 0;
+        node_type* node_ = nullptr;
+
+        iter_base(const vector<bucket>* b, size_t idx, node_type* n)
+            : buckets_(b)
+            , idx_(idx)
+            , node_(n)
+        {
+            settle();
+        }
+
+        // If the current chain is exhausted, move to the next non-empty bucket.
+        void settle()
+        {
+            while (!node_ && idx_ + 1 < buckets_->size())
+                node_ = (*buckets_)[++idx_].begin().it;
+        }
+
+    public:
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = pair_type;
+        using difference_type = ptrdiff_t;
+        using reference
+            = std::conditional_t<IsConst, const pair_type&, pair_type&>;
+        using pointer
+            = std::conditional_t<IsConst, const pair_type*, pair_type*>;
+
+        iter_base() = default;
+
+        // iterator -> const_iterator
+        template <bool C = IsConst, typename = std::enable_if_t<C>>
+        iter_base(const iter_base<false>& o)
+            : buckets_(o.buckets_)
+            , idx_(o.idx_)
+            , node_(o.node_)
+        {
+        }
+
+        reference operator*() const
+        {
+            return node_->kv;
+        }
+        pointer operator->() const
+        {
+            return &node_->kv;
+        }
+
+        iter_base& operator++()
+        {
+            node_ = node_->fwd_list_node.next;
+            settle();
+            return *this;
+        }
+        iter_base operator++(int)
+        {
+            iter_base tmp = *this;
+            ++*this;
+            return tmp;
+        }
+
+        friend bool operator==(const iter_base& a, const iter_base& b)
+        {
+            return a.node_ == b.node_;
+        }
+    };
+
 public:
     hash_map() = default;
     explicit hash_map(Alloc a)
@@ -158,6 +231,39 @@ public:
     ~hash_map()
     {
         free_all();
+    }
+
+    using iterator = iter_base<false>;
+    using const_iterator = iter_base<true>;
+
+    iterator begin()
+    {
+        if (buckets_.size() == 0)
+            return end();
+        return { &buckets_, 0, buckets_[0].begin().it };
+    }
+    const_iterator begin() const
+    {
+        if (buckets_.size() == 0)
+            return end();
+        return { &buckets_, 0, buckets_[0].begin().it };
+    }
+    const_iterator cbegin() const
+    {
+        return begin();
+    }
+
+    iterator end()
+    {
+        return { &buckets_, buckets_.size(), nullptr };
+    }
+    const_iterator end() const
+    {
+        return { &buckets_, buckets_.size(), nullptr };
+    }
+    const_iterator cend() const
+    {
+        return end();
     }
 
     size_t size() const
@@ -266,6 +372,43 @@ public:
             return true;
         }
         return false;
+    }
+
+    iterator find_it(const Key& k)
+    {
+        node_type* n = find_node(k);
+        if (!n)
+            return end();
+        return { &buckets_, index_of_key(k, buckets_.size()), n };
+    }
+    const_iterator find_it(const Key& k) const
+    {
+        node_type* n = find_node(k);
+        if (!n)
+            return end();
+        return { &buckets_, index_of_key(k, buckets_.size()), n };
+    }
+
+    iterator erase(iterator it)
+    {
+        iterator next = it;
+        ++next;
+
+        bucket& b = buckets_[it.idx_];
+        node_type* prev = nullptr;
+        for (node_type* n = b.begin().it; n;
+            prev = n, n = n->fwd_list_node.next) {
+            if (n != it.node_)
+                continue;
+            if (prev)
+                prev->fwd_list_node.next = n->fwd_list_node.next;
+            else
+                b.pop_front_unsafe();
+            destroy_node(n);
+            --size_;
+            break;
+        }
+        return next;
     }
 
     void clear()

@@ -1,9 +1,9 @@
 #pragma once
-#include <type_traits>
 #ifndef USE_MODULES
 #include "glox/types.hpp"
 #include <concepts>
 #include <string_view>
+#include <type_traits>
 #endif
 
 GLOX_EXPORT

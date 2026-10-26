@@ -1,7 +1,9 @@
 #ifndef USE_MODULES
 #include "glox/hash_map.hpp"
+#include <vector>
 #else
 import std;
+import std.compat;
 import glox;
 #endif
 #include "doctest.h"
@@ -226,4 +228,65 @@ TEST_CASE("hash_map: rehash does not move values")
     REQUIRE(alloc_tracker::move_ctor_counter == 1);
     for (int i = 0; i <= 16; ++i)
         REQUIRE(m.find(i)->value == i);
+}
+
+TEST_CASE("hash_map: iteration visits every element once")
+{
+    glox::hash_map<int, int> m;
+    for (int i = 0; i < 300; ++i)
+        m.insert_or_assign(i, i * 2);
+
+    std::vector<bool> seen(300, false);
+    size_t count = 0;
+    for (auto& kv : m) {
+        REQUIRE(kv.second == kv.first * 2);
+        REQUIRE_FALSE(seen[kv.first]);
+        seen[kv.first] = true;
+        ++count;
+    }
+    REQUIRE(count == 300);
+}
+
+TEST_CASE("hash_map: iterate empty and mutate through iterator")
+{
+    glox::hash_map<int, int> m;
+    REQUIRE(m.begin() == m.end());
+
+    m.insert_or_assign(1, 1);
+    m.insert_or_assign(2, 2);
+    for (auto& kv : m)
+        kv.second += 100;
+    REQUIRE(m.find(1).val() == 101);
+    REQUIRE(m.find(2).val() == 102);
+
+    const auto& cm = m;
+    int sum = 0;
+    for (const auto& kv : cm)
+        sum += kv.second;
+    REQUIRE(sum == 203);
+}
+
+TEST_CASE("hash_map: iterator with colliding keys")
+{
+    glox::hash_map<int, int, const_hash> m;
+    for (int i = 0; i < 5; ++i)
+        m.insert_or_assign(i, i);
+    int count = 0;
+    for (auto it = m.begin(); it != m.end(); ++it)
+        ++count;
+    REQUIRE(count == 5);
+}
+
+TEST_CASE("hash_map: erase by iterator")
+{
+    glox::hash_map<int, int> m;
+    for (int i = 0; i < 100; ++i)
+        m.insert_or_assign(i, i);
+
+    for (auto it = m.begin(); it != m.end();)
+        it = (it->first % 2) ? m.erase(it) : ++it;
+
+    REQUIRE(m.size() == 50);
+    for (auto& kv : m)
+        REQUIRE(kv.first % 2 == 0);
 }

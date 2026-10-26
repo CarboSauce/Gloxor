@@ -3,20 +3,6 @@
 
 namespace glox {
 /**
- * @brief Implementation of djb2 hash
- * @param str String for which hash is to be computed, UB if string is null
- * @link http://www.cse.yorku.ca/~oz/hash.html
- */
-GLOX_EXPORT constexpr uint32_t djb2_hash(const char* str)
-{
-    uint32_t hash = 5381; // magic prime number
-    uint8_t c;
-    while ((c = *str++))
-        hash = ((hash << 5) + hash) ^ c;
-    return hash;
-}
-
-/**
  * @brief Implementation of FNV-1a hash
  * @link
  * https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
