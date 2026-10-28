@@ -63,5 +63,9 @@ struct array
         return data[0];
     }
 };
+
+template <typename T, typename... U>
+array(T, U...) -> array<T, sizeof...(U) + 1>;
+
 GLOX_END_EXPORT
 } // namespace glox

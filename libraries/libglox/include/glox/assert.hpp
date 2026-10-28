@@ -67,5 +67,6 @@ exec_assert(const char* message, std::source_location);
 #define gloxAssert(cond, ...) ((void)0)
 #define gloxUnreachable() __builtin_unreachable()
 #define GLOX_UNREACHABLE() __builtin_unreachable()
+#define GLOX_ASSERT(...) ((void)0)
 #define gloxDebugError(...) ((void)0)
 #endif

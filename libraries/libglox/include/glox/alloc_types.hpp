@@ -11,6 +11,11 @@ struct alloc_handle
 {
     T* ptr;
     std::size_t count;
+
+    bool is_empty()
+    {
+        return ptr == nullptr;
+    }
 };
 template <typename Alloc, typename T>
 concept allocator

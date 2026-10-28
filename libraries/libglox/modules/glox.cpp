@@ -44,3 +44,4 @@ import std.compat;
 #include "glox/format.hpp"
 #include "glox/logger.hpp"
 #include "glox/hash_map.hpp"
+#include "glox/heap_alloc.hpp"

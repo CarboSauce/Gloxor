@@ -135,9 +135,21 @@ constexpr auto max(std::initializer_list<T> list)
 }
 
 template <typename T>
+constexpr const T& max(const T& l, const T& r)
+{
+    return l > r ? l : r;
+}
+
+template <typename T>
 constexpr auto min(std::initializer_list<T> list)
 {
     return min_element(list.begin(), list.end());
+}
+
+template <typename T>
+constexpr const T& min(const T& l, const T& r)
+{
+    return l < r ? l : r;
 }
 
 template <typename T, typename... Args>
