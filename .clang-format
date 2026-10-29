@@ -37,6 +37,6 @@ BreakTemplateDeclarations: Yes
 FixNamespaceComments: true
 IndentExportBlock: false
 IndentExternBlock: NoIndent
-PenaltyReturnTypeOnItsOwnLine: 100
+PenaltyReturnTypeOnItsOwnLine: 1000
 PenaltyBreakScopeResolution: 1000
 

@@ -9,6 +9,7 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #endif
 
 GLOX_EXPORT
@@ -27,8 +28,6 @@ struct free_node
     free_node* next;
 };
 
-struct page_header;
-
 // Intrusive list of pages per bucket
 struct page_header
 {
@@ -39,6 +38,9 @@ struct page_header
     std::size_t bucket_idx { 0 };
     std::size_t block_size { 0 };
     page_header* next_page { nullptr }; // Linked list of pages in bucket
+    bool is_large {
+        false
+    }; // Distinguishes large allocations from small blocks
 };
 
 // Thread/Core Local Cache
@@ -70,8 +72,10 @@ class heap_allocator
     [[no_unique_address]] PAllocator palloc;
     [[no_unique_address]] TRoutines troutines;
 
-    static constexpr std::size_t
-    align_up(std::size_t value, std::size_t alignment) noexcept
+    static constexpr std::size_t align_up(
+        std::size_t value,
+        std::size_t alignment
+    ) noexcept
     {
         return (value + alignment - 1) & ~(alignment - 1);
     }
@@ -98,47 +102,43 @@ class heap_allocator
         );
     }
 
-    // Process cross-thread frees across all pages in the bucket and recycle
-    // empty pages
-    void
-    collect_and_sweep(thread_cache<NUM_BUCKETS>& tcache, std::size_t bucket_idx)
+    void collect_and_sweep(
+        thread_cache<NUM_BUCKETS>& tcache,
+        std::size_t bucket_idx
+    )
     {
-        page_header** prev_ptr = &tcache.pages[bucket_idx];
+        page_header** prevPtr = &tcache.pages[bucket_idx];
         page_header* curr = tcache.pages[bucket_idx];
 
         while (curr != nullptr) {
-            // 1. Atomically steal cross-thread frees for this page
             if (curr->cross_thread_free.load(std::memory_order_relaxed)
                 != nullptr) {
                 free_node* stolen = curr->cross_thread_free.exchange(
                     nullptr, std::memory_order_acquire
                 );
 
-                std::uint32_t freed_count = 0;
+                std::uint32_t freedCount = 0;
                 free_node* tail = stolen;
                 while (tail != nullptr) {
-                    freed_count++;
+                    freedCount++;
                     if (tail->next == nullptr)
                         break;
                     tail = tail->next;
                 }
 
                 if (stolen != nullptr) {
-                    // Prepend stolen nodes to local freelist
                     tail->next = tcache.local_free[bucket_idx];
                     tcache.local_free[bucket_idx] = stolen;
-                    curr->used_count -= freed_count;
+                    curr->used_count -= freedCount;
                 }
             }
 
-            // 2. Garbage Collect: If page is completely empty and not the
-            // active front page, return it to palloc
             page_header* next = curr->next_page;
             if (curr->used_count == 0 && curr != tcache.pages[bucket_idx]) {
-                *prev_ptr = next; // Unlink page from list
+                *prevPtr = next;
                 palloc.dealloc(curr, PageSize);
             } else {
-                prev_ptr = &curr->next_page;
+                prevPtr = &curr->next_page;
             }
 
             curr = next;
@@ -151,34 +151,29 @@ class heap_allocator
         std::size_t tid
     )
     {
-        // 1. Reclaim cross-thread frees and recycle empty pages in this bucket
         collect_and_sweep(tcache, bucket_idx);
 
-        // If sweeping reclaimed blocks into local_free, serve allocation
-        // immediately
         if (tcache.local_free[bucket_idx] != nullptr) {
             free_node* block = tcache.local_free[bucket_idx];
             tcache.local_free[bucket_idx] = block->next;
-
             page_header* page = get_page_header(block);
             page->used_count++;
             return block;
         }
 
-        // 2. Fetch new page slab from page allocator
         auto handle = palloc.alloc(PageSize);
         if (handle.ptr == nullptr) {
             return nullptr;
         }
 
-        auto* page = static_cast<page_header*>(handle.ptr);
+        auto* page = new (handle.ptr) page_header();
         page->cross_thread_free.store(nullptr, std::memory_order_relaxed);
         page->owning_thread_id = tid;
         page->bucket_idx = bucket_idx;
         page->block_size = get_block_size(bucket_idx);
-        page->used_count = 1; // First block is returned immediately
+        page->used_count = 1;
+        page->is_large = false;
 
-        // Link new page to head of bucket's page list
         page->next_page = tcache.pages[bucket_idx];
         tcache.pages[bucket_idx] = page;
 
@@ -186,7 +181,6 @@ class heap_allocator
         void* firstBlock = static_cast<char*>(handle.ptr) + offset;
         offset += page->block_size;
 
-        // 3. Carve remaining blocks into thread-local freelist (FIFO)
         free_node* head = nullptr;
         free_node** tailPtr = &head;
         std::uint32_t total = 1;
@@ -222,26 +216,38 @@ public:
         std::size_t alignedN = align_up(n, alignment);
         alignedN = align_up(alignedN, Granularity);
 
+        // Large Allocation Path (now builds a large header)
         if (alignedN > MaxSmallSize || alignment > MAX_SMALL_ALIGNMENT) {
-            std::size_t pageReq = align_up(n, PageSize);
-            return palloc.alloc(pageReq);
+            std::size_t offset = align_up(
+                sizeof(page_header), std::max(alignment, alignof(page_header))
+            );
+            std::size_t pageReq = align_up(n + offset, PageSize);
+            auto handle = palloc.alloc(pageReq);
+            if (!handle.ptr) {
+                return { nullptr, 0 };
+            }
+
+            page_header* page = new (handle.ptr) page_header();
+            page->is_large = true;
+            page->block_size = pageReq;
+            page->owning_thread_id = troutines.thread_id();
+
+            return { static_cast<char*>(handle.ptr) + offset,
+                pageReq - offset };
         }
 
+        // Small Allocation Path
         std::size_t bucketIdx = get_bucket_index(alignedN);
         auto& tcache = troutines.get_tcache();
         free_node* block = tcache.local_free[bucketIdx];
 
-        // Fast path: thread-local freelist hit
         if (block != nullptr) {
             tcache.local_free[bucketIdx] = block->next;
-
             page_header* page = get_page_header(block);
             page->used_count++;
-
             return { block, get_block_size(bucketIdx) };
         }
 
-        // Slow path: collect cross-thread frees or allocate new page slab
         void* ptr
             = allocate_slow_path(tcache, bucketIdx, troutines.thread_id());
         if (ptr == nullptr) {
@@ -251,39 +257,42 @@ public:
         return { ptr, get_block_size(bucketIdx) };
     }
 
-    void dealloc(void* ptr, std::size_t n, std::size_t alignment = Granularity)
+    // Resolves the true payload capacity of an allocated block
+    std::size_t usable_size(void* ptr) noexcept
+    {
+        if (!ptr)
+            return 0;
+        page_header* page = get_page_header(ptr);
+
+        if (page->is_large) {
+            std::size_t offset
+                = static_cast<char*>(ptr) - reinterpret_cast<char*>(page);
+            return page->block_size - offset;
+        }
+        return page->block_size;
+    }
+
+    // Size-less deallocation
+    void dealloc(void* ptr)
     {
         if (!ptr)
             return;
 
-        if (!std::has_single_bit(alignment) || alignment > PageSize) {
-            return;
-        }
-
-        alignment = std::max(alignment, Granularity);
-
-        std::size_t alignedN = align_up(n, alignment);
-        alignedN = align_up(alignedN, Granularity);
-
-        if (alignedN > MaxSmallSize || alignment > MAX_SMALL_ALIGNMENT) {
-            std::size_t pageReq = align_up(n, PageSize);
-            palloc.dealloc(ptr, pageReq);
-            return;
-        }
-
         page_header* page = get_page_header(ptr);
         std::size_t currentTid = troutines.thread_id();
 
-        // Fast path: local thread free
+        if (page->is_large) {
+            palloc.dealloc(page, page->block_size);
+            return;
+        }
+
         if (page->owning_thread_id == currentTid) {
             auto& tcache = troutines.get_tcache();
             auto* node = static_cast<free_node*>(ptr);
             node->next = tcache.local_free[page->bucket_idx];
             tcache.local_free[page->bucket_idx] = node;
             page->used_count--;
-        }
-        // Lock-free path: cross-thread push
-        else {
+        } else {
             auto* node = static_cast<free_node*>(ptr);
             free_node* oldHead
                 = page->cross_thread_free.load(std::memory_order_relaxed);
@@ -296,6 +305,124 @@ public:
                 std::memory_order_relaxed
             ));
         }
+    }
+
+    // Retained for backward API compatibility
+    void dealloc(
+        void* ptr,
+        [[maybe_unused]] std::size_t n,
+        [[maybe_unused]] std::size_t alignment = Granularity
+    )
+    {
+        dealloc(ptr);
+    }
+
+    void* grow_inplace(void* ptr, std::size_t new_size)
+    {
+        if (!ptr)
+            return nullptr;
+
+        if (new_size <= usable_size(ptr)) {
+            return ptr;
+        }
+        return nullptr;
+    }
+
+    void* shrink_inplace(void* ptr, std::size_t new_size)
+    {
+        if (!ptr)
+            return nullptr;
+        if (new_size <= usable_size(ptr)) {
+            return ptr;
+        }
+        return nullptr;
+    }
+
+    alloc_handle<void> grow(
+        void* ptr,
+        std::size_t new_size,
+        std::size_t alignment = Granularity
+    )
+    {
+        if (!ptr)
+            return alloc(new_size, alignment);
+        if (new_size == 0) {
+            dealloc(ptr);
+            return { nullptr, 0 };
+        }
+
+        std::size_t currentUsable = usable_size(ptr);
+
+        // Fast path: it already fits.
+        if (new_size <= currentUsable) {
+            return { ptr, currentUsable };
+        }
+
+        page_header* page = get_page_header(ptr);
+
+        // If it's a large allocation, ask palloc to grow it
+        if (page->is_large) {
+            std::size_t offset
+                = static_cast<char*>(ptr) - reinterpret_cast<char*>(page);
+            std::size_t newPageReq = align_up(new_size + offset, PageSize);
+
+            auto handle = palloc.grow(page, page->block_size, newPageReq);
+            if (handle.ptr) {
+                page_header* newPage = static_cast<page_header*>(handle.ptr);
+                newPage->block_size = newPageReq;
+                return { static_cast<char*>(handle.ptr) + offset,
+                    newPageReq - offset };
+            }
+        }
+
+        // Slow path: palloc failed to grow, or it's a small block that needs to
+        // become larger
+        auto newHandle = alloc(new_size, alignment);
+        if (newHandle.ptr) {
+            std::memcpy(newHandle.ptr, ptr, currentUsable);
+            dealloc(ptr);
+        }
+        return newHandle;
+    }
+
+    alloc_handle<void> shrink(
+        void* ptr,
+        std::size_t new_size,
+        [[maybe_unused]] std::size_t alignment = Granularity
+    )
+    {
+        if (!ptr)
+            return { nullptr, 0 };
+        if (new_size == 0) {
+            dealloc(ptr);
+            return { nullptr, 0 };
+        }
+
+        std::size_t currentUsable = usable_size(ptr);
+        page_header* page = get_page_header(ptr);
+
+        // For large allocations, we can try to release the tail pages via
+        // palloc
+        if (page->is_large) {
+            std::size_t offset
+                = static_cast<char*>(ptr) - reinterpret_cast<char*>(page);
+            std::size_t newPageReq = align_up(new_size + offset, PageSize);
+
+            if (newPageReq < page->block_size) {
+                auto handle = palloc.shrink(page, page->block_size, newPageReq);
+                if (handle.ptr) {
+                    page = static_cast<page_header*>(handle.ptr);
+                    page->block_size = newPageReq;
+                    return { static_cast<char*>(handle.ptr) + offset,
+                        newPageReq - offset };
+                }
+            }
+        }
+
+        // We don't bother moving small blocks to smaller buckets on shrink, as
+        // the overhead of memcpy outweighs the minor space gain. Just treat it
+        // as an in-place success.
+        return { ptr, currentUsable };
     }
 };
 

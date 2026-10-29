@@ -113,25 +113,25 @@ BENCHMARK(BM_Mimalloc_MixedSizesAndAlignments);
 
 static void BM_Mimalloc_Batch_Page_Thrashing(benchmark::State& state)
 {
-    const std::size_t alloc_size = static_cast<std::size_t>(state.range(0));
-    constexpr std::size_t batch_count = 500;
-    std::vector<void*> handles(batch_count);
+    const std::size_t allocSize = static_cast<std::size_t>(state.range(0));
+    constexpr std::size_t batchCount = 500;
+    std::vector<void*> handles(batchCount);
 
     for (auto _ : state) {
-        for (std::size_t i = 0; i < batch_count; ++i) {
-            handles[i] = mi_malloc(alloc_size);
+        for (std::size_t i = 0; i < batchCount; ++i) {
+            handles[i] = mi_malloc(allocSize);
             *static_cast<volatile std::uint64_t*>(handles[i]) = i;
         }
 
         benchmark::DoNotOptimize(handles.data());
 
-        for (std::size_t i = batch_count; i > 0; --i) {
+        for (std::size_t i = batchCount; i > 0; --i) {
             mi_free(handles[i - 1]);
         }
     }
 
     state.SetItemsProcessed(
-        static_cast<int64_t>(state.iterations()) * batch_count
+        static_cast<int64_t>(state.iterations()) * batchCount
     );
 }
 BENCHMARK(BM_Mimalloc_Batch_Page_Thrashing)

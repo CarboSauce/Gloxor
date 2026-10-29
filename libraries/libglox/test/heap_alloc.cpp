@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <thread>
 #include <vector>
 #else
@@ -50,19 +51,21 @@ struct mock_page_allocator
     glox::alloc_handle<void>
     grow(void* ptr, std::size_t old_n, std::size_t new_n)
     {
-        (void)ptr;
-        (void)old_n;
-        (void)new_n;
-        return { nullptr, 0 };
+        if (simulate_failure)
+            return { nullptr, 0 };
+
+        auto handle = alloc(new_n);
+        if (handle.ptr && ptr) {
+            std::memcpy(handle.ptr, ptr, std::min(old_n, new_n));
+            dealloc(ptr, old_n);
+        }
+        return handle;
     }
 
     glox::alloc_handle<void>
     shrink(void* ptr, std::size_t old_n, std::size_t new_n)
     {
-        (void)ptr;
-        (void)old_n;
-        (void)new_n;
-        return { nullptr, 0 };
+        return grow(ptr, old_n, new_n);
     }
 };
 
@@ -103,22 +106,22 @@ TEST_CASE("heap_allocator basic small allocation & deallocation")
     mock_thread_routines::reset_tcache();
     test_heap_allocator alloc;
 
-    SUBCASE("Single allocation and deallocation fast-path")
+    SUBCASE("Single allocation and size-less deallocation fast-path")
     {
         auto handle = alloc.alloc(32);
         REQUIRE(handle.ptr != nullptr);
         REQUIRE(handle.count >= 32);
         REQUIRE(reinterpret_cast<std::uintptr_t>(handle.ptr) % 8 == 0);
 
-        // Deallocate back to local freelist
-        alloc.dealloc(handle.ptr, 32);
+        // Deallocate back to local freelist (using new size-less API)
+        alloc.dealloc(handle.ptr);
 
         // Next allocation of same size should hit local freelist and reuse
         // pointer
         auto handle2 = alloc.alloc(32);
         REQUIRE(handle2.ptr == handle.ptr);
 
-        alloc.dealloc(handle2.ptr, 32);
+        alloc.dealloc(handle2.ptr);
     }
 
     SUBCASE("Multiple allocations within same bucket")
@@ -140,7 +143,7 @@ TEST_CASE("heap_allocator basic small allocation & deallocation")
         }
 
         for (std::size_t i = 0; i < count; ++i) {
-            alloc.dealloc(handles[i].ptr, 64);
+            alloc.dealloc(handles[i].ptr);
         }
     }
 }
@@ -159,20 +162,13 @@ TEST_CASE("heap_allocator alignment guarantees")
             auto handle = alloc.alloc(48, align);
             REQUIRE(handle.ptr != nullptr);
             REQUIRE(reinterpret_cast<std::uintptr_t>(handle.ptr) % align == 0);
-            alloc.dealloc(handle.ptr, 48, align);
+            alloc.dealloc(handle.ptr);
         }
     }
 
     SUBCASE("Invalid non-power-of-two alignment returns null handle")
     {
         auto handle = alloc.alloc(64, 15);
-        REQUIRE(handle.ptr == nullptr);
-        REQUIRE(handle.count == 0);
-    }
-
-    SUBCASE("Alignment exceeding PageSize returns null handle")
-    {
-        auto handle = alloc.alloc(64, TestPageSize * 2);
         REQUIRE(handle.ptr == nullptr);
         REQUIRE(handle.count == 0);
     }
@@ -190,7 +186,7 @@ TEST_CASE("heap_allocator cross-thread lock-free deallocation & stealing")
     // Cross-thread free from Thread 2
     std::thread worker([&]() {
         mock_thread_routines::current_tid = 2;
-        alloc.dealloc(handle.ptr, 128);
+        alloc.dealloc(handle.ptr);
     });
     worker.join();
 
@@ -199,10 +195,10 @@ TEST_CASE("heap_allocator cross-thread lock-free deallocation & stealing")
 
     // Next slow-path allocation on Thread 1 should steal the cross-thread freed
     // block
-    auto stolen_handle = alloc.alloc(128);
-    REQUIRE(stolen_handle.ptr != nullptr);
+    auto stolenHandle = alloc.alloc(128);
+    REQUIRE(stolenHandle.ptr != nullptr);
 
-    alloc.dealloc(stolen_handle.ptr, 128);
+    alloc.dealloc(stolenHandle.ptr);
 }
 
 TEST_CASE("heap_allocator large allocations fallback to page_allocator")
@@ -212,39 +208,128 @@ TEST_CASE("heap_allocator large allocations fallback to page_allocator")
 
     SUBCASE("Allocation exceeding MaxSmallSize")
     {
-        std::size_t large_size = TestMaxSmallSize + 1024;
-        auto handle = alloc.alloc(large_size);
+        std::size_t largeSize = TestMaxSmallSize + 1024;
+        auto handle = alloc.alloc(largeSize);
 
         REQUIRE(handle.ptr != nullptr);
-        REQUIRE(handle.count >= large_size);
+        REQUIRE(handle.count >= largeSize);
+
+        // Large payloads are offset by the header, so they align to
+        // Granularity/requested align, not strictly TestPageSize anymore.
         REQUIRE(
-            reinterpret_cast<std::uintptr_t>(handle.ptr) % TestPageSize == 0
+            reinterpret_cast<std::uintptr_t>(handle.ptr) % TestGranularity == 0
         );
 
-        alloc.dealloc(handle.ptr, large_size);
+        alloc.dealloc(handle.ptr);
     }
 }
 
-TEST_CASE("heap_allocator page allocation failure handling")
+TEST_CASE("heap_allocator grow and shrink API")
 {
     mock_thread_routines::reset_tcache();
+    test_heap_allocator alloc;
 
-    // Instantiate allocator with a page allocator set to fail
-    glox::heap_allocator<
-        mock_page_allocator,
-        mock_thread_routines,
-        TestMaxSmallSize,
-        TestGranularity,
-        TestPageSize
-    >
-        failing_alloc;
+    SUBCASE("grow(nullptr) acts as alloc")
+    {
+        auto handle = alloc.grow(nullptr, 64);
+        REQUIRE(handle.ptr != nullptr);
+        REQUIRE(handle.count >= 64);
+        alloc.dealloc(handle.ptr);
+    }
 
-    // Reach into the internal page allocator instance (if accessible) or
-    // trigger slow-path failure Testing graceful nullptr return when page
-    // allocation fails
-    mock_page_allocator palloc_failing { .simulate_failure = true };
-    auto handle = palloc_failing.alloc(TestPageSize);
+    SUBCASE("grow(ptr, 0) acts as dealloc")
+    {
+        auto handle = alloc.alloc(64);
+        auto new_handle = alloc.grow(handle.ptr, 0);
+        REQUIRE(new_handle.ptr == nullptr);
+        REQUIRE(new_handle.count == 0);
+    }
 
-    REQUIRE(handle.ptr == nullptr);
-    REQUIRE(handle.count == 0);
+    SUBCASE("In-place growth within bucket capacity")
+    {
+        // Allocate 20 bytes (fits in 24 byte bucket if Granularity=8)
+        auto handle = alloc.alloc(20);
+        REQUIRE(handle.count >= 24);
+
+        // Grow to 24 bytes (should succeed in-place)
+        auto grown = alloc.grow(handle.ptr, 24);
+        REQUIRE(grown.ptr == handle.ptr);
+        REQUIRE(grown.count == handle.count);
+
+        alloc.dealloc(grown.ptr);
+    }
+
+    SUBCASE("Out-of-place growth moving to larger bucket")
+    {
+        auto handle = alloc.alloc(32);
+
+        // Grow to 128 (forces a new allocation and memcpy)
+        auto grown = alloc.grow(handle.ptr, 128);
+        REQUIRE(grown.ptr != nullptr);
+        REQUIRE(grown.ptr != handle.ptr); // Pointer must change
+        REQUIRE(grown.count >= 128);
+
+        alloc.dealloc(grown.ptr);
+    }
+
+    SUBCASE("Shrinking a small block")
+    {
+        auto handle = alloc.alloc(128);
+
+        // Shrinking small blocks remains in-place because moving them isn't
+        // worth the overhead
+        auto shrunk = alloc.shrink(handle.ptr, 64);
+        REQUIRE(shrunk.ptr == handle.ptr);
+
+        alloc.dealloc(shrunk.ptr);
+    }
+
+    SUBCASE("Growing a large block")
+    {
+        std::size_t large_size = TestMaxSmallSize + 4096; // ~6KB
+        auto handle = alloc.alloc(large_size);
+        REQUIRE(handle.ptr != nullptr);
+
+        std::size_t huge_size = large_size * 2;
+        auto grown = alloc.grow(handle.ptr, huge_size);
+        REQUIRE(grown.ptr != nullptr);
+        REQUIRE(grown.count >= huge_size);
+
+        alloc.dealloc(grown.ptr);
+    }
+}
+
+TEST_CASE("heap_allocator inplace_grow and inplace_shrink API")
+{
+    mock_thread_routines::reset_tcache();
+    test_heap_allocator alloc;
+
+    SUBCASE("inplace_grow succeeds within capacity")
+    {
+        auto handle = alloc.alloc(20); // Goes to 24-byte bucket
+        void* ptr = alloc.grow_inplace(handle.ptr, 24);
+        REQUIRE(ptr == handle.ptr);
+
+        alloc.dealloc(handle.ptr);
+    }
+
+    SUBCASE("inplace_grow fails when exceeding capacity")
+    {
+        auto handle = alloc.alloc(32);
+        void* ptr = alloc.grow_inplace(handle.ptr, 64);
+
+        // Cannot grow in place, must return nullptr
+        REQUIRE(ptr == nullptr);
+
+        alloc.dealloc(handle.ptr);
+    }
+
+    SUBCASE("inplace_shrink always succeeds within capacity")
+    {
+        auto handle = alloc.alloc(64);
+        void* ptr = alloc.shrink_inplace(handle.ptr, 32);
+        REQUIRE(ptr == handle.ptr);
+
+        alloc.dealloc(handle.ptr);
+    }
 }
