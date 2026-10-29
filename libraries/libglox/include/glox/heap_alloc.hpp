@@ -379,7 +379,7 @@ public:
         // become larger
         auto newHandle = alloc(new_size, alignment);
         if (newHandle.ptr) {
-            std::memcpy(newHandle.ptr, ptr, currentUsable);
+            glox::memcpy(newHandle.ptr, ptr, currentUsable);
             dealloc(ptr);
         }
         return newHandle;
