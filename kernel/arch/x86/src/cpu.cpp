@@ -45,26 +45,26 @@ static u64 cpuFeatures;
 [[gnu::interrupt]]
 static void div_zero_handle(InterruptFrame*)
 {
-    gx::log_fatal("You Fool Divided By Zero!\n");
+    gx::log_fatal("You Fool Divided By Zero!\r\n");
     gx::kernel_panic();
 }
 
 [[gnu::interrupt]]
 static void double_fault(InterruptFrame*)
 {
-    gx::log_fatal("Double fault!\n");
+    gx::log_fatal("Double fault!\r\n");
     gx::kernel_panic();
 }
 [[gnu::interrupt]]
 static void nmi_handler(InterruptFrame*)
 {
-    gx::log_fatal("Non Maskable Interrupt!\n");
+    gx::log_fatal("Non Maskable Interrupt!\r\n");
 }
 
 [[gnu::interrupt]]
 static void gp_fault(InterruptFrame* frame, size_t /* errc */)
 {
-    gx::log_fatal("General Protection Fault!\nRIP = %\n", (void*)frame->ip);
+    gx::log_fatal("General Protection Fault!\r\nRIP = %\r\n", (void*)frame->ip);
     gx::kernel_panic();
 }
 
@@ -72,9 +72,9 @@ static void gp_fault(InterruptFrame* frame, size_t /* errc */)
 static void page_fault(InterruptFrame*, size_t /* errc */)
 {
     void* errorAdr = (void*)readCr(2);
-    gx::log_fatal("Page Fault at address: %\n", errorAdr);
+    gx::log_fatal("Page Fault at address: %\r\n", errorAdr);
     if (errorAdr < (u8*)0x1000) {
-        gx::log_fatal("Null pointer access\n");
+        gx::log_fatal("Null pointer access\r\n");
     }
     gx::kernel_panic();
 }
@@ -82,7 +82,7 @@ static void page_fault(InterruptFrame*, size_t /* errc */)
 [[gnu::interrupt]]
 static void illegal_opcode(InterruptFrame* frame)
 {
-    gx::log_fatal("Illegal opcode! RIP = %\n", (void*)frame->ip);
+    gx::log_fatal("Illegal opcode! RIP = %\r\n", (void*)frame->ip);
     arch::halt_forever();
 }
 
@@ -109,7 +109,7 @@ inline bool setup_pat()
     if (!(info.edx & (1 << 16)))
         return false;
     // WC UC WT WB the CPU default
-    gx::log_debug("Current ia32PAT is: %\n", (void*)rdmsr(msr::ia32PAT));
+    gx::log_debug("Current ia32PAT is: %\r\n", (void*)rdmsr(msr::ia32PAT));
     u32 patlow = 0x01000406;
     // UC UC- WP WC
     u32 pathigh = 0x00070105;
@@ -122,9 +122,9 @@ void initialize_cpu()
     initialize_interrupts();
     initialize_cpu_extensions();
     if (setup_pat())
-        gx::log_debug("PAT supported on boot cpu\n");
+        gx::log_debug("PAT supported on boot cpu\r\n");
 
-    gx::log_debug("Cpu features:\n", cpuFeatures);
+    gx::log_debug("Cpu features:\r\n", cpuFeatures);
 }
 
 } // namespace arch
@@ -140,21 +140,21 @@ inline void initialize_gdt()
     // x86_64 doesnt support immediate long jump, so we have to do "magic"
     // Its really ugly but tldr; it loads long pointer on stack and iretqs
     asm volatile(
-        "pushq %%rbp\n"
-        "movq %%rsp, %%rbp\n"
-        "push %0\n"
-        "pushq %%rbp\n"
-        "pushfq\n"
-        "push %1\n"
+        "pushq %%rbp\r\n"
+        "movq %%rsp, %%rbp\r\n"
+        "push %0\r\n"
+        "pushq %%rbp\r\n"
+        "pushfq\r\n"
+        "push %1\r\n"
 #if (__PIE__ > 0) || (__PIC__ > 0)
-        "leaq 0x3(%%rip), %%rax\n" // 0x3 is the size of pushq and iretq
-        "pushq %%rax\n"
+        "leaq 0x3(%%rip), %%rax\r\n" // 0x3 is the size of pushq and iretq
+        "pushq %%rax\r\n"
 #else
-        "pushq $1f\n"
+        "pushq $1f\r\n"
 #endif
-        "iretq\n"
-        "1:\n"
-        "pop %%rbp\n"
+        "iretq\r\n"
+        "1:\r\n"
+        "pop %%rbp\r\n"
         "mov %0,%%ds; mov %0,%%es; mov %0,%%fs; mov %0,%%gs; mov %0,%%ss;"
         :
         : "r"((uint64_t)(0x10) /* ds */), "r"((uint64_t)0x8 /* cs */)
@@ -215,12 +215,12 @@ static bool testing()
 {
     u32 eax, ebx, ecx, edx;
     __cpuid(0x1, eax, ebx, ecx, edx);
-    gx::log_trace("CPUID ECX = %\n", ecx);
-    gx::log_trace("Is SSE supported? %\n", (edx & (1 << 25)) != 0);
-    gx::log_trace("Is XSAVE supported? %\n", (ecx & (1 << 26)) != 0);
-    gx::log_trace("Is OSXSAVE supported? %\n", (ecx & (1 << 27)) != 0);
-    gx::log_trace("Is RDRAND supported? %\n", ((ecx >> 30) & 1));
-    gx::log_trace("Is AVX supported? %\n", (ecx & (1 << 28)) != 0);
+    gx::log_trace("CPUID ECX = %\r\n", ecx);
+    gx::log_trace("Is SSE supported? %\r\n", (edx & (1 << 25)) != 0);
+    gx::log_trace("Is XSAVE supported? %\r\n", (ecx & (1 << 26)) != 0);
+    gx::log_trace("Is OSXSAVE supported? %\r\n", (ecx & (1 << 27)) != 0);
+    gx::log_trace("Is RDRAND supported? %\r\n", ((ecx >> 30) & 1));
+    gx::log_trace("Is AVX supported? %\r\n", (ecx & (1 << 28)) != 0);
     return true;
 }
 

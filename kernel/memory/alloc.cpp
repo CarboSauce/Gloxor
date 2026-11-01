@@ -357,7 +357,7 @@ inline void* alloc_mem(usize size)
     auto index = size2bucket(size);
     auto bucketSize = tinyBuckets[index];
     auto& curList = globalHeap.buckets[index].list;
-    // gloxDebugLog("Memalloc(", bucketSize, ")\n");
+    // gloxDebugLog("Memalloc(", bucketSize, ")\r\n");
     auto* iter = curList;
     // TODO: Rewrite into inf loop, as its probably clearer
     if (iter == nullptr) {
@@ -420,11 +420,11 @@ static List* test_alloc(int sp)
             = new List { .x = i, .y = i + 20, .z = i + 40, .next = nullptr };
         iter = iter->next;
     }
-    gloxPrint("List:\n");
+    gloxPrint("List:\r\n");
     for (auto it = head; it; it = it->next) {
         gloxPrint(it->x, ' ');
     }
-    gloxPrint("\nEndlist\n");
+    gloxPrint("\r\nEndlist\r\n");
     return head;
 }
 static void test_free(List* head)

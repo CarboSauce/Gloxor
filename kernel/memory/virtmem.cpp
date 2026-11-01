@@ -126,15 +126,15 @@ static bool ioremap_test()
             );
         }
     };
-    gloxDebugLogln("Test 1\n");
+    gloxDebugLogln("Test 1\r\n");
     auto ptr1 = vmap_iomem(0xb8000, 100, PageCaching::writeCombine);
     print_iomem();
     auto ptr2 = vmap_iomem(0xa8000, 1000, PageCaching::writeCombine);
-    gloxDebugLogln("Test 2\n");
+    gloxDebugLogln("Test 2\r\n");
     print_iomem();
     vunmap_iomem(ptr1);
     vunmap_iomem(ptr2);
-    gloxDebugLogln("Test 3\n");
+    gloxDebugLogln("Test 3\r\n");
     print_iomem();
     return true;
 }

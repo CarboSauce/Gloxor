@@ -29,6 +29,12 @@ struct BootInfo
         usize pitch;
         usize height;
         usize width;
+        u8 redMaskSize;
+        u8 redMaskShift;
+        u8 greenMaskSize;
+        u8 greenMaskShift;
+        u8 blueMaskSize;
+        u8 blueMaskShift;
     };
 
     ::glox::span<MemoryMap> mmapEntries;

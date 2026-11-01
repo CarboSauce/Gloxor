@@ -7,12 +7,8 @@ import std.compat;
 [[gnu::interrupt]] static void kbd_handler(InterruptFrame* frame)
 {
     auto val = inb(0x60);
-    if (val == 185) {
-        gx::term::clear_screen(
-            0
-        ); // i think this basically can crash kernel, too complex in irq
-    } else if (val == 158) {
-        gloxTraceLog("Borgir\n");
+    if (val == 158) {
+        gloxTraceLog("Borgir\r\n");
     } else if (val == 22)
         gloxTraceLog("Bor");
     else if (val == 150)
@@ -25,7 +21,7 @@ import std.compat;
 static void init_keyboard()
 {
     auto idt = get_idt();
-    gloxDebugLog("Mapping Keyboard handler\n");
+    gloxDebugLog("Mapping Keyboard handler\r\n");
     idt.base[0x21].register_handler(
         (uint64_t)kbd_handler, 0x8, 0, IDT_INTERRUPTGATE
     );

@@ -126,17 +126,17 @@ void limine_main()
             gx::machineInfo.fbInfoEntry.begin = (vaddr)fb->address;
             gx::machineInfo.fbInfoEntry.end
                 = (uintptr_t)fb->address + fb->pitch * fb->height;
-            gx::machineInfo.fbInfoEntry.pitch = fb->pitch / 4;
+            gx::machineInfo.fbInfoEntry.pitch = fb->pitch;
             gx::machineInfo.fbInfoEntry.height = fb->height;
             gx::machineInfo.fbInfoEntry.width = fb->width;
+            gx::machineInfo.fbInfoEntry.redMaskSize = fb->red_mask_size;
+            gx::machineInfo.fbInfoEntry.redMaskShift = fb->red_mask_shift;
+            gx::machineInfo.fbInfoEntry.greenMaskSize = fb->green_mask_size;
+            gx::machineInfo.fbInfoEntry.greenMaskShift = fb->green_mask_shift;
+            gx::machineInfo.fbInfoEntry.blueMaskSize = fb->blue_mask_size;
+            gx::machineInfo.fbInfoEntry.blueMaskShift = fb->blue_mask_shift;
 
-            gx::term::init_term(
-                (gx::color_t*)fb->address,
-                (gx::color_t*)gx::machineInfo.fbInfoEntry.end,
-                gx::machineInfo.fbInfoEntry.pitch,
-                gx::machineInfo.fbInfoEntry.width,
-                gx::machineInfo.fbInfoEntry.height
-            );
+            gx::term::init_term(gx::machineInfo.fbInfoEntry);
         }
     }
 

@@ -45,7 +45,7 @@ extern "C" void call_driver_inits()
     gloxDebugLogln("Driver Init:");
     call_ctor_pointers(_moduleDriverBegin, _moduleDriverEnd);
     // We assume that Drivers havent enabled interrupts hopefully
-    gloxDebugLog("Starting Interrupts after driver initialization\n");
+    gloxDebugLog("Starting Interrupts after driver initialization\r\n");
     arch::start_irq();
 }
 
@@ -149,26 +149,24 @@ extern "C" void gloxor_main()
     call_driver_inits();
     call_global_ctors();
 #ifdef GLOXTESTING
-    gx::term::set_fg_color(0xadd8e6);
     gloxPrint(
-        "Unit tests:\nThere are ",
+        "Unit tests:\r\nThere are ",
         _moduleTestingEnd - _moduleTesting,
-        " tests\n"
+        " tests\r\n"
     );
-    gx::term::set_fg_color(0xFFFFFF);
     for (auto it = _moduleTesting; it != _moduleTestingEnd; ++it) {
         gloxPrintln("Test case ", it->name);
         if (it->init()) {
-            gx::term::set_fg_color(0x00FF00);
-            gloxPrint("Test passed\n");
+            gloxPrint("\e[0;32m");
+            gloxPrint("Test passed\r\n");
         } else {
-            gx::term::set_fg_color(0xFF0000);
-            gloxPrint("Test failed\n");
+            gloxPrint("\e[0;31m");
+            gloxPrint("Test failed\r\n");
         }
-        gx::term::set_fg_color(0xFFFFFF);
+        gloxPrint("\e[0;37m");
     }
 #endif
-    gloxPrint("Initialization Completed.\n");
+    gloxPrint("Initialization Completed.\r\n");
     for (;;)
         arch::halt();
 }
@@ -180,10 +178,8 @@ static bool gogole_test()
     __get_cpuid(0x80000002, brand + 0x0, brand + 0x1, brand + 0x2, brand + 0x3);
     __get_cpuid(0x80000003, brand + 0x4, brand + 0x5, brand + 0x6, brand + 0x7);
     __get_cpuid(0x80000004, brand + 0x8, brand + 0x9, brand + 0xa, brand + 0xb);
-    gx::term::set_fg_color(0x80c000);
     gx::term::write_str((const char*)brand, 12 * sizeof(u32));
-    gx::term::write_str("\n", 1);
-    gx::term::set_fg_color(0xFFFFFF);
+    gx::term::write_str("\r\n", 1);
     return true;
 }
 

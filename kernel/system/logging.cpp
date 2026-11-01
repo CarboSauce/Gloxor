@@ -9,8 +9,8 @@ import arch_asm.e9;
 namespace glox {
 extern "C++" void exec_assert(const char* message, std::source_location loc)
 {
-    gx::outStream, "Assertion failed: \n (", message, ")\n ", loc.file_name(),
-        ":", loc.line(), '\n';
+    gx::outStream, "Assertion failed: \r\n (", message, ")\r\n ", loc.file_name(),
+        ":", loc.line(), '\r\n';
     gx::kernel_panic();
 }
 } // namespace glox

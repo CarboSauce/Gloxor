@@ -36,7 +36,7 @@ void set_divisor(u16 divisor)
 static void init_timer()
 {
     auto idt = get_idt();
-    gloxDebugLog("Mapping Timer handler\n");
+    gloxDebugLog("Mapping Timer handler\r\n");
     idt.base[0x20].register_handler(
         (uint64_t)timer_handler, 0x8, 0, IDT_INTERRUPTGATE
     );

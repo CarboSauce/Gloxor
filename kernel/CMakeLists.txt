@@ -107,6 +107,23 @@ if (cheaders_ADDED)
 
 endif()
 
+CPMAddPackage(
+    NAME flanterm
+    GIT_REPOSITORY "https://github.com/Mintsuki/flanterm"
+    VERSION 3.1.2
+    DOWNLOAD_ONLY
+)
+
+if (flanterm_ADDED)
+    target_include_directories(kernel
+        PUBLIC $<BUILD_INTERFACE:${flanterm_SOURCE_DIR}/src>
+    )
+    target_sources(kernel PRIVATE
+        "${flanterm_SOURCE_DIR}/src/flanterm.c"
+        "${flanterm_SOURCE_DIR}/src/flanterm_backends/fb.c"
+    )
+endif()
+
 target_compile_options(kernel PRIVATE
     $<$<COMPILE_LANGUAGE:ASM_NASM>:${CMMN_ASM_FLAGS}>
     ${GLOX_COMPILE_FLAGS}

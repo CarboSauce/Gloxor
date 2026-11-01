@@ -12,6 +12,12 @@ struct Framebuffer
     usize width;
     usize height;
     usize pitch;
+    int redMaskSize;
+    int redMaskShift;
+    int greenMaskSize;
+    int greenMaskShift;
+    int blueMaskSize;
+    int blueMaskShift;
 };
 
 template <typename iter, typename T>

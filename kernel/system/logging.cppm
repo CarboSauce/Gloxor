@@ -30,10 +30,13 @@ public:
             flush();
             i = 0;
         }
-        buffer[i++] = c;
-
-        if (c == '\n')
+        if (c != '\n') {
+            buffer[i++] = c;
+        } else {
+            buffer[i++] = '\r';
+            buffer[i++] = '\n';
             flush();
+        }
 
         return i;
     }
@@ -62,6 +65,7 @@ template <typename... Args>
 void println(std::string_view fmt, Args&&... args)
 {
     glox::format_to(logStream, fmt, FORWARD(args)...);
+    logStream.write('\r');
     logStream.write('\n');
     logStream.flush();
 }
@@ -76,6 +80,7 @@ void logln(LogLevel lvl, std::string_view fmt, Args&&... args)
 {
     if (lvl < LogLevelCap) {
         glox::format_to(logStream, fmt, FORWARD(args)...);
+        logStream.write('\r');
         logStream.write('\n');
         logStream.flush();
     }
