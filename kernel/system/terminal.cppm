@@ -1,10 +1,11 @@
+module;
+#include "flanterm.h"
 export module gloxor.system.terminal;
 import std.compat;
 import glox;
 import gloxor.types;
 import gloxor.graphics;
 import gloxor.kinfo;
-#include "flanterm.h"
 
 export namespace gx::term {
 void init_term(const gx::BootInfo::FbInfo& fb);

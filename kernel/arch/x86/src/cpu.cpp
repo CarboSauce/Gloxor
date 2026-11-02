@@ -225,11 +225,4 @@ static bool testing()
 }
 
 registerTest("Cpu flags", testing);
-
-static bool tst()
-{
-    // gx::println("AHA %", 1);
-    return true;
-}
-registerTest("TEST", tst);
 #endif

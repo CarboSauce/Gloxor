@@ -4,17 +4,11 @@ import std.compat;
 #include "glox/assert.hpp"
 #include "gloxor/modules.hpp"
 #include "system/logging.hpp"
+
 [[gnu::interrupt]] static void kbd_handler(InterruptFrame* frame)
 {
     auto val = inb(0x60);
-    if (val == 158) {
-        gloxTraceLog("Borgir\r\n");
-    } else if (val == 22)
-        gloxTraceLog("Bor");
-    else if (val == 150)
-        gloxTraceLog("gar");
-    else
-        gloxTraceLogln("Kbval = ", val);
+    gx::log_trace("Kbval = %\n", val);
     gx::pic::send_eoi_master();
 }
 
