@@ -17,6 +17,7 @@ struct PmmAllocator
 
 void* memalloc(size_t size);
 void memdealloc(void* ptr, size_t size);
+void memdealloc(void* ptr);
 
 template <typename T>
 T* alloc(size_t ele_count = 1)
