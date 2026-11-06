@@ -64,7 +64,7 @@ void set_slave_mask(u8 mask)
 static void init_pic()
 {
     gx::pic::remap(0x20, 0x28);
-    gloxDebugLog("Initializing PIC\r\n");
+    gx::log_debug("Initializing PIC\r\n");
     // Mask all devices
     outb(PIC1_DATA, 0xFF);
     outb(PIC2_DATA, 0xFF);

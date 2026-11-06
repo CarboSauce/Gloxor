@@ -290,8 +290,10 @@ inline bool init_chunk(ChunkPtr& list, usize bucketSize)
     return true;
 }
 
-inline glox::pair<void*, bool>
-alloc_from_chunk(Metadata::chunkHeadersT& chunks, usize bucketSize)
+inline glox::pair<void*, bool> alloc_from_chunk(
+    Metadata::chunkHeadersT& chunks,
+    usize bucketSize
+)
 {
     for (auto&& it : chunks) {
         // completely borked, quickly fix
@@ -395,7 +397,7 @@ void memdealloc(void* ptr, usize size)
     ::glox::scoped_lock<IrqLock> _;
     if (!free_mem(ptr, size)) {
         // TODO: Add debuging capabilities
-        gloxDebugLogln("Failed to free addr: ", ptr, " of size: ", size);
+        gx::logln_debug("Failed to free addr: % of size: %", ptr, size);
     }
 }
 

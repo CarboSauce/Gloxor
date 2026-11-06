@@ -36,22 +36,22 @@ extern "C" void call_ctor_pointers(ctor_t* begin, ctor_t* end)
 
 extern "C" void call_pre_cpu_inits()
 {
-    gloxDebugLogln("Pre Cpu Init:");
+    gx::logln_debug("Pre Cpu Init:");
     call_ctor_pointers(_modulePreCpuBegin, _moduleDriverBegin);
 }
 
 extern "C" void call_driver_inits()
 {
-    gloxDebugLogln("Driver Init:");
+    gx::logln_debug("Driver Init:");
     call_ctor_pointers(_moduleDriverBegin, _moduleDriverEnd);
     // We assume that Drivers havent enabled interrupts hopefully
-    gloxDebugLog("Starting Interrupts after driver initialization\r\n");
+    gx::logln_debug("Starting Interrupts after driver initialization\r\n");
     arch::start_irq();
 }
 
 extern "C" void call_global_ctors()
 {
-    gloxDebugLogln("Global ctors :");
+    gx::logln_debug("Global ctors :");
     call_ctor_pointers(_ctorArrayStart, _ctorArrayEnd);
 }
 
@@ -82,7 +82,7 @@ inline void map_region(
 inline void map_kernel()
 {
     size_t size = (kernelFileEnd - kernelFileBegin);
-    gloxDebugLogln("kernelPhysOffset: ", kernelPhysOffset);
+    gx::logln_debug("kernelPhysOffset: ", kernelPhysOffset);
     for (size_t i = 0; i < size; i += pageSize) {
         kAddrSpace.map(
             (vaddr)kernelFileBegin + i,
@@ -112,10 +112,10 @@ inline void identity_map()
 
 void init_addr_space()
 {
-    gloxDebugLogln("Remapping CR3 to ", (void*)&kAddrSpace);
+    gx::logln_debug("Remapping CR3 to %", &kAddrSpace);
     identity_map();
     auto [fbeg, fend] = gx::term::get_used_memory_range();
-    gloxDebugLogln("Mapping framebuffer from: ", fbeg, " to: ", fend);
+    gx::logln_debug("Mapping framebuffer from: % to: %", fbeg, fend);
     map_region(
         (vaddr)fbeg,
         (vaddr)fend,
@@ -124,49 +124,45 @@ void init_addr_space()
         PageCaching::writeCombine
     );
     map_kernel();
-    gloxDebugLogln(
-        "Trying translation code, from : ",
+    gx::logln_debug(
+        "Trying translation code, from : % to %x",
         fbeg,
-        " to: ",
-        (void*)kAddrSpace.translate((u64)fbeg)
+        kAddrSpace.translate((u64)fbeg)
     );
-    gloxDebugLogln(
-        "Trying translation code, from : ",
+    gx::logln_debug(
+        "Trying translation code, from : % to %x",
         (u8*)physicalMemBase + 0x200'000,
-        " to: ",
-        (void*)kAddrSpace.translate(physicalMemBase + 0x200'000)
+        kAddrSpace.translate(physicalMemBase + 0x200'000)
     );
     // lets goo
 }
 extern "C" void gloxor_main()
 {
     auto fbrange = gx::term::get_used_memory_range();
-    gloxDebugLogln("Con begin: ", fbrange.begin());
-    gloxDebugLogln("Con end: ", fbrange.end());
+    gx::logln_debug("Con begin: %", fbrange.begin());
+    gx::logln_debug("Con end: %", fbrange.end());
     call_pre_cpu_inits();
     initialize_cpu();
     init_addr_space();
     call_driver_inits();
     call_global_ctors();
 #ifdef GLOXTESTING
-    gloxPrint(
-        "Unit tests:\r\nThere are ",
-        _moduleTestingEnd - _moduleTesting,
-        " tests\r\n"
+    gx::println(
+        "Unit tests:\r\nThere are % tests", _moduleTestingEnd - _moduleTesting
     );
     for (auto it = _moduleTesting; it != _moduleTestingEnd; ++it) {
-        gloxPrintln("Test case ", it->name);
+        gx::println("Test case %", it->name);
         if (it->init()) {
-            gloxPrint("\e[0;32m");
-            gloxPrint("Test passed\r\n");
+            gx::print("\e[0;32m");
+            gx::print("Test passed\r\n");
         } else {
-            gloxPrint("\e[0;31m");
-            gloxPrint("Test failed\r\n");
+            gx::print("\e[0;31m");
+            gx::print("Test failed\r\n");
         }
-        gloxPrint("\e[0;37m");
+        gx::print("\e[0;37m");
     }
 #endif
-    gloxPrint("Initialization Completed.\r\n");
+    gx::print("Initialization Completed.\r\n");
     for (;;)
         arch::halt();
 }
@@ -178,8 +174,7 @@ static bool gogole_test()
     __get_cpuid(0x80000002, brand + 0x0, brand + 0x1, brand + 0x2, brand + 0x3);
     __get_cpuid(0x80000003, brand + 0x4, brand + 0x5, brand + 0x6, brand + 0x7);
     __get_cpuid(0x80000004, brand + 0x8, brand + 0x9, brand + 0xa, brand + 0xb);
-    gx::term::write_str((const char*)brand, 12 * sizeof(u32));
-    gx::term::write_str("\r\n", 1);
+    gx::println(std::string_view { (const char*)brand, 12 });
     return true;
 }
 

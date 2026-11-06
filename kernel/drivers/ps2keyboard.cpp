@@ -8,14 +8,14 @@ import std.compat;
 [[gnu::interrupt]] static void kbd_handler(InterruptFrame* frame)
 {
     auto val = inb(0x60);
-    gx::log_trace("Kbval = %\n", val);
+    gx::println("Kbval = %\n", val);
     gx::pic::send_eoi_master();
 }
 
 static void init_keyboard()
 {
     auto idt = get_idt();
-    gloxDebugLog("Mapping Keyboard handler\r\n");
+    gx::log_debug("Mapping Keyboard handler\r\n");
     idt.base[0x21].register_handler(
         (uint64_t)kbd_handler, 0x8, 0, IDT_INTERRUPTGATE
     );

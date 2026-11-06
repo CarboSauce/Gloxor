@@ -104,6 +104,36 @@ void log_debug(std::string_view fmt, Args&&... args)
     if (LogLevel::debug < LogLevelCap)
         glox::format_to(logStream, fmt, FORWARD(args)...);
 }
+template <typename... Args>
+void logln_fatal(std::string_view fmt, Args&&... args)
+{
+    if (LogLevel::fatal < LogLevelCap) {
+        glox::format_to(logStream, fmt, FORWARD(args)...);
+        logStream.write('\r');
+        logStream.write('\n');
+        logStream.flush();
+    }
+}
+template <typename... Args>
+void logln_trace(std::string_view fmt, Args&&... args)
+{
+    if (LogLevel::trace < LogLevelCap) {
+        glox::format_to(logStream, fmt, FORWARD(args)...);
+        logStream.write('\r');
+        logStream.write('\n');
+        logStream.flush();
+    }
+}
+template <typename... Args>
+void logln_debug(std::string_view fmt, Args&&... args)
+{
+    if (LogLevel::debug < LogLevelCap) {
+        glox::format_to(logStream, fmt, FORWARD(args)...);
+        logStream.write('\r');
+        logStream.write('\n');
+        logStream.flush();
+    }
+}
 } // namespace gx
 
 using gx::LogLevel;

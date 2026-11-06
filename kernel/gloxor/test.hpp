@@ -18,14 +18,14 @@ struct Ktest
     {                                                                  \
         name, &fnc                                                     \
     }
-#define KTEST_EXPECT(expr)                                                   \
-    do {                                                                     \
-        gloxPrintln("EXPECT(" #expr ") = ", (expr) ? "Success" : "Failure"); \
+#define KTEST_EXPECT(expr)                                                    \
+    do {                                                                      \
+        gx::println("EXPECT(" #expr ") = %", (expr) ? "Success" : "Failure"); \
     } while (0)
 #define KTEST_ASSERT(expr)                                 \
     do {                                                   \
         if (!(expr)) {                                     \
-            gloxPrintln("KTEST_ASSERT(" #expr ") failed"); \
+            gx::println("KTEST_ASSERT(" #expr ") failed"); \
             return false;                                  \
         }                                                  \
     } while (0)
