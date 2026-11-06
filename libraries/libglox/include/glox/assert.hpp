@@ -11,8 +11,10 @@
 #endif
 
 namespace glox {
-extern "C++" [[noreturn]] void
-exec_assert(const char* message, std::source_location);
+extern "C++" [[noreturn]] void exec_assert(
+    const char* message,
+    std::source_location
+);
 }
 
 #define gloxUnimplemented() glox::exec_assert("The function is unimplemented")
@@ -56,15 +58,13 @@ exec_assert(const char* message, std::source_location);
 
 #define gloxDebugError(...) \
     (glox::exec_assert(__VA_ARGS__, __FILE__, _mSTRINGIFY(__LINE__)))
-#define gloxAssert(cond, ...) GLOX_ASSERT(cond, __VA_ARGS__)
-#define gloxUnreachable()                          \
-    gloxAssert(false, "unreachable code invoked"); \
+#define gloxUnreachable()                           \
+    GLOX_ASSERT(false, "unreachable code invoked"); \
     __builtin_unreachable()
-#define GLOX_UNREACHABLE()                         \
-    gloxAssert(false, "Unreachable code invoked"); \
+#define GLOX_UNREACHABLE()                          \
+    GLOX_ASSERT(false, "Unreachable code invoked"); \
     __builtin_unreachable()
 #else
-#define gloxAssert(cond, ...) ((void)0)
 #define gloxUnreachable() __builtin_unreachable()
 #define GLOX_UNREACHABLE() __builtin_unreachable()
 #define GLOX_ASSERT(...) ((void)0)

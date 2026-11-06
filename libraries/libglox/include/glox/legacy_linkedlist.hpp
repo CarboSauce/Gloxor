@@ -53,7 +53,7 @@ struct node : public T
     }
     void insert(node<T>* left, node<T>* right)
     {
-        // gloxAssert(left != nullptr && right != nullptr);
+        // GLOX_ASSERT(left != nullptr && right != nullptr);
         //  temporary fix
         if (left != nullptr)
             left->next = this;

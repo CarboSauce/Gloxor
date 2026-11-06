@@ -48,7 +48,7 @@ public:
         : from(from)
         , to(to)
     {
-        gloxAssert(
+        GLOX_ASSERT(
             this->from < this->to, "Span shouldn't have negative range!"
         );
     }
@@ -66,7 +66,7 @@ public:
     }
     constexpr const T& operator[](size_t i) const
     {
-        gloxAssert(i < size(), "Span access out of bounds");
+        GLOX_ASSERT(i < size(), "Span access out of bounds");
         return *(from + i);
     }
     constexpr T& operator[](size_t i)

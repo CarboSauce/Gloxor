@@ -76,7 +76,7 @@ public:
     }
     intrusive_fwd_list& operator=(intrusive_fwd_list&& other)
     {
-        gloxAssert(first_node);
+        GLOX_ASSERT(first_node);
         first_node = other.first_node;
         other.first_node = nullptr;
         return *this;

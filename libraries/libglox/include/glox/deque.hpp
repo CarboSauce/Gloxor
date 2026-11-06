@@ -360,14 +360,14 @@ public:
 
     constexpr T& operator[](size_t i)
     {
-        gloxAssert(i < siz);
+        GLOX_ASSERT(i < siz);
         size_t globalIdx = start_idx + i;
         return map[globalIdx / BLOCK_SIZE][globalIdx % BLOCK_SIZE];
     }
 
     constexpr const T& operator[](size_t i) const
     {
-        gloxAssert(i < siz);
+        GLOX_ASSERT(i < siz);
         size_t globalIdx = start_idx + i;
         return map[globalIdx / BLOCK_SIZE][globalIdx % BLOCK_SIZE];
     }
@@ -410,7 +410,7 @@ public:
 
     constexpr void pop_back()
     {
-        gloxAssert(siz > 0);
+        GLOX_ASSERT(siz > 0);
         size_t lastIdx = start_idx + siz - 1;
         map[lastIdx / BLOCK_SIZE][lastIdx % BLOCK_SIZE].~T();
         --siz;
@@ -418,7 +418,7 @@ public:
 
     constexpr void pop_front()
     {
-        gloxAssert(siz > 0);
+        GLOX_ASSERT(siz > 0);
         map[start_idx / BLOCK_SIZE][start_idx % BLOCK_SIZE].~T();
         ++start_idx;
         --siz;

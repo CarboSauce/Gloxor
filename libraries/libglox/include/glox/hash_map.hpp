@@ -90,7 +90,7 @@ private:
 
     void rehash(size_t new_count)
     {
-        gloxAssert((new_count & (new_count - 1)) == 0);
+        GLOX_ASSERT((new_count & (new_count - 1)) == 0);
         vector<bucket> nb;
         for (size_t i = 0; i < new_count; ++i)
             nb.push_back(bucket { });

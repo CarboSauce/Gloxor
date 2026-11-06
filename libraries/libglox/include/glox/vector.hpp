@@ -249,17 +249,17 @@ public:
     }
     constexpr void pop_back()
     {
-        gloxAssert(siz > 0);
+        GLOX_ASSERT(siz > 0);
         start[--siz].~T();
     }
     constexpr const T& operator[](size_t i) const
     {
-        gloxAssert(i < siz);
+        GLOX_ASSERT(i < siz);
         return *(start + i);
     }
     constexpr T& operator[](size_t i)
     {
-        gloxAssert(i < siz);
+        GLOX_ASSERT(i < siz);
         return *(start + i);
     }
 

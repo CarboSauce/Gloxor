@@ -149,7 +149,7 @@ public:
     }
     intrusive_list& operator=(intrusive_list&& other)
     {
-        gloxAssert(other.list_size);
+        GLOX_ASSERT(other.list_size);
         sentinel = other.sentinel;
         list_size = other.list_size;
         other.sentinel = { &sentinel, &sentinel };

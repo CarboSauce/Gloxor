@@ -15,7 +15,7 @@ struct array
     static constexpr size_t size = N;
     constexpr const T& operator[](size_t i) const
     {
-        gloxAssert(i < N, "Out of bounds access");
+        GLOX_ASSERT(i < N, "Out of bounds access");
         return data[i];
     }
     constexpr T& operator[](size_t i)
