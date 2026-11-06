@@ -20,7 +20,7 @@ inline usize kernelMappingOffset;
 
 inline vaddr get_real_kernel_addr(vaddr virt)
 {
-    gloxAssert(virt >= arch::kernelMemBase);
+    GLOX_ASSERT(virt >= arch::kernelMemBase);
     return virt + kernelMappingOffset;
 }
 inline vaddr get_real_kernel_addr(const void* virt)
@@ -29,7 +29,7 @@ inline vaddr get_real_kernel_addr(const void* virt)
 }
 inline vaddr get_real_data_addr(vaddr virt)
 {
-    gloxAssert(virt >= arch::physicalMemBase);
+    GLOX_ASSERT(virt >= arch::physicalMemBase);
     return virt - arch::physicalMemBase;
 }
 inline vaddr to_virt(vaddr addr)

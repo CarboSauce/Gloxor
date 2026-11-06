@@ -47,9 +47,9 @@ bool map_huge_page(vmemCtxT context, vaddr from, vaddr to, u64 mask)
 {
     auto* ctx = (PageTable<4>*)context;
     auto& e4 = ctx->entry(from);
-    gloxAssert(alloc_page_if_needed(e4.entry, mask));
+    GLOX_ASSERT(alloc_page_if_needed(e4.entry, mask));
     auto& e3 = e4.vaddr()->entry(from);
-    gloxAssert(alloc_page_if_needed(e3.entry, mask));
+    GLOX_ASSERT(alloc_page_if_needed(e3.entry, mask));
     e3.vaddr()->entry(from).entry = mask_entry(to & ~0x100000, mask | granul);
     return true;
 }
@@ -58,11 +58,11 @@ bool map(vmemCtxT context, vaddr from, vaddr to, u64 mask)
 {
     auto* ctx = (PageTable<4>*)context;
     auto& e4 = ctx->entry(from);
-    gloxAssert(alloc_page_if_needed(e4.entry, mask));
+    GLOX_ASSERT(alloc_page_if_needed(e4.entry, mask));
     auto& e3 = e4.vaddr()->entry(from);
-    gloxAssert(alloc_page_if_needed(e3.entry, mask));
+    GLOX_ASSERT(alloc_page_if_needed(e3.entry, mask));
     auto& e2 = e3.vaddr()->entry(from);
-    gloxAssert(alloc_page_if_needed(e2.entry, mask));
+    GLOX_ASSERT(alloc_page_if_needed(e2.entry, mask));
     e2.vaddr()->entry(from).entry = mask_entry(get_physical(to), mask);
     return true;
 }

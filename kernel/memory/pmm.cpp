@@ -33,7 +33,7 @@ namespace gx {
 
 void pmm_add_chunk(void* base, size_t length)
 {
-    gloxAssert(
+    GLOX_ASSERT(
         length % gx::pmmChunkSize == 0,
         "Pmm chunk length must be multiple of pmmChunkSize"
     );

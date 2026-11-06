@@ -96,7 +96,7 @@ glox::alloc_handle<void> grow(
     std::size_t alignment
 )
 {
-    gloxAssert(
+    GLOX_ASSERT(
         old_count <= new_count,
         "New size must be greater than or equal to old size"
     );
@@ -120,7 +120,7 @@ glox::alloc_handle<void> grow_zeroed(
     std::size_t alignment
 )
 {
-    gloxAssert(
+    GLOX_ASSERT(
         old_count <= new_count,
         "New size must be greater than or equal to old size"
     );
@@ -147,7 +147,7 @@ glox::alloc_handle<void> shrink(
     std::size_t alignment
 )
 {
-    gloxAssert(
+    GLOX_ASSERT(
         old_count >= new_count,
         "New size must be smaller than or equal to old size"
     );
@@ -263,7 +263,7 @@ inline auto align_up_pow2(usize x)
 
 inline usize size2bucket(usize size)
 {
-    gloxAssert(size != 0);
+    GLOX_ASSERT(size != 0);
     if (size <= tinyBuckets[0])
         return 0;
     return align_up_pow2(size) - 4;
