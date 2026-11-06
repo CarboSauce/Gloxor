@@ -27,6 +27,9 @@ concept allocator
       std::size_t count,
       std::size_t alignment
   ) {
+          typename Alloc::size_type;
+          typename Alloc::value_type;
+          typename Alloc::difference_type;
           {
               allocator.alloc(count, alignment)
           } -> std::same_as<alloc_handle<T>>;

@@ -13,16 +13,22 @@
 namespace glox {
 #ifdef CUSTOM_DEFAULT_ALLOCATOR
 namespace custom {
-    alloc_handle<void>
-    alloc(std::size_t count, std::size_t objsize, std::size_t alignment);
+    alloc_handle<void> alloc(
+        std::size_t count,
+        std::size_t objsize,
+        std::size_t alignment
+    );
     void dealloc(
         void* p,
         std::size_t count,
         std::size_t objsize,
         std::size_t alignment
     );
-    alloc_handle<void>
-    alloc_zeroed(std::size_t count, std::size_t objsize, std::size_t alignment);
+    alloc_handle<void> alloc_zeroed(
+        std::size_t count,
+        std::size_t objsize,
+        std::size_t alignment
+    );
 
     alloc_handle<void> grow(
         void* old_ptr,
@@ -66,10 +72,22 @@ namespace custom {
 
 } // namespace custom
 #endif
+GLOX_EXPORT
+template <template <typename T> typename Alloc, typename T>
+struct rebind_allocator
+{
+    using other = Alloc<T>;
+};
 
 GLOX_EXPORT template <typename T>
 struct default_allocator
 {
+    using value_type = T;
+    using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
+    template <typename U>
+    using rebind = rebind_allocator<default_allocator, U>;
+
     alloc_handle<T> alloc(std::size_t count, std::size_t alignment)
     {
 #ifdef CUSTOM_DEFAULT_ALLOCATOR
@@ -91,8 +109,10 @@ struct default_allocator
         return std::free(static_cast<void*>(p));
 #endif
     }
-    alloc_handle<T>
-    alloc_zeroed(std::size_t count, [[maybe_unused]] std::size_t alignment)
+    alloc_handle<T> alloc_zeroed(
+        std::size_t count,
+        [[maybe_unused]] std::size_t alignment
+    )
     {
 #ifdef CUSTOM_DEFAULT_ALLOCATOR
         auto mem = glox::custom::alloc_zeroed(count, sizeof(T), alignment);
@@ -113,7 +133,7 @@ struct default_allocator
         std::size_t alignment
     )
     {
-        gloxAssert(
+        GLOX_ASSERT(
             old_count <= new_count,
             "New size must be greater than or equal to old size"
         );
@@ -142,7 +162,7 @@ struct default_allocator
         std::size_t alignment
     )
     {
-        gloxAssert(
+        GLOX_ASSERT(
             old_count <= new_count,
             "New size must be greater than or equal to old size"
         );
@@ -173,7 +193,7 @@ struct default_allocator
         std::size_t alignment
     )
     {
-        gloxAssert(
+        GLOX_ASSERT(
             old_count >= new_count,
             "New size must be smaller than or equal to old size"
         );
@@ -240,6 +260,7 @@ static_assert(
 );
 
 namespace glox {
+
 GLOX_BEGIN_EXPORT
 template <typename T>
     requires std::is_pointer_v<T>
@@ -297,6 +318,20 @@ constexpr alloc_handle<T> alloc_uninitialized(
         return { res.ptr, res.count };
     }
     return allocator.alloc(count, alignment);
+}
+
+template <typename T, glox::allocator<T> Allocator>
+constexpr alloc_handle<T> alloc_zeroed(
+    Allocator& allocator,
+    std::size_t count,
+    std::size_t alignment = alignof(T)
+)
+{
+    if (std::is_constant_evaluated()) {
+        auto res = std::allocator<T> { }.allocate_at_least(count);
+        return { res.ptr, res.count };
+    }
+    return allocator.alloc_zeroed(count, alignment);
 }
 
 template <typename T, glox::allocator<T> Allocator>
@@ -364,7 +399,7 @@ constexpr alloc_handle<T> grow_alloc(
         for (std::size_t i = 0; i != old_constructed_count; ++i) {
             ::new ((T*)mem.ptr + i) T(RVALUE(old_ptr[i]));
         }
-        gloxAssert(old_constructed_count <= old_count);
+        GLOX_ASSERT(old_constructed_count <= old_count);
         for (std::size_t i = 0; i != old_constructed_count; ++i) {
             old_ptr[i].~T();
         }
@@ -408,7 +443,7 @@ constexpr alloc_handle<T> shrink_alloc(
         for (std::size_t i = 0; i != new_count; ++i) {
             ::new ((T*)mem.ptr + i) T(RVALUE(old_ptr[i]));
         }
-        gloxAssert(old_constructed_count <= old_count);
+        GLOX_ASSERT(old_constructed_count <= old_count);
         for (std::size_t i = 0; i != old_constructed_count; ++i) {
             old_ptr[i].~T();
         }
@@ -416,5 +451,125 @@ constexpr alloc_handle<T> shrink_alloc(
         return mem;
     }
 }
+
+template <typename T, glox::allocator<T> Allocator>
+constexpr alloc_handle<T> shrink_alloc_inplace(
+    Allocator& allocator,
+    T* old_ptr,
+    std::size_t old_count,
+    std::size_t new_count,
+    std::size_t alignment = alignof(T)
+)
+{
+    if (std::is_constant_evaluated()) {
+        return { nullptr, 0 };
+    }
+    alloc_handle<T> mem
+        = allocator.shrink_inplace(old_ptr, old_count, new_count, alignment);
+    return mem;
+}
+
+template <typename T, glox::allocator<T> Allocator>
+constexpr alloc_handle<T> grow_alloc_inplace(
+    Allocator& allocator,
+    T* old_ptr,
+    std::size_t old_count,
+    std::size_t new_count,
+    std::size_t alignment = alignof(T)
+)
+{
+    if (std::is_constant_evaluated()) {
+        return { nullptr, 0 };
+    }
+    alloc_handle<T> mem
+        = allocator.grow_inplace(old_ptr, old_count, new_count, alignment);
+    return mem;
+}
+
+template <typename Alloc, typename T>
+    requires glox::allocator<T, Alloc>
+struct alloc_traits
+{
+    constexpr static alloc_handle<T> alloc(
+        Alloc& alloc,
+        std::size_t count,
+        std::size_t alignment
+    )
+    {
+        return glox::alloc_uninitialized(alloc, count, alignment);
+    }
+    constexpr static void dealloc(
+        Alloc& alloc,
+        void* p,
+        std::size_t count,
+        std::size_t alignment
+    )
+    {
+        return glox::dealloc(alloc, p, count, alignment);
+    }
+    constexpr static alloc_handle<void> alloc_zeroed(
+        Alloc& alloc,
+        std::size_t count,
+        std::size_t alignment
+    )
+    {
+        return glox::alloc_zeroed(alloc, count, alignment);
+    }
+
+    constexpr static alloc_handle<void> grow(
+        Alloc& alloc,
+        T* old_ptr,
+        std::size_t old_count,
+        std::size_t new_count,
+        std::size_t alignment
+    )
+    {
+        return glox::grow_alloc(
+            alloc, old_ptr, old_count, new_count, alignment
+        );
+    }
+
+    constexpr static alloc_handle<void> shrink(
+        Alloc& alloc,
+        T* old_ptr,
+        std::size_t old_count,
+        std::size_t new_count,
+        std::size_t alignment
+    )
+    {
+        return glox::shrink_alloc(
+            alloc, old_ptr, old_count, new_count, alignment
+        );
+    }
+
+    constexpr static alloc_handle<void> grow_inplace(
+        Alloc& alloc,
+        T* old_ptr,
+        std::size_t old_count,
+        std::size_t new_count,
+        std::size_t alignment
+    )
+    {
+        return glox::grow_alloc_inplace(
+            alloc, old_ptr, old_count, new_count, alignment
+        );
+    }
+
+    constexpr static alloc_handle<void> shrink_inplace(
+        Alloc& alloc,
+        T* old_ptr,
+        std::size_t old_count,
+        std::size_t new_count,
+        std::size_t alignment
+    )
+    {
+        return glox::shrink_alloc_inplace(
+            alloc, old_ptr, old_count, new_count, alignment
+        );
+    }
+
+    using rebind = typename Alloc::rebind::other;
+};
+
 GLOX_END_EXPORT
 }; // namespace glox

@@ -17,6 +17,7 @@ add_executable(tests
     string.cpp
     hash_map.cpp
     heap_alloc.cpp
+    deque.cpp
 )
 
 add_executable(benchmarks
