@@ -18,6 +18,8 @@ add_executable(tests
     hash_map.cpp
     heap_alloc.cpp
     deque.cpp
+    path.cpp
+    cstring.cpp
 )
 
 add_executable(benchmarks

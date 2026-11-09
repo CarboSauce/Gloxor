@@ -122,6 +122,14 @@ public:
         }
     }
 
+    constexpr string(const char* str, size_t n)
+        : r()
+    {
+        reserve(n);
+        for (size_t i = 0; i != n; i++)
+            push_back(str[i]);
+    }
+
     constexpr string(std::string_view str)
         : r()
     {
@@ -134,7 +142,7 @@ public:
     constexpr string(const string& other)
         : alloc(other.alloc)
     {
-        if (not is_big()) {
+        if (not other.is_big()) {
             r = other.r;
         } else {
             size_t n = other.size();
@@ -145,10 +153,15 @@ public:
         }
     }
 
-    string& operator=(const string& other)
+    constexpr string& operator=(const string& other)
     {
+        if (this == &other) {
+            return *this;
+        }
+
         alloc = other.alloc;
-        if (not is_big()) {
+
+        if (not is_big() && not other.is_big()) {
             r = other.r;
         } else {
             size_t n = other.size();
@@ -158,14 +171,15 @@ public:
                 push_back(c);
             }
         }
+
         return *this;
     }
-
-    string& operator=(string&& other)
+    constexpr string& operator=(string&& other)
     {
         using glox::swap;
         swap(alloc, other.alloc);
         swap(r, other.r);
+        return *this;
     }
 
     constexpr string(string&& other)
@@ -259,6 +273,27 @@ public:
         return *(data() + i);
     }
 
+    constexpr const_reference back() const
+    {
+        GLOX_ASSERT(size() != 0);
+        return *(data() + size() - 1);
+    }
+    constexpr reference back()
+    {
+        GLOX_ASSERT(size() != 0);
+        return *(data() + size() - 1);
+    }
+    constexpr const_reference front() const
+    {
+        GLOX_ASSERT(size() != 0);
+        return *data();
+    }
+    constexpr reference front()
+    {
+        GLOX_ASSERT(size() != 0);
+        return *data();
+    }
+
     constexpr std::string_view view() const
     {
         return std::string_view { data(), size() };
@@ -346,6 +381,11 @@ public:
         ensure_can_fit(s);
     }
 
+    constexpr void clear()
+    {
+        set_size(0);
+    }
+
 private:
     constexpr void set_capacity(size_t cap)
     {
@@ -381,11 +421,6 @@ private:
         }
     }
 
-    constexpr void clear()
-    {
-        set_size(0);
-    }
-
     constexpr void begin_lifetime(char* p, size_t from, size_t to)
     {
         if consteval {
@@ -419,4 +454,207 @@ private:
         return true;
     }
 };
+template <glox::allocator<char> Allocator = glox::default_allocator<char>>
+class cstring
+{
+    glox::string<Allocator> inner;
+
+    constexpr void init_null()
+    {
+        if (inner.empty() || inner.back() != '\0') {
+            inner.push_back('\0');
+        }
+    }
+
+public:
+    using size_type = std::size_t;
+    using reference = char&;
+    using const_reference = const char&;
+    using iterator = char*;
+    using const_iterator = const char*;
+
+    constexpr cstring()
+        : inner()
+    {
+        inner.push_back('\0');
+    }
+
+    constexpr cstring(const char* s)
+        : inner(s)
+    {
+        inner.push_back('\0');
+    }
+
+    constexpr cstring(const char* s, size_t n)
+        : inner(s, n)
+    {
+        inner.push_back('\0');
+    }
+
+    constexpr cstring(std::string_view sv)
+        : inner(sv)
+    {
+        inner.push_back('\0');
+    }
+
+    constexpr explicit cstring(glox::string<Allocator> s)
+        : inner(std::move(s))
+    {
+        init_null();
+    }
+
+    [[nodiscard]] constexpr size_t size() const noexcept
+    {
+        return inner.size() - 1; // Mask the \0
+    }
+
+    [[nodiscard]] constexpr size_t len() const noexcept
+    {
+        return size();
+    }
+    [[nodiscard]] constexpr bool empty() const noexcept
+    {
+        return size() == 0;
+    }
+
+    [[nodiscard]] constexpr const char* c_str() const noexcept
+    {
+        return inner.data();
+    }
+
+    [[nodiscard]] constexpr const char* data() const noexcept
+    {
+        return inner.data();
+    }
+    [[nodiscard]] constexpr char* data() noexcept
+    {
+        return inner.data();
+    }
+
+    constexpr void push_back(char c)
+    {
+        // Replace current \0 with new char, then append a new \0
+        inner.back() = c;
+        inner.push_back('\0');
+    }
+
+    constexpr void pop_back()
+    {
+        GLOX_ASSERT(size() > 0);
+        inner.pop_back(); // Remove \0
+        inner.back() = '\0'; // Replace last actual char with \0
+    }
+
+    constexpr void clear()
+    {
+        inner.clear();
+        inner.push_back('\0');
+    }
+
+    template <std::convertible_to<std::string_view> T>
+    constexpr void append(const T& str)
+    {
+        std::string_view view(str);
+        if (view.empty())
+            return;
+
+        inner.pop_back(); // Remove trailing \0
+        inner.append(view); // Append new data
+        inner.push_back('\0'); // Restore trailing \0
+    }
+
+    template <std::convertible_to<std::string_view> T>
+    constexpr cstring& operator+=(const T& str)
+    {
+        append(str);
+        return *this;
+    }
+
+    constexpr void reserve(size_t s)
+    {
+        inner.reserve(s + 1); // Account for \0
+    }
+
+    constexpr const_reference operator[](size_t i) const
+    {
+        GLOX_ASSERT(i < size());
+        return inner[i];
+    }
+    constexpr reference operator[](size_t i)
+    {
+        GLOX_ASSERT(i < size());
+        return inner[i];
+    }
+
+    constexpr const_reference front() const
+    {
+        GLOX_ASSERT(size() > 0);
+        return inner.front();
+    }
+    constexpr reference front()
+    {
+        GLOX_ASSERT(size() > 0);
+        return inner.front();
+    }
+
+    constexpr const_reference back() const
+    {
+        GLOX_ASSERT(size() > 0);
+        return inner[size() - 1]; // Avoid returning the \0
+    }
+    constexpr reference back()
+    {
+        GLOX_ASSERT(size() > 0);
+        return inner[size() - 1]; // Avoid returning the \0
+    }
+
+    constexpr iterator begin()
+    {
+        return inner.begin();
+    }
+    constexpr const_iterator begin() const
+    {
+        return inner.begin();
+    }
+    constexpr const_iterator cbegin() const
+    {
+        return inner.cbegin();
+    }
+
+    constexpr iterator end()
+    {
+        return inner.begin() + size();
+    }
+    constexpr const_iterator end() const
+    {
+        return inner.begin() + size();
+    }
+    constexpr const_iterator cend() const
+    {
+        return inner.cbegin() + size();
+    }
+
+    [[nodiscard]] constexpr std::string_view view() const noexcept
+    {
+        return std::string_view(data(), size());
+    }
+
+    template <std::convertible_to<std::string_view> T>
+    constexpr auto operator<=>(const T& rhs) const
+    {
+        return view() <=> std::string_view(rhs);
+    }
+
+    template <std::convertible_to<std::string_view> T>
+    constexpr bool operator==(const T& rhs) const
+    {
+        return view() == std::string_view(rhs);
+    }
+
+    [[nodiscard]] constexpr glox::string<Allocator> to_string() const
+    {
+        return glox::string<Allocator>(view());
+    }
+};
+
 } // namespace glox

@@ -1,11 +1,11 @@
 #pragma once
 #include "assert.hpp"
-#include "detail/moveutils.hpp"
-#include "metaprog.hpp"
-#include "types.hpp"
 
 #ifndef USE_MODULES
+#include "detail/moveutils.hpp"
+#include "metaprog.hpp"
 #include "type_traits"
+#include "types.hpp"
 #if defined(_LIBCPP_VERSION)
 #include <__tuple/tuple_element.h>
 #include <__tuple/tuple_size.h>
@@ -19,8 +19,8 @@ GLOX_BEGIN_EXPORT
 template <typename T, typename U>
 struct pair
 {
-    T first;
-    U second;
+    [[no_unique_address]] T first;
+    [[no_unique_address]] U second;
     constexpr friend auto operator<=>(const pair&, const pair&) = default;
 };
 
