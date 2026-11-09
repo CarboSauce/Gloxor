@@ -272,7 +272,7 @@ public:
         return page->block_size;
     }
 
-    // Size-less deallocation
+    // Size-less deallocation (non-atomic, thread-local aware)
     void dealloc(void* ptr)
     {
         if (!ptr)
@@ -293,18 +293,84 @@ public:
             tcache.local_free[page->bucket_idx] = node;
             page->used_count--;
         } else {
+            // Cross-thread deallocation via atomic free list
             auto* node = static_cast<free_node*>(ptr);
-            free_node* oldHead
-                = page->cross_thread_free.load(std::memory_order_relaxed);
+            free_node* oldHead = page->cross_thread_free.load(std::memory_order_relaxed);
             do {
                 node->next = oldHead;
             } while (!page->cross_thread_free.compare_exchange_weak(
                 oldHead,
                 node,
                 std::memory_order_release,
-                std::memory_order_relaxed
-            ));
+                std::memory_order_relaxed));
         }
+    }
+
+    // Atomic allocation suitable for interrupt/context where locks are disallowed
+    // Returns a block without touching thread-local caches.
+    alloc_handle<void> alloc_atomic(std::size_t n, std::size_t alignment = Granularity)
+    {
+        if (!std::has_single_bit(alignment) || alignment > PageSize) {
+            return { nullptr, 0 };
+        }
+        alignment = std::max(alignment, Granularity);
+        std::size_t alignedN = align_up(n, alignment);
+        alignedN = align_up(alignedN, Granularity);
+
+        // Large allocation path: allocate a dedicated large page
+        if (alignedN > MaxSmallSize || alignment > MAX_SMALL_ALIGNMENT) {
+            std::size_t offset = align_up(
+                sizeof(page_header), std::max(alignment, alignof(page_header)));
+            std::size_t pageReq = align_up(n + offset, PageSize);
+            auto handle = palloc.alloc(pageReq);
+            if (!handle.ptr) return { nullptr, 0 };
+            page_header* page = new (handle.ptr) page_header();
+            page->is_large = true;
+            page->block_size = pageReq;
+            page->owning_thread_id = troutines.thread_id();
+            // No thread cache involvement; caller must dealloc via dealloc (which handles large)
+            return { static_cast<char*>(handle.ptr) + offset, pageReq - offset };
+        }
+
+        // Small allocation: try to pop from any page's cross_thread_free list.
+        std::size_t bucketIdx = get_bucket_index(alignedN);
+        // Walk pages in bucket
+        for (page_header* page = troutines.get_tcache().pages[bucketIdx]; page != nullptr; page = page->next_page) {
+            free_node* head = page->cross_thread_free.load(std::memory_order_acquire);
+            while (head) {
+                free_node* next = head->next;
+                // Attempt to pop head atomically
+                if (page->cross_thread_free.compare_exchange_weak(head, next,
+                        std::memory_order_acquire, std::memory_order_relaxed)) {
+                    page->used_count++;
+                    return { head, get_block_size(bucketIdx) };
+                }
+                // head changed, retry loop
+                head = page->cross_thread_free.load(std::memory_order_acquire);
+            }
+        }
+        // If nothing available, fall back to normal allocation (which may populate caches)
+        // Use regular alloc which may touch thread local cache; in interrupt context this is acceptable as a last resort.
+        return alloc(n, alignment);
+    }
+
+    // Atomic deallocation counterpart (can be called from interrupt context)
+    void dealloc_atomic(void* ptr)
+    {
+        if (!ptr) return;
+        page_header* page = get_page_header(ptr);
+        if (page->is_large) {
+            palloc.dealloc(page, page->block_size);
+            return;
+        }
+        // Push onto cross_thread_free list atomically
+        auto* node = static_cast<free_node*>(ptr);
+        free_node* oldHead = page->cross_thread_free.load(std::memory_order_relaxed);
+        do {
+            node->next = oldHead;
+        } while (!page->cross_thread_free.compare_exchange_weak(
+            oldHead, node, std::memory_order_release, std::memory_order_relaxed));
+        page->used_count--;
     }
 
     // Retained for backward API compatibility

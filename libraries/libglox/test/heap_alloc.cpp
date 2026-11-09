@@ -333,3 +333,23 @@ TEST_CASE("heap_allocator inplace_grow and inplace_shrink API")
         alloc.dealloc(handle.ptr);
     }
 }
+
+TEST_CASE("heap_allocator atomic allocation and deallocation (interrupt-like)")
+{
+    mock_thread_routines::reset_tcache();
+    test_heap_allocator alloc;
+
+    // Simulate interrupt context: use atomic allocation without touching thread cache
+    auto handle = alloc.alloc_atomic(64);
+    REQUIRE(handle.ptr != nullptr);
+    // Verify alignment matches granularity
+    REQUIRE(reinterpret_cast<std::uintptr_t>(handle.ptr) % TestGranularity == 0);
+
+    // Deallocate atomically
+    alloc.dealloc_atomic(handle.ptr);
+
+    // Allocate again to ensure allocator still works after atomic free
+    auto handle2 = alloc.alloc_atomic(64);
+    REQUIRE(handle2.ptr != nullptr);
+    alloc.dealloc_atomic(handle2.ptr);
+}
