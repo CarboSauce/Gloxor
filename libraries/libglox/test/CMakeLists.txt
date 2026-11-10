@@ -20,6 +20,7 @@ add_executable(tests
     deque.cpp
     path.cpp
     cstring.cpp
+    mutex.cpp
 )
 
 add_executable(benchmarks
