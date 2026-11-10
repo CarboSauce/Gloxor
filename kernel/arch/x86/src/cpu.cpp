@@ -8,7 +8,6 @@ import gloxor.types;
 import std.compat;
 import arch_asm.msr;
 
-#include "asm/asmstubs.hpp"
 #include "cpuid.h"
 #include "gloxor/test.hpp"
 
@@ -71,7 +70,7 @@ static void gp_fault(InterruptFrame* frame, size_t /* errc */)
 [[gnu::interrupt]]
 static void page_fault(InterruptFrame*, size_t /* errc */)
 {
-    void* errorAdr = (void*)readCr(2);
+    void* errorAdr = (void*)read_cr2();
     gx::log_fatal("Page Fault at address: %\r\n", errorAdr);
     if (errorAdr < (u8*)0x1000) {
         gx::log_fatal("Null pointer access\r\n");
@@ -188,18 +187,18 @@ inline void initialize_cpu_extensions()
     bool isOSXsaveEnabled = 0;
     if (edx & (1 << 25)) {
         u64 control;
-        control = readCr(0);
+        control = read_cr0();
         control &= ~(1 << 2);
         control |= 1 << 1;
-        writeCr(0, control);
-        control = readCr(4);
+        write_cr0(control);
+        control = read_cr4();
         control |= (1 << 9 | 1 << 10);
         cpuFeatures |= 1;
         if (ecx & (1 << 26)) {
             control |= 1 << 18;
             isOSXsaveEnabled = true;
         }
-        writeCr(4, control);
+        write_cr4(control);
     }
 
     if ((ecx & (1 << 28)) && isOSXsaveEnabled) {

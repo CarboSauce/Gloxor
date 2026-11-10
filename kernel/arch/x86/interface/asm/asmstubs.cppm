@@ -1,5 +1,7 @@
 export module arch_asm.asmstubs;
 import std.compat;
+import gloxor.types;
+import glox;
 
 #include "cpuid.h"
 
@@ -71,10 +73,62 @@ inline void set_status_flags(statusFlags::Eflags flags)
     __asm__ volatile("push %0;popf" : : "rm"(flags) : "memory", "cc");
 }
 
+inline u64 read_cr0()
+{
+    u64 val;
+    asm("mov %%cr0, %0" : "=r"(val));
+    return val;
+}
+inline u64 read_cr2()
+{
+    u64 val;
+    asm("mov %%cr2, %0" : "=r"(val));
+    return val;
+}
+inline u64 read_cr3()
+{
+    u64 val;
+    asm("mov %%cr3, %0" : "=r"(val));
+    return val;
+}
+inline u64 read_cr4()
+{
+    u64 val;
+    asm("mov %%cr4, %0" : "=r"(val));
+    return val;
+}
+inline u64 read_cr8()
+{
+    u64 val;
+    asm("mov %%cr8, %0" : "=r"(val));
+    return val;
+}
+inline void write_cr0(u64 val)
+{
+    asm("mov %0, %%cr0" ::"r"(val));
+}
+inline void write_cr2(u64 val)
+{
+    asm("mov %0, %%cr2" ::"r"(val));
+}
+inline void write_cr3(u64 val)
+{
+    asm("mov %0, %%cr3" ::"r"(val));
+}
+inline void write_cr4(u64 val)
+{
+    asm("mov %0, %%cr4" ::"r"(val));
+}
+inline void write_cr8(u64 val)
+{
+    asm("mov %0, %%cr8" ::"r"(val));
+}
+
 /**
  * @brief Returns EDX:EAX from xgetbv instruction
  *
- * @param ecx XCR branch to read from, only 0 and 1 supported rest are reserved
+ * @param ecx XCR branch to read from, only 0 and 1 supported rest are
+ * reserved
  * @return gx::pair<uint32_t,uint32_t>
  */
 inline RegisterPair xgetbv(size_t ecx)

@@ -1,5 +1,7 @@
 module;
 
+#include <limits.h>
+
 export module glox;
 
 import std;
@@ -13,8 +15,8 @@ import std.compat;
 
 // clang-format off
 #include "glox/util.hpp"
-#include "glox/utilalgs.hpp"
 #include "glox/detail/moveutils.hpp"
+#include "glox/utilalgs.hpp"
 #include "glox/detail/memory.hpp"
 #include "glox/hash.hpp"
 #include "glox/detail/movesem.hpp"
@@ -46,3 +48,4 @@ import std.compat;
 #include "glox/hash_map.hpp"
 #include "glox/heap_alloc.hpp"
 #include "glox/deque.hpp"
+#include "glox/path.hpp"
