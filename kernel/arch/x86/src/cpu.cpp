@@ -123,7 +123,7 @@ void initialize_cpu()
     if (setup_pat())
         gx::log_debug("PAT supported on boot cpu\r\n");
 
-    gx::log_debug("Cpu features:\r\n", cpuFeatures);
+    gx::log_debug("Cpu features: %\r\n", cpuFeatures);
 }
 
 } // namespace arch

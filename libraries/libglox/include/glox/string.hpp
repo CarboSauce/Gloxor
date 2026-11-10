@@ -1,10 +1,10 @@
 #pragma once
-#include <limits.h>
 #ifndef USE_MODULES
 #include "detail/moveutils.hpp"
 #include "glox/alloc.hpp"
 #include "glox/string.h"
 #include "glox/types.hpp"
+#include <limits.h>
 #include <string_view>
 #endif
 
@@ -654,6 +654,33 @@ public:
     [[nodiscard]] constexpr glox::string<Allocator> to_string() const
     {
         return glox::string<Allocator>(view());
+    }
+};
+
+template <size_t N>
+struct comptime_string
+{
+    char buf[N];
+    consteval comptime_string() = default;
+    consteval comptime_string(const char (&str)[N])
+    {
+        for (size_t i = 0; i != N; ++i) {
+            buf[i] = str[i];
+        }
+    }
+    consteval auto data() const
+    {
+        return buf;
+    }
+
+    consteval size_t size() const
+    {
+        return N - 1;
+    }
+
+    constexpr std::string_view view() const
+    {
+        return { buf, N - 1 };
     }
 };
 

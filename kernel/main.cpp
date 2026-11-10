@@ -82,7 +82,7 @@ inline void map_region(
 inline void map_kernel()
 {
     size_t size = (kernelFileEnd - kernelFileBegin);
-    gx::logln_debug("kernelPhysOffset: ", kernelPhysOffset);
+    gx::logln_debug("kernelPhysOffset: %", kernelPhysOffset);
     for (size_t i = 0; i < size; i += pageSize) {
         kAddrSpace.map(
             (vaddr)kernelFileBegin + i,
@@ -174,7 +174,7 @@ static bool gogole_test()
     __get_cpuid(0x80000002, brand + 0x0, brand + 0x1, brand + 0x2, brand + 0x3);
     __get_cpuid(0x80000003, brand + 0x4, brand + 0x5, brand + 0x6, brand + 0x7);
     __get_cpuid(0x80000004, brand + 0x8, brand + 0x9, brand + 0xa, brand + 0xb);
-    gx::println(std::string_view { (const char*)brand, 12 });
+    gx::println("%", std::string_view { (const char*)brand, 12 });
     return true;
 }
 

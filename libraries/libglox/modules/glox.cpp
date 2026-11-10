@@ -14,6 +14,7 @@ import std.compat;
 #define GLOX_COMPILING_MODULE
 
 // clang-format off
+#include "glox/macros.hpp"
 #include "glox/util.hpp"
 #include "glox/detail/moveutils.hpp"
 #include "glox/utilalgs.hpp"

@@ -1,6 +1,8 @@
 #pragma once
+#include <type_traits>
 #ifndef USE_MODULES
 #include "glox/array.hpp"
+#include "glox/macros.hpp"
 #include "glox/math.hpp"
 #include "glox/string.hpp"
 #include "glox/types.hpp"
@@ -178,8 +180,11 @@ template <typename T>
     requires std::is_pointer_v<T>
 struct formatter<T>
 {
-    void
-    format(formattable_to<char> auto& buffer, format_options opts, void* value)
+    void format(
+        formattable_to<char> auto& buffer,
+        format_options opts,
+        void* value
+    )
     {
         opts = opts == format_options::def ? format_options::hex : opts;
         return glox::formatter<uintptr_t> { }.format(
@@ -188,9 +193,71 @@ struct formatter<T>
     }
 };
 
+namespace detail {
+    template <typename... Args>
+    struct format_string
+    {
+        std::string_view view;
+        using type = format_string;
+        template <size_t N>
+        GLOX_ALWAYS_INLINE consteval format_string(const char (&str)[N])
+            : view { str, N - 1 }
+        {
+            validate_fmt();
+        }
+        GLOX_ALWAYS_INLINE consteval format_string(std::string_view str)
+            : view(str)
+        {
+            validate_fmt();
+        }
+
+        GLOX_ALWAYS_INLINE consteval void validate_fmt()
+        {
+            constexpr auto argCount = sizeof...(Args);
+            std::size_t count = 0;
+
+            for (std::size_t i = 0; i < view.size(); ++i) {
+                if (view[i] != '%')
+                    continue;
+
+                ++count;
+
+                if (i + 1 == view.size())
+                    continue;
+
+                switch (view[i + 1]) {
+                case 's':
+                case 'd':
+                case 'b':
+                case 'x':
+                    ++i;
+                    break;
+
+                default:
+                    break;
+                }
+            }
+
+            if (count != argCount)
+                not_enough_arguments();
+        }
+
+        void not_enough_arguments();
+    };
+} // namespace detail
+
+template <typename... T>
+using format_string = detail::format_string<T...>::type;
+
 template <formattable_to<char> Buffer, typename... Args>
-constexpr auto format_to(Buffer& buffer, std::string_view templ, Args&&... args)
+constexpr auto format_to(
+    Buffer& buffer,
+    format_string<Args...> fmt,
+    Args&&... args
+)
 {
+    const auto templ = fmt.view;
+
     auto beg = templ.begin();
     const auto end = templ.end();
 

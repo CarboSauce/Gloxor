@@ -57,12 +57,12 @@ inline gx::BufferStream logStream;
 inline LogLevel LogLevelCap = LogLevel(LOG_LEVEL);
 
 template <typename... Args>
-void print(std::string_view fmt, Args&&... args)
+void print(glox::format_string<Args...> fmt, Args&&... args)
 {
     glox::format_to(logStream, fmt, FORWARD(args)...);
 }
 template <typename... Args>
-void println(std::string_view fmt, Args&&... args)
+void println(glox::format_string<Args...> fmt, Args&&... args)
 {
     glox::format_to(logStream, fmt, FORWARD(args)...);
     logStream.write('\r');
@@ -70,13 +70,13 @@ void println(std::string_view fmt, Args&&... args)
     logStream.flush();
 }
 template <typename... Args>
-void log(LogLevel lvl, std::string_view fmt, Args&&... args)
+void log(LogLevel lvl, glox::format_string<Args...> fmt, Args&&... args)
 {
     if (lvl < LogLevelCap)
         glox::format_to(logStream, fmt, FORWARD(args)...);
 }
 template <typename... Args>
-void logln(LogLevel lvl, std::string_view fmt, Args&&... args)
+void logln(LogLevel lvl, glox::format_string<Args...> fmt, Args&&... args)
 {
     if (lvl < LogLevelCap) {
         glox::format_to(logStream, fmt, FORWARD(args)...);
@@ -86,26 +86,26 @@ void logln(LogLevel lvl, std::string_view fmt, Args&&... args)
     }
 }
 template <typename... Args>
-void log_fatal(std::string_view fmt, Args&&... args)
+void log_fatal(glox::format_string<Args...> fmt, Args&&... args)
 {
     if (LogLevel::fatal < LogLevelCap)
         glox::format_to(logStream, fmt, FORWARD(args)...);
 }
 template <typename... Args>
-void log_trace(std::string_view fmt, Args&&... args)
+void log_trace(glox::format_string<Args...> fmt, Args&&... args)
 {
     if (LogLevel::trace < LogLevelCap) {
         glox::format_to(logStream, fmt, FORWARD(args)...);
     }
 }
 template <typename... Args>
-void log_debug(std::string_view fmt, Args&&... args)
+void log_debug(glox::format_string<Args...> fmt, Args&&... args)
 {
     if (LogLevel::debug < LogLevelCap)
         glox::format_to(logStream, fmt, FORWARD(args)...);
 }
 template <typename... Args>
-void logln_fatal(std::string_view fmt, Args&&... args)
+void logln_fatal(glox::format_string<Args...> fmt, Args&&... args)
 {
     if (LogLevel::fatal < LogLevelCap) {
         glox::format_to(logStream, fmt, FORWARD(args)...);
@@ -115,7 +115,7 @@ void logln_fatal(std::string_view fmt, Args&&... args)
     }
 }
 template <typename... Args>
-void logln_trace(std::string_view fmt, Args&&... args)
+void logln_trace(glox::format_string<Args...> fmt, Args&&... args)
 {
     if (LogLevel::trace < LogLevelCap) {
         glox::format_to(logStream, fmt, FORWARD(args)...);
@@ -125,7 +125,7 @@ void logln_trace(std::string_view fmt, Args&&... args)
     }
 }
 template <typename... Args>
-void logln_debug(std::string_view fmt, Args&&... args)
+void logln_debug(glox::format_string<Args...> fmt, Args&&... args)
 {
     if (LogLevel::debug < LogLevelCap) {
         glox::format_to(logStream, fmt, FORWARD(args)...);
