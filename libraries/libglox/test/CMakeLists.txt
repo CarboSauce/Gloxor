@@ -21,6 +21,7 @@ add_executable(tests
     path.cpp
     cstring.cpp
     mutex.cpp
+    circular_buffer.cpp
 )
 
 add_executable(benchmarks
