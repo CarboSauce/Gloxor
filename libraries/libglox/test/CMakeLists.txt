@@ -22,6 +22,7 @@ add_executable(tests
     cstring.cpp
     mutex.cpp
     circular_buffer.cpp
+    initgraph.cpp
 )
 
 add_executable(benchmarks
@@ -38,7 +39,7 @@ target_compile_features(benchmarks
 
 target_compile_features(doctest INTERFACE cxx_std_20)
 target_compile_features(doctest_with_main INTERFACE cxx_std_20)
-target_compile_features(benchmark INTERFACE cxx_std_20)
+target_compile_features(benchmark PUBLIC cxx_std_23)
 
 target_link_libraries(tests PRIVATE libglox doctest::doctest doctest_with_main
     $<$<BOOL:${LIBGLOX_SANITIZE}>:-fsanitize=address,undefined>

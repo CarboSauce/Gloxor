@@ -27,6 +27,8 @@ struct list_node
         list_node* const p = prev;
         p->next = n;
         n->prev = p;
+        next = this;
+        prev = this;
     }
     void insert(list_node* new_current)
     {
@@ -215,8 +217,10 @@ public:
     }
     iterator erase(iterator iter)
     {
+        auto nextIt = iter.next();
         iter.it->remove();
-        return iter;
+        --list_size;
+        return nextIt;
     }
     void clear()
     {

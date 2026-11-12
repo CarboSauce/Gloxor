@@ -9,8 +9,12 @@ import arch_asm.e9;
 namespace glox {
 extern "C++" void exec_assert(const char* message, std::source_location loc)
 {
-    gx::outStream, "Assertion failed: \r\n (", message, ")\r\n ", loc.file_name(),
-        ":", loc.line(), '\r\n';
+    gx::println(
+        "Assertion failed: \r\n (%)\r\n %:%\r\n",
+        message,
+        loc.file_name(),
+        loc.line()
+    );
     gx::kernel_panic();
 }
 } // namespace glox
@@ -23,13 +27,5 @@ size_t BufferStream::flush()
     i = 0;
     return tmp;
 }
-void write(gx::LogStream& out, const char* str, size_t s)
-{
-    gx::term::write_str(str, s);
-    print_e9(str, s);
-    (void)out;
-}
-
-LogStream outStream;
 
 } // namespace gx

@@ -3,7 +3,7 @@ import arch;
 import gloxor.system.logging;
 static inline void draw_panic()
 {
-    gx::outStream, "\r\nKernel Panic moment";
+    gx::println("Kernel panic");
 }
 
 extern "C" void abort()

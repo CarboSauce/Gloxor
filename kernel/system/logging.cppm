@@ -5,19 +5,6 @@ import std.compat;
 #include "glox/macros.hpp"
 
 export namespace gx {
-class LogStream : ::glox::b_stream
-{
-
-public:
-    char buffer[512];
-    uint32_t curLogLevel;
-    template <typename... args>
-    void operator()(args... Args)
-    {
-        ((void)(*this, Args), ...);
-    }
-};
-
 class BufferStream
 {
     int i = 0;
@@ -50,9 +37,6 @@ enum class LogLevel
     debug,
 };
 
-void write(LogStream&, const char* str, size_t s);
-
-extern gx::LogStream outStream;
 inline gx::BufferStream logStream;
 inline LogLevel LogLevelCap = LogLevel(LOG_LEVEL);
 
@@ -138,4 +122,3 @@ void logln_debug(glox::format_string<Args...> fmt, Args&&... args)
 
 using gx::LogLevel;
 using gx::logStream;
-using gx::outStream;

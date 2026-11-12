@@ -14,6 +14,7 @@ import std;
 import glox;
 #endif
 #include "doctest.h"
+#include <stdlib.h>
 
 namespace {
 
@@ -48,8 +49,11 @@ struct mock_page_allocator
         free(ptr);
     }
 
-    glox::alloc_handle<void>
-    grow(void* ptr, std::size_t old_n, std::size_t new_n)
+    glox::alloc_handle<void> grow(
+        void* ptr,
+        std::size_t old_n,
+        std::size_t new_n
+    )
     {
         if (simulate_failure)
             return { nullptr, 0 };
@@ -62,8 +66,11 @@ struct mock_page_allocator
         return handle;
     }
 
-    glox::alloc_handle<void>
-    shrink(void* ptr, std::size_t old_n, std::size_t new_n)
+    glox::alloc_handle<void> shrink(
+        void* ptr,
+        std::size_t old_n,
+        std::size_t new_n
+    )
     {
         return grow(ptr, old_n, new_n);
     }
@@ -339,11 +346,14 @@ TEST_CASE("heap_allocator atomic allocation and deallocation (interrupt-like)")
     mock_thread_routines::reset_tcache();
     test_heap_allocator alloc;
 
-    // Simulate interrupt context: use atomic allocation without touching thread cache
+    // Simulate interrupt context: use atomic allocation without touching thread
+    // cache
     auto handle = alloc.alloc_atomic(64);
     REQUIRE(handle.ptr != nullptr);
     // Verify alignment matches granularity
-    REQUIRE(reinterpret_cast<std::uintptr_t>(handle.ptr) % TestGranularity == 0);
+    REQUIRE(
+        reinterpret_cast<std::uintptr_t>(handle.ptr) % TestGranularity == 0
+    );
 
     // Deallocate atomically
     alloc.dealloc_atomic(handle.ptr);
