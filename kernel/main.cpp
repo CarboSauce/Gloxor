@@ -55,8 +55,6 @@ extern "C" void call_global_ctors()
     call_ctor_pointers(_ctorArrayStart, _ctorArrayEnd);
 }
 
-// extern void sleep(u64 ticks, u64 ms);
-// extern u64 getTicks();
 inline void map_region(
     vaddr from,
     vaddr to,
@@ -124,23 +122,9 @@ void init_addr_space()
         PageCaching::writeCombine
     );
     map_kernel();
-    gx::logln_debug(
-        "Trying translation code, from : % to %x",
-        fbeg,
-        kAddrSpace.translate((u64)fbeg)
-    );
-    gx::logln_debug(
-        "Trying translation code, from : % to %x",
-        (u8*)physicalMemBase + 0x200'000,
-        kAddrSpace.translate(physicalMemBase + 0x200'000)
-    );
-    // lets goo
 }
 extern "C" void gloxor_main()
 {
-    auto fbrange = gx::term::get_used_memory_range();
-    gx::logln_debug("Con begin: %", fbrange.begin());
-    gx::logln_debug("Con end: %", fbrange.end());
     call_pre_cpu_inits();
     initialize_cpu();
     init_addr_space();
