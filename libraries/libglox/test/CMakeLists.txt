@@ -23,6 +23,7 @@ add_executable(tests
     mutex.cpp
     circular_buffer.cpp
     initgraph.cpp
+    function.cpp
 )
 
 add_executable(benchmarks

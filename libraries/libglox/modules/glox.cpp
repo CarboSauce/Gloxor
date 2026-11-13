@@ -51,3 +51,4 @@ import std.compat;
 #include "glox/path.hpp"
 #include "glox/initgraph.hpp"
 #include "glox/circular_buffer.hpp"
+#include "glox/function.hpp"
