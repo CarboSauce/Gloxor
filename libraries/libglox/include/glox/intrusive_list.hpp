@@ -135,7 +135,7 @@ public:
     using const_iterator = iter_base<true>;
     friend iterator;
 
-    intrusive_list()
+    constexpr intrusive_list()
         : sentinel { }
         , list_size(0)
     {

@@ -1,5 +1,6 @@
 export module arch_asm.pic8042contr;
 import gloxor.types;
+import glox;
 
 export namespace gx {
 constexpr auto PIC1 = 0x20; /* IO base address for master PIC */
@@ -19,6 +20,9 @@ constexpr auto ICW4_BUF_SLAVE = 0x08; /* Buffered mode/slave */
 constexpr auto ICW4_BUF_MASTER = 0x0C; /* Buffered mode/master */
 constexpr auto ICW4_SFNM = 0x10; /* Special fully nested (not) */
 constexpr auto PIC_EOI = 0x20; /* End-of-interrupt ccommand code */
+
+glox::initgraph::stage* pic_init_stage();
+
 struct PicContext
 {
     u8 masterMask;

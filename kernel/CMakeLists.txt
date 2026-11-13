@@ -33,6 +33,7 @@ target_sources(kernel
         gloxor/kinfo.cppm
         gloxor/graphics.cppm
         gloxor/gloxor.cppm
+        gloxor/initgraph.cppm
 )
 
 add_subdirectory(arch)

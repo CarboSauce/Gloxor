@@ -1,8 +1,8 @@
 module arch_asm.pic8042contr;
 import gloxor.system;
 import arch_asm.asmstubs;
+import gloxor.initgraph;
 
-#include "gloxor/modules.hpp"
 #include "system/logging.hpp"
 
 using namespace gx;
@@ -70,4 +70,21 @@ static void init_pic()
     outb(PIC2_DATA, 0xFF);
 }
 
-initDriverCentralModule(init_pic);
+namespace gx {
+glox::initgraph::stage* pic_init_stage()
+{
+    static glox::initgraph::stage st {
+        &gx::postCpuInit,
+        "pic8042_controller.init",
+    };
+
+    return &st;
+}
+} // namespace gx
+
+glox::initgraph::task pic8042Task {
+    &gx::postCpuInit,
+    "pic8042_controller",
+    glox::initgraph::entail { pic_init_stage() },
+    init_pic,
+};

@@ -1,12 +1,12 @@
 #pragma once
 
 #ifndef USE_MODULES
-#include "array.hpp"
 #include "assert.hpp"
 #include "detail/moveutils.hpp"
 #include "intrusive_list.hpp"
 #include "macros.hpp"
 #include "metaprog.hpp"
+#include <array> // used for 0 size support
 #include <cstddef>
 #include <type_traits>
 #endif
@@ -133,8 +133,8 @@ struct engine
 {
     [[no_unique_address]] Policy policy { };
 
-    engine() = default;
-    explicit engine(Policy p)
+    constexpr engine() = default;
+    constexpr explicit engine(Policy p)
         : policy(RVALUE(p))
     {
     }
@@ -244,7 +244,7 @@ struct require
     {
     }
 
-    glox::array<node*, N> nodes;
+    std::array<node*, N> nodes;
 };
 
 template <typename... Args>
@@ -260,7 +260,7 @@ struct entail
     {
     }
 
-    glox::array<node*, N> nodes;
+    std::array<node*, N> nodes;
 };
 
 template <typename... Args>
@@ -313,9 +313,9 @@ private:
     }
 
     template <typename Engine, std::size_t... Is>
-    glox::array<edge, NR> make_edges_to(
+    std::array<edge, NR> make_edges_to(
         Engine* eng,
-        const glox::array<node*, NR>& arr,
+        const std::array<node*, NR>& arr,
         glox::index_sequence<Is...>
     )
     {
@@ -323,9 +323,9 @@ private:
     }
 
     template <typename Engine, std::size_t... Is>
-    glox::array<edge, NE> make_edges_from(
+    std::array<edge, NE> make_edges_from(
         Engine* eng,
-        const glox::array<node*, NE>& arr,
+        const std::array<node*, NE>& arr,
         glox::index_sequence<Is...>
     )
     {
@@ -333,8 +333,8 @@ private:
     }
 
     F invocable_;
-    glox::array<edge, NR> r_edges_;
-    glox::array<edge, NE> e_edges_;
+    std::array<edge, NR> r_edges_;
+    std::array<edge, NE> e_edges_;
 };
 
 template <typename Engine, typename F>

@@ -1,8 +1,9 @@
 import arch_asm;
 import gloxor.system;
 import std.compat;
+import gloxor.initgraph;
+import glox;
 #include "glox/assert.hpp"
-#include "gloxor/modules.hpp"
 #include "system/logging.hpp"
 
 [[gnu::interrupt]] static void kbd_handler(InterruptFrame* frame)
@@ -25,4 +26,11 @@ static void init_keyboard()
     gx::pic::set_master_mask(0b11111101);
 }
 
-initDriverModule(init_keyboard);
+glox::initgraph::task ps2KeyboardTask {
+    &gx::postCpuInit,
+    "ps2_keyboard",
+    glox::initgraph::require {
+        gx::pic_init_stage(),
+    },
+    init_keyboard,
+};

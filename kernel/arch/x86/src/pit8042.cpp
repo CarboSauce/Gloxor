@@ -2,10 +2,10 @@ module arch_asm.pit8042;
 import gloxor.system;
 import arch_asm.asmstubs;
 import arch_asm.idt;
+import gloxor.initgraph;
 import arch_asm.pic8042contr;
 import std.compat;
 
-#include "gloxor/modules.hpp"
 #include "system/logging.hpp"
 
 static u64 tick = 0;
@@ -58,4 +58,11 @@ void sleep(u64 curTicks, u64 ms)
         asm("hlt");
 }
 
-initDriverModule(init_timer);
+glox::initgraph::task pitTimerTask {
+    &gx::postCpuInit,
+    "pit_timer",
+    glox::initgraph::require {
+        gx::pic_init_stage(),
+    },
+    init_timer,
+};

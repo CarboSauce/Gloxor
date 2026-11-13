@@ -1,5 +1,6 @@
 import std;
 import glox;
+import gloxor.initgraph;
 import gloxor.system;
 import gloxor.memory;
 import gloxor.types;
@@ -21,35 +22,17 @@ using namespace gx;
 using namespace arch::vmem;
 extern ctor_t _ctorArrayStart[];
 extern ctor_t _ctorArrayEnd[];
-extern ctor_t _modulePreCpuBegin[];
-extern ctor_t _moduleDriverBegin[];
-extern ctor_t _moduleDriverEnd[];
 extern gx::Ktest _moduleTesting[];
 extern gx::Ktest _moduleTestingEnd[];
 
-extern "C" void call_ctor_pointers(ctor_t* begin, ctor_t* end)
+void call_ctor_pointers(ctor_t* begin, ctor_t* end)
 {
     for (auto it = begin; it != end; ++it) {
         (*it)();
     }
 }
 
-extern "C" void call_pre_cpu_inits()
-{
-    gx::logln_debug("Pre Cpu Init:");
-    call_ctor_pointers(_modulePreCpuBegin, _moduleDriverBegin);
-}
-
-extern "C" void call_driver_inits()
-{
-    gx::logln_debug("Driver Init:");
-    call_ctor_pointers(_moduleDriverBegin, _moduleDriverEnd);
-    // We assume that Drivers havent enabled interrupts hopefully
-    gx::logln_debug("Starting Interrupts after driver initialization\r\n");
-    arch::start_irq();
-}
-
-extern "C" void call_global_ctors()
+void call_global_ctors()
 {
     gx::logln_debug("Global ctors :");
     call_ctor_pointers(_ctorArrayStart, _ctorArrayEnd);
@@ -125,11 +108,12 @@ void init_addr_space()
 }
 extern "C" void gloxor_main()
 {
-    call_pre_cpu_inits();
+    (void)gx::preCpuInit.run();
     initialize_cpu();
     init_addr_space();
-    call_driver_inits();
     call_global_ctors();
+    (void)gx::postCpuInit.run();
+
 #ifdef GLOXTESTING
     gx::println(
         "Unit tests:\r\nThere are % tests", _moduleTestingEnd - _moduleTesting
