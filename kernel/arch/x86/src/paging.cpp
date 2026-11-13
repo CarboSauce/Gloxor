@@ -20,8 +20,10 @@ using namespace x86::vmem;
 using namespace gx;
 
 template <size_t I>
-glox::pair<const PageTable<I - 1>*, bool>
-translate_single_entry(const PageTable<I>& ctx, vaddr from)
+glox::pair<const PageTable<I - 1>*, bool> translate_single_entry(
+    const PageTable<I>& ctx,
+    vaddr from
+)
 {
     auto entry = ctx.entry(from);
     if (!(entry.entry & present))
@@ -47,9 +49,11 @@ bool map_huge_page(vmemCtxT context, vaddr from, vaddr to, u64 mask)
 {
     auto* ctx = (PageTable<4>*)context;
     auto& e4 = ctx->entry(from);
-    GLOX_ASSERT(alloc_page_if_needed(e4.entry, mask));
+    auto res = alloc_page_if_needed(e4.entry, mask);
+    GLOX_ASSERT(res);
     auto& e3 = e4.vaddr()->entry(from);
-    GLOX_ASSERT(alloc_page_if_needed(e3.entry, mask));
+    res = alloc_page_if_needed(e3.entry, mask);
+    GLOX_ASSERT(res);
     e3.vaddr()->entry(from).entry = mask_entry(to & ~0x100000, mask | granul);
     return true;
 }
@@ -58,11 +62,14 @@ bool map(vmemCtxT context, vaddr from, vaddr to, u64 mask)
 {
     auto* ctx = (PageTable<4>*)context;
     auto& e4 = ctx->entry(from);
-    GLOX_ASSERT(alloc_page_if_needed(e4.entry, mask));
+    auto res = alloc_page_if_needed(e4.entry, mask);
+    GLOX_ASSERT(res);
     auto& e3 = e4.vaddr()->entry(from);
-    GLOX_ASSERT(alloc_page_if_needed(e3.entry, mask));
+    res = alloc_page_if_needed(e3.entry, mask);
+    GLOX_ASSERT(res);
     auto& e2 = e3.vaddr()->entry(from);
-    GLOX_ASSERT(alloc_page_if_needed(e2.entry, mask));
+    res = alloc_page_if_needed(e2.entry, mask);
+    GLOX_ASSERT(res);
     e2.vaddr()->entry(from).entry = mask_entry(get_physical(to), mask);
     return true;
 }
