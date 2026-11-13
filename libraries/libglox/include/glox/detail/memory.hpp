@@ -13,9 +13,20 @@
 #endif
 
 namespace glox {
-GLOX_EXPORT struct in_place_t
-{ };
-GLOX_EXPORT inline constexpr auto in_place = in_place_t { };
+GLOX_BEGIN_EXPORT
+struct in_place_t
+{
+    explicit in_place_t() = default;
+};
+inline constexpr auto in_place = in_place_t { };
+template <typename T>
+struct in_place_type_t
+{
+    explicit in_place_type_t() = default;
+};
+template <typename T>
+constexpr in_place_type_t<T> in_place_type { };
+GLOX_END_EXPORT
 } // namespace glox
 
 #endif
