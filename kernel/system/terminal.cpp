@@ -56,6 +56,10 @@ void write_str(const char* str, size_t size)
 {
     flanterm_write(flantermContext, str, size);
 }
+void write_str(std::string_view str)
+{
+    flanterm_write(flantermContext, str.data(), str.length());
+}
 void clear_screen(color_t)
 {
     flanterm_write(flantermContext, "\e[2J", 4);

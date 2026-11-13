@@ -14,7 +14,6 @@ import std.compat;
 #include "cpuid.h"
 #include "glox/assert.hpp"
 #include "gloxor/test.hpp"
-#include "system/logging.hpp"
 
 using ctor_t = void (*)();
 using namespace arch;
@@ -120,14 +119,15 @@ extern "C" void gloxor_main()
     );
     for (auto it = _moduleTesting; it != _moduleTestingEnd; ++it) {
         gx::println("Test case %", it->name);
+        using namespace std::string_view_literals;
         if (it->init()) {
-            gx::print("\e[0;32m");
+            gx::term::write_str("\e[0;32m"sv);
             gx::print("Test passed\r\n");
         } else {
-            gx::print("\e[0;31m");
+            gx::term::write_str("\e[0;31m"sv);
             gx::print("Test failed\r\n");
         }
-        gx::print("\e[0;37m");
+        gx::term::write_str("\e[0;37m"sv);
     }
 #endif
     gx::print("Initialization Completed.\r\n");

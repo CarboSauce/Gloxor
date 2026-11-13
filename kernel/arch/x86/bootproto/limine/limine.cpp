@@ -7,7 +7,6 @@ import std.compat;
 
 #include "limine.h"
 #include "glox/assert.hpp"
-#include "system/logging.hpp"
 
 extern "C" void limine_main();
 extern "C" void gloxor_main();

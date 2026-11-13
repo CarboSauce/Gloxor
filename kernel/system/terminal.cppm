@@ -10,6 +10,7 @@ import gloxor.kinfo;
 export namespace gx::term {
 void init_term(const gx::BootInfo::FbInfo& fb);
 void write_str(const char* str, size_t size);
+void write_str(std::string_view str);
 inline void write_str(const char* str)
 {
     write_str(str, glox::strlen(str));

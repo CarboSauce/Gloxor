@@ -1,5 +1,4 @@
 #pragma once
-#include "system/logging.hpp"
 #ifdef GLOXTESTING
 #define TEST
 #endif

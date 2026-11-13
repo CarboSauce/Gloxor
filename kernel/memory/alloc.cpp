@@ -9,7 +9,6 @@ import std;
 import std.compat;
 
 #include "glox/assert.hpp"
-#include "system/logging.hpp"
 
 /*
     Allocator idea is pretty simple, its similar in idea to slab

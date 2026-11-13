@@ -3,8 +3,6 @@ import gloxor.system;
 import arch_asm.asmstubs;
 import gloxor.initgraph;
 
-#include "system/logging.hpp"
-
 using namespace gx;
 // everything is masked on startup
 static gx::PicContext picCtx { 0xFF, 0xFF };

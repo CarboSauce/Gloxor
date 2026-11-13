@@ -6,8 +6,6 @@ import gloxor.initgraph;
 import arch_asm.pic8042contr;
 import std.compat;
 
-#include "system/logging.hpp"
-
 static u64 tick = 0;
 using namespace gx::pit;
 

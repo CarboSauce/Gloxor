@@ -4,7 +4,6 @@ import std.compat;
 import gloxor.initgraph;
 import glox;
 #include "glox/assert.hpp"
-#include "system/logging.hpp"
 
 [[gnu::interrupt]] static void kbd_handler(InterruptFrame* frame)
 {

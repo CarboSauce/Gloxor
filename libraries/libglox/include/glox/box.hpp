@@ -1,10 +1,10 @@
 #pragma once
-#include <type_traits>
 #ifndef USE_MODULES
 #include "alloc.hpp"
 #include "detail/memory.hpp"
 #include "detail/moveutils.hpp"
 #include "option.hpp"
+#include <type_traits>
 #endif
 
 #include "assert.hpp"
