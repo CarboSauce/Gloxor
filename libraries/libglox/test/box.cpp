@@ -5,6 +5,7 @@ import std;
 import glox;
 #endif
 #include "doctest.h"
+#include "glox/macros.hpp"
 #include "utils.hpp"
 
 // ============================================================================

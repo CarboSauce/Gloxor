@@ -29,6 +29,8 @@ add_executable(tests
 add_executable(benchmarks
     benchmarks/heap_alloc.cpp
     benchmarks/mimalloc.cpp
+    benchmarks/function.cpp
+    benchmarks/deque.cpp
 )
 
 target_compile_features(tests

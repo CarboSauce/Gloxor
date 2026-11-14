@@ -6,6 +6,7 @@
 #include "detail/memory.hpp"
 #include "detail/moveutils.hpp"
 #include "macros.hpp"
+#include "string.h"
 #include "util.hpp"
 #include <concepts>
 #include <cstddef>
@@ -130,21 +131,31 @@ class function;
 template <typename R, typename... Args, typename Allocator>
 class function<R(Args...), Allocator>
 {
+    template <typename T>
+    using fast_param_t = std::conditional_t<
+        std::is_trivially_copyable_v<T> && sizeof(T) <= sizeof(void*) * 2,
+        T,
+        T&&
+    >;
+
     struct callable_base
     {
         callable_base() = default;
         callable_base(const callable_base&) = delete;
         callable_base& operator=(const callable_base&) = delete;
-        virtual ~callable_base() = default;
 
+        // Slot 0: [vptr + 0]
+        virtual R operator()(fast_param_t<Args>... args) = 0;
         virtual callable_base* clone() const = 0;
         virtual void clone_into(callable_base* dst) const = 0;
-        virtual void move_into(callable_base* dst) noexcept = 0;
+        virtual void move_and_destroy(callable_base* dst) noexcept = 0;
         virtual void destroy() noexcept = 0;
         virtual void destroy_deallocate() noexcept = 0;
-        virtual R operator()(Args&&... args) = 0;
         virtual bool is_copyable() const noexcept = 0;
+        virtual ~callable_base() = default;
     };
+
+    using invoker_t = R (*)(callable_base*, fast_param_t<Args>...);
 
     template <typename F>
     struct callable_impl final : callable_base
@@ -191,7 +202,7 @@ class function<R(Args...), Allocator>
             }
         }
 
-        void move_into(callable_base* dst) noexcept override
+        void move_and_destroy(callable_base* dst) noexcept override
         {
             if constexpr (std::is_move_constructible_v<F>) {
                 std::construct_at(
@@ -204,6 +215,7 @@ class function<R(Args...), Allocator>
                     static_cast<callable_impl*>(dst), fn_, RVALUE(alloc_)
                 );
             }
+            this->~callable_impl();
         }
 
         void destroy() noexcept override
@@ -220,7 +232,7 @@ class function<R(Args...), Allocator>
             glox::dealloc(rebound, this, 1);
         }
 
-        R operator()(Args&&... args) override
+        R operator()(fast_param_t<Args>... args) override
         {
             if constexpr (std::is_void_v<R>) {
                 fn_(FORWARD(args)...);
@@ -235,6 +247,19 @@ class function<R(Args...), Allocator>
         }
     };
 
+    template <typename F>
+    static constexpr invoker_t make_invoker() noexcept
+    {
+        return +[](callable_base* base, fast_param_t<Args>... args) -> R {
+            auto& fn = static_cast<callable_impl<F>*>(base)->fn_;
+            if constexpr (std::is_void_v<R>) {
+                fn(FORWARD(args)...);
+            } else {
+                return fn(FORWARD(args)...);
+            }
+        };
+    }
+
     template <typename Target>
     static constexpr auto rebind_impl(const Allocator& a) noexcept
     {
@@ -247,8 +272,11 @@ class function<R(Args...), Allocator>
     }
 
     static constexpr std::size_t SBO_SIZE = sizeof(void*) * 3;
-    alignas(std::max_align_t) unsigned char sbo_[SBO_SIZE];
+    static constexpr std::uintptr_t TRIVIAL_TAG = 1;
+
     callable_base* ptr_ = nullptr;
+    invoker_t invoker_ = nullptr;
+    alignas(std::max_align_t) unsigned char sbo_[SBO_SIZE];
     [[no_unique_address]] Allocator alloc_ { };
 
     template <typename Impl, typename F>
@@ -256,8 +284,29 @@ class function<R(Args...), Allocator>
         = sizeof(Impl) <= SBO_SIZE && alignof(Impl) <= alignof(std::max_align_t)
        && (std::is_move_constructible_v<F> || std::is_copy_constructible_v<F>);
 
+    template <typename F>
+    static constexpr bool IS_TRIVIAL_SBO_V
+        = std::is_trivially_copyable_v<F> && std::is_trivially_destructible_v<F>
+       && std::is_trivially_copyable_v<Allocator>
+       && std::is_trivially_destructible_v<Allocator>;
+
+    bool is_trivial_local() const noexcept
+    {
+        return (reinterpret_cast<std::uintptr_t>(ptr_) & TRIVIAL_TAG) != 0;
+    }
+
+    callable_base* untagged_ptr() const noexcept
+    {
+        return reinterpret_cast<callable_base*>(
+            reinterpret_cast<std::uintptr_t>(ptr_) & ~TRIVIAL_TAG
+        );
+    }
+
     bool is_local() const noexcept
     {
+        if (is_trivial_local()) {
+            return true;
+        }
         const auto p = reinterpret_cast<std::uintptr_t>(ptr_);
         const auto base = reinterpret_cast<std::uintptr_t>(sbo_);
         return p >= base && p < base + SBO_SIZE;
@@ -268,15 +317,25 @@ class function<R(Args...), Allocator>
         return std::launder(reinterpret_cast<callable_base*>(sbo_));
     }
 
+    callable_base* tagged_local_ptr() noexcept
+    {
+        return reinterpret_cast<callable_base*>(
+            reinterpret_cast<std::uintptr_t>(sbo_) | TRIVIAL_TAG
+        );
+    }
+
     void reset() noexcept
     {
         if (ptr_ != nullptr) {
-            if (is_local()) {
-                ptr_->destroy();
-            } else {
-                ptr_->destroy_deallocate();
+            if (!is_trivial_local()) {
+                if (is_local()) {
+                    ptr_->destroy();
+                } else {
+                    ptr_->destroy_deallocate();
+                }
             }
             ptr_ = nullptr;
+            invoker_ = nullptr;
         }
     }
 
@@ -292,6 +351,7 @@ public:
                  && std::is_invocable_r_v<R, std::decay_t<F>&, Args...>
     function(F&& callable)
         : ptr_(nullptr)
+        , invoker_(nullptr)
         , alloc_(Allocator { })
     {
         using DecayedF = std::decay_t<F>;
@@ -307,7 +367,11 @@ public:
             Impl* local = std::construct_at(
                 reinterpret_cast<Impl*>(sbo_), FORWARD(callable), alloc_
             );
-            ptr_ = local;
+            if constexpr (IS_TRIVIAL_SBO_V<DecayedF>) {
+                ptr_ = tagged_local_ptr();
+            } else {
+                ptr_ = local;
+            }
         } else {
             auto rebound = rebind_impl<Impl>(alloc_);
             Impl* mem = glox::alloc_uninitialized<Impl>(rebound, 1).ptr;
@@ -317,14 +381,20 @@ public:
             std::construct_at(mem, FORWARD(callable), alloc_);
             ptr_ = mem;
         }
+
+        invoker_ = make_invoker<DecayedF>();
     }
 
     function(const function& other)
         : ptr_(nullptr)
+        , invoker_(other.invoker_)
         , alloc_(other.alloc_)
     {
         if (other.ptr_ != nullptr) {
-            if (other.is_local()) {
+            if (other.is_trivial_local()) {
+                glox::memcpy(sbo_, other.sbo_, SBO_SIZE);
+                ptr_ = tagged_local_ptr();
+            } else if (other.is_local()) {
                 other.ptr_->clone_into(local_ptr());
                 ptr_ = local_ptr();
             } else {
@@ -344,12 +414,16 @@ public:
 
     function(function&& other) noexcept
         : ptr_(nullptr)
+        , invoker_(glox::exchange(other.invoker_, nullptr))
         , alloc_(RVALUE(other.alloc_))
     {
         if (other.ptr_ != nullptr) {
-            if (other.is_local()) {
-                other.ptr_->move_into(local_ptr());
-                other.ptr_->destroy();
+            if (other.is_trivial_local()) {
+                glox::memcpy(sbo_, other.sbo_, SBO_SIZE);
+                other.ptr_ = nullptr;
+                ptr_ = tagged_local_ptr();
+            } else if (other.is_local()) {
+                other.ptr_->move_and_destroy(local_ptr());
                 other.ptr_ = nullptr;
                 ptr_ = local_ptr();
             } else {
@@ -362,11 +436,15 @@ public:
     {
         if (this != &other) {
             reset();
+            invoker_ = glox::exchange(other.invoker_, nullptr);
             alloc_ = RVALUE(other.alloc_);
             if (other.ptr_ != nullptr) {
-                if (other.is_local()) {
-                    other.ptr_->move_into(local_ptr());
-                    other.ptr_->destroy();
+                if (other.is_trivial_local()) {
+                    glox::memcpy(sbo_, other.sbo_, SBO_SIZE);
+                    other.ptr_ = nullptr;
+                    ptr_ = tagged_local_ptr();
+                } else if (other.is_local()) {
+                    other.ptr_->move_and_destroy(local_ptr());
                     other.ptr_ = nullptr;
                     ptr_ = local_ptr();
                 } else {
@@ -395,7 +473,7 @@ public:
 
     [[nodiscard]] bool is_copyable() const noexcept
     {
-        return ptr_ == nullptr || ptr_->is_copyable();
+        return ptr_ == nullptr || is_trivial_local() || ptr_->is_copyable();
     }
 
     [[nodiscard]] bool is_sbo() const noexcept
@@ -405,14 +483,15 @@ public:
 
     R operator()(Args... args) const
     {
-        GLOX_ASSERT(ptr_ != nullptr);
+        GLOX_ASSERT(invoker_ != nullptr);
         if constexpr (std::is_void_v<R>) {
-            (*ptr_)(FORWARD(args)...);
+            invoker_(untagged_ptr(), static_cast<fast_param_t<Args>>(args)...);
         } else {
-            return (*ptr_)(FORWARD(args)...);
+            return invoker_(
+                untagged_ptr(), static_cast<fast_param_t<Args>>(args)...
+            );
         }
     }
 };
-
 GLOX_END_EXPORT
 } // namespace glox

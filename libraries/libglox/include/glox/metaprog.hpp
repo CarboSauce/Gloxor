@@ -36,6 +36,12 @@ constexpr T* launder(T* p) noexcept
 {
     return __builtin_launder(p);
 }
+template <typename T>
+using fast_param_t = std::conditional_t<
+    std::is_trivially_copyable_v<T> && sizeof(T) <= sizeof(void*) * 2,
+    T,
+    T&&
+>;
 
 template <typename Test, template <typename...> class Templ>
 struct is_specialization : std::false_type

@@ -4,6 +4,7 @@
 #include "alloc.hpp"
 #include "detail/moveutils.hpp"
 #include "option.hpp"
+#include <algorithm>
 #include <memory>
 #endif
 
@@ -230,6 +231,59 @@ private:
         }
     };
 
+    constexpr void shift_left_range(
+        size_t first_offset,
+        size_t count,
+        size_t dist
+    )
+    {
+        size_t srcIdx = start_idx + first_offset;
+        size_t dstIdx = srcIdx - dist;
+        size_t remaining = count;
+
+        while (remaining > 0) {
+            const size_t srcOff = srcIdx % BLOCK_SIZE;
+            const size_t dstOff = dstIdx % BLOCK_SIZE;
+            const size_t chunk = std::min(
+                { remaining, BLOCK_SIZE - srcOff, BLOCK_SIZE - dstOff }
+            );
+
+            T* srcPtr = map[srcIdx / BLOCK_SIZE] + srcOff;
+            T* dstPtr = map[dstIdx / BLOCK_SIZE] + dstOff;
+            std::move(srcPtr, srcPtr + chunk, dstPtr);
+
+            srcIdx += chunk;
+            dstIdx += chunk;
+            remaining -= chunk;
+        }
+    }
+
+    constexpr void shift_right_range(
+        size_t first_offset,
+        size_t count,
+        size_t dist
+    )
+    {
+        size_t srcEnd = start_idx + first_offset + count;
+        size_t dstEnd = srcEnd + dist;
+        size_t remaining = count;
+
+        while (remaining > 0) {
+            const size_t srcUsed = ((srcEnd - 1) % BLOCK_SIZE) + 1;
+            const size_t dstUsed = ((dstEnd - 1) % BLOCK_SIZE) + 1;
+            const size_t chunk = std::min({ remaining, srcUsed, dstUsed });
+
+            srcEnd -= chunk;
+            dstEnd -= chunk;
+
+            T* srcPtr = map[srcEnd / BLOCK_SIZE] + (srcEnd % BLOCK_SIZE);
+            T* dstPtr = map[dstEnd / BLOCK_SIZE] + (dstEnd % BLOCK_SIZE);
+            std::move_backward(srcPtr, srcPtr + chunk, dstPtr + chunk);
+
+            remaining -= chunk;
+        }
+    }
+
 public:
     using allocator = Allocator;
     using size_type = std::size_t;
@@ -244,9 +298,40 @@ public:
         : alloc(other.alloc)
         , m_alloc(other.m_alloc)
     {
-        for (size_t i = 0; i < other.siz; ++i) {
-            push_back(other[i]);
+        if (other.siz == 0) {
+            return;
         }
+        const size_t required_nodes = (other.siz + BLOCK_SIZE - 1) / BLOCK_SIZE;
+        allocate_map(
+            required_nodes + 2
+        ); // +1 front node, +1 back node headroom
+        start_idx = BLOCK_SIZE;
+
+        size_t remaining = other.siz;
+        size_t srcIdx = other.start_idx;
+        size_t dstIdx = start_idx;
+
+        while (remaining > 0) {
+            const size_t srcNode = srcIdx / BLOCK_SIZE;
+            const size_t srcOff = srcIdx % BLOCK_SIZE;
+            const size_t dstNode = dstIdx / BLOCK_SIZE;
+            const size_t dstOff = dstIdx % BLOCK_SIZE;
+
+            allocate_node(dstNode);
+
+            const size_t chunk = std::min(
+                { remaining, BLOCK_SIZE - srcOff, BLOCK_SIZE - dstOff }
+            );
+
+            std::uninitialized_copy_n(
+                other.map[srcNode] + srcOff, chunk, map[dstNode] + dstOff
+            );
+
+            srcIdx += chunk;
+            dstIdx += chunk;
+            remaining -= chunk;
+        }
+        siz = other.siz;
     }
 
     constexpr deque(deque&& other)
@@ -459,15 +544,20 @@ public:
         if (offset < siz / 2) {
             // shift prefix left
             emplace_front(RVALUE(front()));
+            if (offset > 1) {
+                shift_left_range(2, offset - 1, 1);
+            }
             iterator mutPos = begin() + offset;
-            glox::move_range(begin() + 2, mutPos + 1, begin() + 1);
             *mutPos = RVALUE(val);
             return mutPos;
         } else {
-            // Shift suffix right
+            // shift suffix right
             emplace_back(RVALUE(back()));
+            const size_t suffixCount = (siz - 2) - offset;
+            if (suffixCount > 0) {
+                shift_right_range(offset, suffixCount, 1);
+            }
             iterator mutPos = begin() + offset;
-            glox::move_range_backward(mutPos, end() - 2, end() - 1);
             *mutPos = RVALUE(val);
             return mutPos;
         }
@@ -489,14 +579,12 @@ public:
         // shift the shorter side to fill the gap
         if (offset < siz / 2) {
             // shift prefix right
-            glox::move_range_backward(
-                begin(), begin() + offset, begin() + offset + 1
-            );
+            shift_right_range(0, offset, 1);
             pop_front();
             return begin() + offset;
         } else {
             // shift suffix left
-            glox::move_range(begin() + offset + 1, end(), begin() + offset);
+            shift_left_range(offset + 1, (siz - 1) - offset, 1);
             pop_back();
             return begin() + offset;
         }
