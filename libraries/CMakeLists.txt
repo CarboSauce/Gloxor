@@ -1,5 +1,6 @@
 set(LIBGLOX_COMPILE_OPTIONS ${GLOX_COMPILE_FLAGS})
 set(COMPILE_TESTS OFF)
+
 function(readgloxsubdir status)
     # this approach is fairly naive
     if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/libglox/CMakeLists.txt)

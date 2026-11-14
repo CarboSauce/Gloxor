@@ -6,7 +6,7 @@ static inline void draw_panic()
     gx::println("Kernel panic");
 }
 
-extern "C" void abort()
+extern "C" void abort() noexcept
 {
     gx::kernel_panic();
 }

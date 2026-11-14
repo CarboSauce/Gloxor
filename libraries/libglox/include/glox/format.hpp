@@ -1,5 +1,4 @@
 #pragma once
-#include <type_traits>
 #ifndef USE_MODULES
 #include "glox/array.hpp"
 #include "glox/macros.hpp"
@@ -9,6 +8,7 @@
 #include "glox/utilalgs.hpp"
 #include <concepts>
 #include <string_view>
+#include <type_traits>
 #endif
 
 namespace glox {
@@ -162,12 +162,12 @@ struct formatter<const char*>
 };
 
 template <glox::allocator<char> Alloc>
-struct formatter<glox::string<Alloc>>
+struct formatter<glox::basic_string<Alloc>>
 {
     void format(
         formattable_to<char> auto& buffer,
         [[maybe_unused]] format_options opts,
-        const glox::string<Alloc>& value
+        const glox::basic_string<Alloc>& value
     )
     {
         for (const auto c : value) {

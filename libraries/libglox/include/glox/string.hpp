@@ -12,7 +12,7 @@ GLOX_EXPORT
 namespace glox {
 
 template <glox::allocator<char> Allocator = glox::default_allocator<char>>
-class string
+class basic_string
 {
     struct big_str
     {
@@ -99,20 +99,20 @@ public:
     using iterator = char*;
     using const_iterator = const char*;
 
-    constexpr string()
+    constexpr basic_string()
         : r()
         , alloc()
     {
     }
 
-    constexpr string(size_t s)
+    constexpr basic_string(size_t s)
         : r()
         , alloc()
     {
         init(s);
     }
 
-    constexpr string(const char* str)
+    constexpr basic_string(const char* str)
         : r()
     {
         size_t n = glox::strlen(str);
@@ -122,7 +122,7 @@ public:
         }
     }
 
-    constexpr string(const char* str, size_t n)
+    constexpr basic_string(const char* str, size_t n)
         : r()
     {
         reserve(n);
@@ -130,7 +130,7 @@ public:
             push_back(str[i]);
     }
 
-    constexpr string(std::string_view str)
+    constexpr basic_string(std::string_view str)
         : r()
     {
         size_t n = str.length();
@@ -139,7 +139,7 @@ public:
             push_back(c);
     }
 
-    constexpr string(const string& other)
+    constexpr basic_string(const basic_string& other)
         : alloc(other.alloc)
     {
         if (not other.is_big()) {
@@ -153,7 +153,7 @@ public:
         }
     }
 
-    constexpr string& operator=(const string& other)
+    constexpr basic_string& operator=(const basic_string& other)
     {
         if (this == &other) {
             return *this;
@@ -174,7 +174,7 @@ public:
 
         return *this;
     }
-    constexpr string& operator=(string&& other)
+    constexpr basic_string& operator=(basic_string&& other)
     {
         using glox::swap;
         swap(alloc, other.alloc);
@@ -182,14 +182,14 @@ public:
         return *this;
     }
 
-    constexpr string(string&& other)
+    constexpr basic_string(basic_string&& other)
         : r(RVALUE(other.r))
         , alloc(RVALUE(other.alloc))
     {
         other.r = { };
     }
 
-    constexpr ~string()
+    constexpr ~basic_string()
     {
         if (is_big()) {
             glox::dealloc(alloc, r.b.data, r.b.cap);
@@ -299,8 +299,8 @@ public:
         return std::string_view { data(), size() };
     }
 
-    constexpr bool operator==(const string&) const = default;
-    constexpr auto operator<=>(const string& other) const
+    constexpr bool operator==(const basic_string&) const = default;
+    constexpr auto operator<=>(const basic_string& other) const
     {
         return view() <=> other.view();
     }
@@ -457,7 +457,7 @@ private:
 template <glox::allocator<char> Allocator = glox::default_allocator<char>>
 class cstring
 {
-    glox::string<Allocator> inner;
+    glox::basic_string<Allocator> inner;
 
     constexpr void init_null()
     {
@@ -497,7 +497,7 @@ public:
         inner.push_back('\0');
     }
 
-    constexpr explicit cstring(glox::string<Allocator> s)
+    constexpr explicit cstring(glox::basic_string<Allocator> s)
         : inner(std::move(s))
     {
         init_null();
@@ -651,9 +651,9 @@ public:
         return view() == std::string_view(rhs);
     }
 
-    [[nodiscard]] constexpr glox::string<Allocator> to_string() const
+    [[nodiscard]] constexpr glox::basic_string<Allocator> to_string() const
     {
-        return glox::string<Allocator>(view());
+        return glox::basic_string<Allocator>(view());
     }
 };
 
@@ -683,5 +683,7 @@ struct comptime_string
         return { buf, N - 1 };
     }
 };
+
+using string = basic_string<>;
 
 } // namespace glox

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.4.3)
+cmake_minimum_required(VERSION 4.5)
 ###########
 # all ugly variables that had to be set
 # thanks to cmake not supporting osdev that much
@@ -10,16 +10,36 @@ set(CMAKE_SYSTEM_NAME "Generic")
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_EXTENSIONS ON)
-set(USE_MODULES ON)
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(CMAKE_CXX_COMPILE_OBJECT "${CMAKE_CXX_COMPILE_OBJECT} @<OBJECT>.modmap")
 endif()
 
+set(USE_MODULES ON)
+
 project(Gloxor VERSION 1.0 LANGUAGES C CXX ASM_NASM)
 
 include(CMakeOptions.cmake)
-include(CheckCXXSourceCompiles)
 include(scripts/get-cpm.cmake)
+include(CheckCXXSourceCompiles)
+
+CPMAddPackage(
+    NAME cxxheaders
+    GIT_REPOSITORY "https://github.com/CarboSauce/cxx-headers-freestanding.git"
+    GIT_TAG "c32d4d68b17d9452504de7d7e1661b1c87f49002"
+    DOWNLOAD_ONLY
+)
+
+CPMAddPackage(
+    NAME cheaders
+    GIT_REPOSITORY "https://github.com/osdev0/freestanding-c-hdrs-gnu.git"
+    GIT_TAG "7082a7596238932f20cf0013e8448f74b53e814c"
+    DOWNLOAD_ONLY
+)
+
+if (cxxheaders_ADDED)
+    set(CMAKE_CXX_STDLIB_MODULES_JSON /home/carbosauce/dev/c++.modules.json)
+    set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES "${cxxheaders_SOURCE_DIR}/include;${cheaders_SOURCE_DIR}/${OS_ARCH}/include;${CMAKE_SOURCE_DIR}/kernel/")
+endif()
 
 if (WITH_PIC)
     #set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -56,6 +76,8 @@ list(APPEND KERNEL_COMPILE_FLAGS
     -mno-mmx
     -mno-sse
     -mno-sse2
+    # require popcount
+    -mpopcnt
     -nostdlib
     -nostdinc
     -nostdinc++
@@ -65,8 +87,7 @@ list(APPEND KERNEL_COMPILE_FLAGS
 list(APPEND KERNEL_LINK_FLAGS -ffreestanding -nostdlib)
 
 set(GLOX_COMPILE_FLAGS
-    $<$<COMPILE_LANG_AND_ID:CXX,Clang,GNU,AppleClang>:$<BUILD_INTERFACE:${KERNEL_COMPILE_FLAGS}>>
-    $<$<COMPILE_LANG_AND_ID:C,Clang,GNU,AppleClang>:$<BUILD_INTERFACE:${KERNEL_COMPILE_FLAGS}>>
+    ${KERNEL_COMPILE_FLAGS}
 )
 
 if (USE_LTO)

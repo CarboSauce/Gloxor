@@ -3,54 +3,30 @@
 #define TEST
 #endif
 
+extern "C++"
+{
 namespace gx {
-struct Ktest
-{
-    std::string_view name;
-    bool (*const init)();
-};
-extern "C"
-{
-extern gx::Ktest _moduleTesting[];
-extern gx::Ktest _moduleTestingEnd[];
-}
-struct KtestContext
-{
-    int assert_counter = 0;
-    int success_counter = 0;
-    int failed_counter = 0;
-    void run()
+    struct Ktest
     {
-        auto testCount = _moduleTestingEnd - _moduleTesting;
-        gx::println("There are % tests", testCount);
-        int passCounter = 0;
-        for (auto it = _moduleTesting; it != _moduleTestingEnd; ++it) {
-            using namespace std::string_view_literals;
-            auto res = it->init();
-            if (not res) {
-                gx::println("Test % failed", it->name);
-            }
-            passCounter += res ? 1 : 0;
-        }
-
-        gx::println(
-            "Tests: % passed; % failed;\r\n",
-            passCounter,
-            testCount - passCounter
-        );
-        gx::println(
-            "Asserts: % count; % passed; % failed;\r\n",
-            assert_counter,
-            success_counter,
-            failed_counter
-        );
-    }
-};
+        glox::string name;
+        bool (*const init)();
+    };
+    struct KtestContext
+    {
+        int assert_counter = 0;
+        int success_counter = 0;
+        int failed_counter = 0;
+        void run();
+    };
 } // namespace gx
+}
 
 #ifdef GLOXTESTING
+extern "C++"
+{
 namespace gx {
-inline KtestContext ktestContext;
+    inline KtestContext ktestContext;
+}
 }
 #define REGISTER_TEST(name, fnc)                \
     [[gnu::used, gnu::section(".module.test")]] \

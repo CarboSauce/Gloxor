@@ -41,7 +41,6 @@ SECTIONS
 
     .module ALIGN(4K): 
     {
-        . = ALIGN(16); /* gcc wants allignment of 16 for whatever reason */
         PROVIDE(_moduleTesting = .);
         KEEP(*(.module.test*))
         PROVIDE(_moduleTestingEnd = .);

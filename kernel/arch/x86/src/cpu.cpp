@@ -7,6 +7,7 @@ import arch_asm;
 import gloxor.types;
 import std.compat;
 import arch_asm.msr;
+import glox;
 
 #include "cpuid.h"
 #include "gloxor/test.hpp"

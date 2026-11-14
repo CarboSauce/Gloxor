@@ -112,7 +112,7 @@ public:
 template <glox::allocator<char> Allocator = glox::default_allocator<char>>
 class path
 {
-    string<Allocator> str;
+    basic_string<Allocator> str;
 
 public:
     static constexpr char PREFERRED_SEPARATOR = '/';
@@ -127,7 +127,7 @@ public:
         : str(s)
     {
     }
-    constexpr path(string<Allocator> s)
+    constexpr path(basic_string<Allocator> s)
         : str(std::move(s))
     {
     }

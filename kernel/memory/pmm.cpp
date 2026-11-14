@@ -7,8 +7,8 @@ import arch;
 import std.compat;
 import std;
 
-#include <glox/assert.hpp>
-#include <gloxor/test.hpp>
+#include "glox/assert.hpp"
+#include "gloxor/test.hpp"
 
 using namespace gx;
 

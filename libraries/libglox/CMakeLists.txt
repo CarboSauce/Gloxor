@@ -10,9 +10,6 @@ set(DEFAULT_ALLOCATOR_PATH "" CACHE STRING
 and used as default allocator for containers that require them")
 
 
-if (USE_COMPILERS_IMPORT_STD)
-    set(CMAKE_CXX_MODULE_STD 1)
-endif()
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_EXTENSIONS ON)
@@ -78,10 +75,18 @@ else()
         GLOX_EXPORT= GLOX_BEGIN_EXPORT= GLOX_END_EXPORT=
     )
 endif()
-target_compile_options(libglox INTERFACE
-    ${WARNING_FLAGS}
-    ${LIBGLOX_COMPILE_OPTIONS}
-)
+
+if (USE_MODULES)
+    target_compile_options(libglox PRIVATE
+        ${WARNING_FLAGS}
+        ${LIBGLOX_COMPILE_OPTIONS}
+    )
+else()
+    target_compile_options(libglox INTERFACE
+        ${WARNING_FLAGS}
+        ${LIBGLOX_COMPILE_OPTIONS}
+    )
+endif()
 
 # Install config
 if (${SET_INSTALL_TARGETS})

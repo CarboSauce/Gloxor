@@ -12,6 +12,8 @@
 
 namespace glox {
 #ifdef CUSTOM_DEFAULT_ALLOCATOR
+extern "C++"
+{
 namespace custom {
     alloc_handle<void> alloc(
         std::size_t count,
@@ -71,6 +73,7 @@ namespace custom {
     );
 
 } // namespace custom
+}
 #endif
 GLOX_EXPORT
 template <template <typename T> typename Alloc, typename T>
