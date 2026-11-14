@@ -301,10 +301,8 @@ public:
         if (other.siz == 0) {
             return;
         }
-        const size_t required_nodes = (other.siz + BLOCK_SIZE - 1) / BLOCK_SIZE;
-        allocate_map(
-            required_nodes + 2
-        ); // +1 front node, +1 back node headroom
+        const size_t requiredNodes = (other.siz + BLOCK_SIZE - 1) / BLOCK_SIZE;
+        allocate_map(requiredNodes + 2); // +1 front node, +1 back node headroom
         start_idx = BLOCK_SIZE;
 
         size_t remaining = other.siz;
