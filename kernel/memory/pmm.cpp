@@ -89,5 +89,5 @@ static bool test()
     KTEST_EXPECT(pmmCtx.front->next > nextH);
     return true;
 }
-registerTest("Page allocator", test);
+REGISTER_TEST("Page allocator", test);
 #endif

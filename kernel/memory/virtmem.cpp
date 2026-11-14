@@ -138,5 +138,5 @@ static bool ioremap_test()
     print_iomem();
     return true;
 }
-registerTest("ioremap test", ioremap_test);
+REGISTER_TEST("ioremap test", ioremap_test);
 #endif

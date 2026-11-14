@@ -21,8 +21,6 @@ using namespace gx;
 using namespace arch::vmem;
 extern ctor_t _ctorArrayStart[];
 extern ctor_t _ctorArrayEnd[];
-extern gx::Ktest _moduleTesting[];
-extern gx::Ktest _moduleTestingEnd[];
 
 void call_ctor_pointers(ctor_t* begin, ctor_t* end)
 {
@@ -114,21 +112,7 @@ extern "C" void gloxor_main()
     (void)gx::postCpuInit.run();
 
 #ifdef GLOXTESTING
-    gx::println(
-        "Unit tests:\r\nThere are % tests", _moduleTestingEnd - _moduleTesting
-    );
-    for (auto it = _moduleTesting; it != _moduleTestingEnd; ++it) {
-        gx::println("Test case %", it->name);
-        using namespace std::string_view_literals;
-        if (it->init()) {
-            gx::term::write_str("\e[0;32m"sv);
-            gx::print("Test passed\r\n");
-        } else {
-            gx::term::write_str("\e[0;31m"sv);
-            gx::print("Test failed\r\n");
-        }
-        gx::term::write_str("\e[0;37m"sv);
-    }
+    gx::ktestContext.run();
 #endif
     gx::print("Initialization Completed.\r\n");
     for (;;)
@@ -146,5 +130,5 @@ static bool gogole_test()
     return true;
 }
 
-registerTest("Stub", gogole_test);
+REGISTER_TEST("Stub", gogole_test);
 #endif
