@@ -3,6 +3,7 @@ module;
 module gloxor.system.terminal;
 import gloxor.graphics;
 import gloxor.types;
+import gloxor.memory;
 import std.compat;
 import glox;
 
@@ -11,7 +12,7 @@ using namespace gx;
 extern "C++" const u8 fontBitmap[];
 
 namespace gx::term {
-static flanterm_context* flantermContext;
+static flanterm_context* flantermContext = nullptr;
 glox::span<u8> get_used_memory_range()
 {
     return {
@@ -23,8 +24,8 @@ glox::span<u8> get_used_memory_range()
 void init_term(const gx::BootInfo::FbInfo& fb)
 {
     flantermContext = flanterm_fb_init(
-        NULL,
-        NULL,
+        [](size_t s) { return gx::memalloc(s); },
+        [](void* p, size_t s) { return gx::memdealloc(p, s); },
         (uint32_t*)fb.begin,
         fb.width,
         fb.height,
@@ -54,14 +55,17 @@ void init_term(const gx::BootInfo::FbInfo& fb)
 }
 void write_str(const char* str, size_t size)
 {
-    flanterm_write(flantermContext, str, size);
+    if (flantermContext != nullptr)
+        flanterm_write(flantermContext, str, size);
 }
 void write_str(std::string_view str)
 {
-    flanterm_write(flantermContext, str.data(), str.length());
+    if (flantermContext != nullptr)
+        flanterm_write(flantermContext, str.data(), str.length());
 }
 void clear_screen(color_t)
 {
-    flanterm_write(flantermContext, "\e[2J", 4);
+    if (flantermContext != nullptr)
+        flanterm_write(flantermContext, "\e[2J", 4);
 }
 } // namespace gx::term

@@ -10,23 +10,6 @@ import std.compat;
 
 #include "glox/assert.hpp"
 
-/*
-    Allocator idea is pretty simple, its similar in idea to slab
-    Its segregated fit with freelist of free slots in a bucket
-    Metadata is stored in a unrolled linked list that fits the page,
-    so you can construct it in the buffer provided by pageAlloc()
-    Alloc calculates bucket index from the given size, and pops address
-    from bucket with free slot, if there isnt a free list, new one is allocated
-    Dealloc is pricy as it requires traversal of all entries of the given
-   address
-    TODO:
-    -	Traversing unrolled list of buckets in case of allocation might be slow
-        if lot of buckets are full, reconsider adding full list to keep track
-        of allocated buckets, so we dont lose the information of them being
-   allocated -	Freeing is costly, perhaps one could have FIFO/HashTable to
-   speedup freeing -	Massive fragmentation might occur if lot of chunks are
-   partially filled
-*/
 namespace gx {
 void* memalloc(usize size);
 void memdealloc(void* ptr, usize size);

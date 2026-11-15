@@ -114,6 +114,7 @@ extern "C" void gloxor_main()
 #ifdef GLOXTESTING
     gx::ktestContext.run();
 #endif
+
     gx::print("Initialization Completed.\r\n");
     for (;;)
         arch::halt();

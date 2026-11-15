@@ -116,6 +116,11 @@ inline void setup_kernelmemmap(limine_memmap_response* m)
 
 void limine_main()
 {
+    if (auto resp = memmap_request.response; resp != nullptr) {
+        initialize_pmm(resp);
+        setup_kernelmemmap(resp);
+    }
+
     if (rsdp_request.response != nullptr)
         arch::archInfo.acpiRsdp = (vaddr)rsdp_request.response->address;
 
@@ -134,7 +139,6 @@ void limine_main()
             gx::machineInfo.fbInfoEntry.greenMaskShift = fb->green_mask_shift;
             gx::machineInfo.fbInfoEntry.blueMaskSize = fb->blue_mask_size;
             gx::machineInfo.fbInfoEntry.blueMaskShift = fb->blue_mask_shift;
-
             gx::term::init_term(gx::machineInfo.fbInfoEntry);
         }
     }
@@ -144,11 +148,6 @@ void limine_main()
         arch::kernelVirtOffset = resp->virtual_base;
         arch::kernelMappingOffset
             = arch::kernelPhysOffset - arch::kernelVirtOffset;
-    }
-
-    if (auto resp = memmap_request.response; resp != nullptr) {
-        initialize_pmm(resp);
-        setup_kernelmemmap(resp);
     }
 
     gx::machineInfo.kernelCode = { kernelFileBegin, kernelFileEnd };
