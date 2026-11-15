@@ -1,7 +1,6 @@
 module arch.cpu;
 import gloxor.system;
 import gloxor.memory;
-import gloxor.system.logging;
 import arch;
 import arch_asm;
 import gloxor.types;
@@ -42,54 +41,86 @@ static Gdt code_data[3] = {
 static Idt idt_list[256] { };
 static u64 cpuFeatures;
 
-[[gnu::interrupt]]
-static void div_zero_handle(InterruptFrame*)
+extern "C" void int_handle(
+    arch::InterruptRegs* regs,
+    u64 intNumber,
+    u64 errorCode
+)
 {
-    gx::log_fatal("You Fool Divided By Zero!\r\n");
-    gx::kernel_panic();
-}
+    switch (intNumber) {
+    case 0: // Divide by zero
+        gx::log_fatal("You Fool Divided By Zero!\r\n");
+        gx::kernel_panic();
+        break;
 
-[[gnu::interrupt]]
-static void double_fault(InterruptFrame*)
-{
-    gx::log_fatal("Double fault!\r\n");
-    gx::kernel_panic();
-}
-[[gnu::interrupt]]
-static void nmi_handler(InterruptFrame*)
-{
-    gx::log_fatal("Non Maskable Interrupt!\r\n");
-}
+    case 1: // Debug
+        gx::println("Debug handler, RIP: %", (void*)regs->rip);
+        break;
 
-[[gnu::interrupt]]
-static void gp_fault(InterruptFrame* frame, size_t /* errc */)
-{
-    gx::log_fatal("General Protection Fault!\r\nRIP = %\r\n", (void*)frame->ip);
-    gx::kernel_panic();
-}
+    case 2: // NMI
+        gx::log_fatal("Non Maskable Interrupt!\r\n");
+        gx::kernel_panic();
+        break;
 
-[[gnu::interrupt]]
-static void page_fault(InterruptFrame*, size_t /* errc */)
-{
-    void* errorAdr = (void*)read_cr2();
-    gx::log_fatal("Page Fault at address: %\r\n", errorAdr);
-    if (errorAdr < (u8*)0x1000) {
-        gx::log_fatal("Null pointer access\r\n");
+    case 6: // Invalid opcode
+        gx::log_fatal("Illegal opcode! RIP = %\r\n", (void*)regs->rip);
+        arch::halt_forever();
+        break;
+
+    case 8: // Double fault
+        gx::log_fatal("Double fault!\r\n");
+        gx::kernel_panic();
+        break;
+
+    case 13: // General protection fault
+        gx::log_fatal(
+            "General Protection Fault!\r\n"
+            "RIP = %\r\n"
+            "Error code = %\r\n",
+            (void*)regs->rip,
+            errorCode
+        );
+        gx::kernel_panic();
+        break;
+
+    case 14: // Page fault
+    {
+        void* errorAddress = (void*)read_cr2();
+
+        gx::log_fatal(
+            "Page Fault!\r\n"
+            "RIP = %\r\n"
+            "Address = %\r\n"
+            "Error code = %\r\n",
+            (void*)regs->rip,
+            errorAddress,
+            errorCode
+        );
+
+        if ((uintptr_t)errorAddress < 0x1000) {
+            gx::log_fatal("Null pointer access!\r\n");
+        }
+
+        gx::kernel_panic();
+        break;
     }
-    gx::kernel_panic();
-}
 
-[[gnu::interrupt]]
-static void illegal_opcode(InterruptFrame* frame)
-{
-    gx::log_fatal("Illegal opcode! RIP = %\r\n", (void*)frame->ip);
-    arch::halt_forever();
-}
-
-[[gnu::interrupt]]
-static void debug_handler(InterruptFrame* frame)
-{
-    gx::println("Debug handler, RIP: %", (void*)frame->ip);
+    default:
+        auto irq = gx::irq::handler_at(intNumber);
+        if (irq) {
+            irq.val().handler();
+        } else {
+            gx::log_fatal(
+                "Unhandled interrupt % at RIP = %\r\n"
+                "Error code = %\r\n",
+                intNumber,
+                (void*)regs->rip,
+                errorCode
+            );
+            gx::kernel_panic();
+        }
+        break;
+    }
 }
 
 inline void initialize_gdt();
@@ -133,7 +164,7 @@ inline void initialize_gdt()
 {
     stop_irq();
 
-    GdtPointer gdt_ptr = { sizeof(code_data), code_data };
+    GdtPointer gdt_ptr = { sizeof(code_data) - 1, code_data };
 
     load_gdt(gdt_ptr);
     // Perform long jump after loading gdt to flush instruction cache
@@ -147,7 +178,7 @@ inline void initialize_gdt()
         "pushfq\r\n"
         "push %1\r\n"
 #if (__PIE__ > 0) || (__PIC__ > 0)
-        "leaq 0x3(%%rip), %%rax\r\n" // 0x3 is the size of pushq and iretq
+        "leaq 1f(%%rip), %%rax\r\n" // 0x3 is the size of pushq and iretq
         "pushq %%rax\r\n"
 #else
         "pushq $1f\r\n"
@@ -162,23 +193,16 @@ inline void initialize_gdt()
     );
 }
 
+extern "C" u64 intVector[256];
 inline void initialize_interrupts()
 {
 
-    IdtPointer idt_ptr = { sizeof(idt_list), idt_list };
+    for (u64 i = 0; i < 256; ++i) {
+        idt_list[i].register_handler(intVector[i], 0x8, 0, IDT_INTERRUPTGATE);
+    }
 
-    idt_list[0].register_handler(
-        (u64)div_zero_handle, 0x8, 0, IDT_INTERRUPTGATE
-    );
-    idt_list[1].register_handler((u64)debug_handler, 0x8, 0, IDT_INTERRUPTGATE);
-    idt_list[2].register_handler((u64)nmi_handler, 0x8, 0, IDT_INTERRUPTGATE);
-    idt_list[6].register_handler(
-        (u64)illegal_opcode, 0x8, 0, IDT_INTERRUPTGATE
-    );
-    idt_list[8].register_handler((u64)double_fault, 0x8, 0, IDT_TRAPGATE);
-    idt_list[13].register_handler((u64)gp_fault, 0x8, 0, IDT_INTERRUPTGATE);
-    idt_list[14].register_handler((u64)page_fault, 0x8, 0, IDT_INTERRUPTGATE);
-    load_idt(idt_ptr);
+    IdtPointer idtPtr = { sizeof(idt_list) - 1, idt_list };
+    load_idt(idtPtr);
 }
 
 inline void initialize_cpu_extensions()

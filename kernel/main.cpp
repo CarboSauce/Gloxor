@@ -116,6 +116,7 @@ extern "C" void gloxor_main()
 #endif
 
     gx::print("Initialization Completed.\r\n");
+    start_irq();
     for (;;)
         arch::halt();
 }

@@ -32,6 +32,7 @@ target_sources(kernel
         system/logging.cppm
         system/terminal.cppm
         system/system.cppm
+        system/irq.cppm
 
         gloxor/mutex.cppm
         gloxor/types.cppm

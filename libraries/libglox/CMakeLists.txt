@@ -35,7 +35,7 @@ target_include_directories(libglox INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-if (NOT DEFINED WARNING_FLAGS)
+if (PROJECT_IS_TOP_LEVEL AND NOT DEFINED WARNING_FLAGS)
     set(WARNING_FLAGS
         $<$<COMPILE_LANG_AND_ID:CXX,Clang,GNU,AppleClang>:$<BUILD_INTERFACE:-Wall;-Wextra;-Wzero-as-null-pointer-constant>>
     )

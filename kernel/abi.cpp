@@ -1,6 +1,8 @@
 #define ATEXIT_MAX_FUNCS 128
 #ifdef __cplusplus
 
+import gloxor.system.danger;
+
 extern "C"
 {
 #endif
@@ -132,6 +134,11 @@ void __cxa_finalize(void* f)
         };
     };
 };
+
+extern "C" void __cxa_pure_virtual()
+{
+    gx::kernel_panic();
+}
 
 #ifdef __cplusplus
 };

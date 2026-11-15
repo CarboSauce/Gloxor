@@ -3,6 +3,7 @@ target_sources(kernel PRIVATE
     src/pit8042.cpp
     src/cpu.cpp
     src/paging.cpp
+    src/entries.asm
     # src/cpuHelpers.asm #Not needed for now
 )
 target_include_directories(kernel PRIVATE

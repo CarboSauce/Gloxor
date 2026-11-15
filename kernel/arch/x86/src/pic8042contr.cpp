@@ -1,6 +1,7 @@
 module arch_asm.pic8042contr;
 import gloxor.system;
 import arch_asm.asmstubs;
+import arch_asm.msr;
 import gloxor.initgraph;
 
 using namespace gx;
@@ -47,20 +48,38 @@ void remap(u8 offset1, u8 offset2)
     outb(PIC2_DATA, a2);
 }
 
-void set_master_mask(u8 mask)
+void unmask_master_irq(u8 irq)
 {
-    picCtx.masterMask &= mask;
+    picCtx.masterMask &= ~(1u << irq);
     outb(PIC1_DATA, picCtx.masterMask);
 }
-void set_slave_mask(u8 mask)
+
+void mask_master_irq(u8 irq)
 {
-    picCtx.slaveMask &= mask;
-    outb(PIC1_DATA, picCtx.slaveMask);
+    picCtx.masterMask |= (1u << irq);
+    outb(PIC1_DATA, picCtx.masterMask);
+}
+
+void unmask_slave_irq(u8 irq)
+{
+    picCtx.slaveMask &= ~(1u << irq);
+    outb(PIC2_DATA, picCtx.slaveMask);
+}
+
+void mask_slave_irq(u8 irq)
+{
+    picCtx.slaveMask |= (1u << irq);
+    outb(PIC2_DATA, picCtx.slaveMask);
 }
 } // namespace gx::pic
 
 static void init_pic()
 {
+    // In init_pic(), right after remapping and masking the 8259 PIC:
+    u64 apicBase = rdmsr(0x1B);
+    apicBase &= ~(1ULL << 11); // Clear bit 11 (APIC Global Enable)
+    wrmsr(0x1B, static_cast<u32>(apicBase), static_cast<u32>(apicBase >> 32));
+
     gx::pic::remap(0x20, 0x28);
     gx::log_debug("Initializing PIC\r\n");
     // Mask all devices

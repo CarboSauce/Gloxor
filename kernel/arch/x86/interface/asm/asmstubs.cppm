@@ -7,25 +7,26 @@ import glox;
 
 export {
 namespace statusFlags { // clang-format off
-	enum Eflags
-	{ 
-		carry       = 0x00000001,
-		parity      = 0x00000004,
-		adjust      = 0x00000010,
-		zero        = 0x00000040,
-		sign        = 0x00000080, 
-		trap        = 0x00000100, // set if cpu is in single step
-		interrupt   = 0x00000200,
-		direction   = 0x00000400,
-		overflow    = 0x00000800,
-		iopl        = 0x00003000, // IO privilege flag
-		resume      = 0x00010000,
-		vm          = 0x00020000, // Virtual 8086 mode flag
-		ac          = 0x00040000, // Allignment check
-		vif         = 0x00080000, // Virtual interrupt flag
-		vip         = 0x00100000, // Virtual interrupt pending
-		cpuid       = 0x00200000, // if able to use CPUID
-	};
+enum Eflags
+{ 
+    carry       = 0x00000001,
+    parity      = 0x00000004,
+    adjust      = 0x00000010,
+    zero        = 0x00000040,
+    sign        = 0x00000080, 
+    trap        = 0x00000100, // set if cpu is in single step
+    interrupt   = 0x00000200,
+    direction   = 0x00000400,
+    overflow    = 0x00000800,
+    iopl        = 0x00003000, // IO privilege flag
+    resume      = 0x00010000,
+    vm          = 0x00020000, // Virtual 8086 mode flag
+    ac          = 0x00040000, // Allignment check
+    vif         = 0x00080000, // Virtual interrupt flag
+    vip         = 0x00100000, // Virtual interrupt pending
+    cpuid       = 0x00200000, // if able to use CPUID
+};
+
 } // clang-format on
 
 inline void io_wait()

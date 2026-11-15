@@ -6,7 +6,7 @@ import gloxor.initgraph;
 import arch_asm.pic8042contr;
 import std.compat;
 
-static u64 tick = 0;
+volatile static u64 tick = 0;
 using namespace gx::pit;
 
 namespace gx::pit {
@@ -19,13 +19,11 @@ void set_divisor(u16 divisor)
 {
     outb(0x40, divisor & 0xFF);
     io_wait();
-    outb(0x40, (divisor & 0xFF00) >> 8);
+    outb(0x40, divisor >> 8);
 }
 } // namespace gx::pit
 
-[[gnu::interrupt]] static void timer_handler(
-    [[maybe_unused]] InterruptFrame* frame
-)
+static void timer_handler()
 {
     tick += 1;
     gx::pic::send_eoi_master();
@@ -33,16 +31,13 @@ void set_divisor(u16 divisor)
 
 static void init_timer()
 {
-    auto idt = get_idt();
     gx::log_debug("Mapping Timer handler\r\n");
-    idt.base[0x20].register_handler(
-        (uint64_t)timer_handler, 0x8, 0, IDT_INTERRUPTGATE
-    );
+    gx::irq::attach_handler("pit_timer", 0x20, timer_handler);
     // Make sure we get 1ms interrupts
     outb(0x43, 0x36);
     gx::pit::set_divisor(gx::pit::timerFreq);
     // PIT is on line 0
-    gx::pic::set_master_mask(0b11111110);
+    gx::pic::unmask_master_irq(0);
 }
 
 u64 get_ticks()

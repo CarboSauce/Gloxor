@@ -29,8 +29,10 @@ struct PicContext
     u8 slaveMask;
 };
 namespace pic {
-    void set_master_mask(u8 mask);
-    void set_slave_mask(u8 mask);
+    void unmask_master_irq(u8 irq);
+    void mask_master_irq(u8 irq);
+    void unmask_slave_irq(u8 irq);
+    void mask_slave_irq(u8 irq);
     void send_eoi_master();
     void send_eoi_slave();
     void remap(u8 masterOffst, u8 slaveOffst);
