@@ -9,7 +9,7 @@ export struct IrqHandler
     glox::function<void()> handler;
 };
 
-constinit inline glox::array<IrqHandler, 256> irqHandlers = { };
+inline glox::array<IrqHandler, 256> irqHandlers = { };
 
 export template <typename Func>
 void attach_handler(std::string_view str, int irqNumber, Func func)

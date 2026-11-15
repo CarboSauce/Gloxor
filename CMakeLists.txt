@@ -25,7 +25,7 @@ include(CheckCXXSourceCompiles)
 CPMAddPackage(
     NAME cxxheaders
     GIT_REPOSITORY "https://github.com/CarboSauce/cxx-headers-freestanding.git"
-    GIT_TAG "c32d4d68b17d9452504de7d7e1661b1c87f49002"
+    GIT_TAG "92149b57b72ff46a119e9c09ae7808df4b151041"
     DOWNLOAD_ONLY
 )
 
@@ -37,7 +37,7 @@ CPMAddPackage(
 )
 
 if (cxxheaders_ADDED)
-    set(CMAKE_CXX_STDLIB_MODULES_JSON /home/carbosauce/dev/c++.modules.json)
+    set(CMAKE_CXX_STDLIB_MODULES_JSON "${cxxheaders_SOURCE_DIR}/modules/c++.modules.json")
     set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES "${cxxheaders_SOURCE_DIR}/include;${cheaders_SOURCE_DIR}/${OS_ARCH}/include;${CMAKE_SOURCE_DIR}/kernel/")
 endif()
 
