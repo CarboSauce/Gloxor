@@ -8,9 +8,7 @@ import glox;
 #include "glox/macros.hpp"
 #include "utils.hpp"
 
-// ============================================================================
 // Constexpr Tests
-// ============================================================================
 constexpr auto constexpr_test(int a)
 {
     glox::box<int> val(a);
@@ -29,9 +27,7 @@ constexpr auto constexpr_array_box_test()
 
 static_assert(constexpr_array_box_test() == 40);
 
-// ============================================================================
 // box<T> Tests
-// ============================================================================
 TEST_CASE("Box default construction is null")
 {
     glox::box<alloc_tracker> b;
@@ -113,9 +109,7 @@ TEST_CASE("Box copy construction and copy assignment")
     REQUIRE(alloc_tracker::dtor_counter == 4);
 }
 
-// ============================================================================
 // box<T[]> Tests
-// ============================================================================
 TEST_CASE("Box array default and count construction")
 {
     alloc_tracker::reset_counters();
@@ -185,9 +179,7 @@ TEST_CASE("Box array copy and move semantics")
     REQUIRE(alloc_tracker::dtor_counter == 4);
 }
 
-// ============================================================================
 // polybox<T> Tests
-// ============================================================================
 namespace {
 
 struct poly_base
@@ -252,6 +244,7 @@ TEST_CASE("Polybox derived construction and non-virtual base destruction")
         REQUIRE(opt_pb.has_val());
 
         auto pb = RVALUE(opt_pb).val();
+        REQUIRE_FALSE(pb.valueless());
         REQUIRE_FALSE(pb.is_null());
         REQUIRE(pb->compute() == 35);
         REQUIRE(alloc_tracker::ctor_counter == 1);
@@ -267,12 +260,13 @@ TEST_CASE("Polybox polymorphic deep copy without slicing")
     alloc_tracker::reset_counters();
     {
         glox::polybox<poly_base> original = poly_derived { 100, 50 };
-        REQUIRE(original.is_copyable());
+        REQUIRE_FALSE(original.valueless());
         REQUIRE(original->compute() == 150);
 
         alloc_tracker::reset_counters();
         glox::polybox<poly_base> copied = original;
 
+        REQUIRE_FALSE(copied.valueless());
         REQUIRE_FALSE(copied.is_null());
         REQUIRE(copied.get_ptr() != original.get_ptr());
         REQUIRE(copied->compute() == 150);
@@ -281,24 +275,32 @@ TEST_CASE("Polybox polymorphic deep copy without slicing")
         // Copy assignment
         glox::polybox<poly_base> assigned = poly_derived { 1, 2 };
         assigned = original;
+        REQUIRE_FALSE(assigned.valueless());
         REQUIRE(assigned->compute() == 150);
         REQUIRE(alloc_tracker::copy_ctor_counter == 2);
     }
     REQUIRE(alloc_tracker::dtor_counter == 5);
 }
 
-TEST_CASE("Polybox move-only derived type and converting move")
+TEST_CASE("Polybox move-only derived type, converting move, and valueless copy")
 {
     alloc_tracker::reset_counters();
     {
         glox::polybox<poly_move_only> derivedBox(glox::in_place, 6, 7);
-        REQUIRE_FALSE(derivedBox.is_copyable());
+        REQUIRE_FALSE(derivedBox.valueless());
 
         // Converting move: polybox<poly_move_only> -> polybox<poly_base>
         glox::polybox<poly_base> baseBox = RVALUE(derivedBox);
+        REQUIRE(derivedBox.valueless());
         REQUIRE(derivedBox.is_null());
-        REQUIRE_FALSE(baseBox.is_null());
-        REQUIRE_FALSE(baseBox.is_copyable());
+        REQUIRE_FALSE(baseBox.valueless());
+        REQUIRE(baseBox->compute() == 42);
+
+        // Copying a non-copyable dynamic type produces a valueless polybox
+        glox::polybox<poly_base> failedCopy = baseBox;
+        REQUIRE(failedCopy.valueless());
+        REQUIRE_FALSE(static_cast<bool>(failedCopy));
+        REQUIRE_FALSE(baseBox.valueless());
         REQUIRE(baseBox->compute() == 42);
     }
     REQUIRE(alloc_tracker::dtor_counter == 1);

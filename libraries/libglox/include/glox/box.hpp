@@ -433,38 +433,46 @@ class [[clang::trivial_abi]] polybox
             return ReboundAlloc { };
         }
     }
-    struct control_ops
+
+    enum class opcode : bool
     {
-        T* (*clone)(const T* src, Allocator& alloc);
-        void (*destroy_and_dealloc)(T* ptr, Allocator& alloc) noexcept;
+        destroy,
+        clone
     };
+
+    using op_fn = void* (*)(opcode op, void* ptr, Allocator& alloc);
 
     template <typename U>
-    static constexpr control_ops OPS_FOR = {
-        .clone = []() -> T* (*)(const T*, Allocator&) {
-            if constexpr (std::is_copy_constructible_v<U>) {
-                return +[](const T* src, Allocator& alloc) -> T* {
-                    auto rebound = rebind_alloc<U>(alloc);
-                    U* mem = glox::alloc_uninitialized<U>(rebound, 1).ptr;
-                    if (mem != nullptr) {
-                        std::construct_at(mem, *static_cast<const U*>(src));
-                    }
-                    return static_cast<T*>(mem);
-                };
-            } else {
-                return nullptr;
-            }
-        }(),
-        .destroy_and_dealloc = +[](T* ptr, Allocator& alloc) noexcept {
+    static void* dispatch_op(opcode op, void* ptr, Allocator& alloc)
+    {
+        if (op == opcode::destroy) {
             auto rebound = rebind_alloc<U>(alloc);
-            U* derivedPtr = static_cast<U*>(ptr);
+            U* derivedPtr = static_cast<U*>(static_cast<T*>(ptr));
             derivedPtr->U::~U();
             glox::dealloc(rebound, derivedPtr, 1);
+            return nullptr;
         }
-    };
+
+        // opcode::clone
+        if constexpr (std::is_copy_constructible_v<U>) {
+            auto rebound = rebind_alloc<U>(alloc);
+            U* mem = glox::alloc_uninitialized<U>(rebound, 1).ptr;
+            if (mem != nullptr) {
+                const U* src
+                    = static_cast<const U*>(static_cast<const T*>(ptr));
+                std::construct_at(mem, *src);
+            }
+            return static_cast<T*>(mem);
+        } else {
+            return nullptr;
+        }
+    }
+
+    template <typename U>
+    static constexpr op_fn OPS_FOR = &dispatch_op<U>;
 
     T* ptr;
-    const control_ops* ops;
+    op_fn ops;
     [[no_unique_address]] Allocator alloc;
 
     template <typename U, glox::allocator<U> OtherAlloc>
@@ -483,12 +491,19 @@ public:
     {
     }
 
+    constexpr polybox(std::nullptr_t) noexcept
+        : ptr(nullptr)
+        , ops(nullptr)
+        , alloc(Allocator { })
+    {
+    }
+
     // In-place construction of concrete type T
     template <typename... Args>
         requires(!std::is_abstract_v<T>) && std::constructible_from<T, Args...>
     constexpr explicit polybox(in_place_t, Args&&... args)
         : ptr(glox::alloc_uninitialized<T>(alloc, 1).ptr)
-        , ops(&OPS_FOR<T>)
+        , ops(OPS_FOR<T>)
         , alloc(Allocator { })
     {
         if (ptr != nullptr) {
@@ -504,7 +519,7 @@ public:
                   && std::constructible_from<U, Args...>
     constexpr explicit polybox(in_place_type_t<U>, Args&&... args)
         : ptr(nullptr)
-        , ops(&OPS_FOR<U>)
+        , ops(OPS_FOR<U>)
         , alloc(Allocator { })
     {
         auto rebound = rebind_alloc<U>(alloc);
@@ -517,11 +532,11 @@ public:
         }
     }
 
-    // Direct construction from a concrete/derived value (e.g.
-    // polybox<Base>(Derived{...}))
+    // Direct construction from a concrete/derived value
     template <typename U>
         requires(!std::same_as<std::remove_cvref_t<U>, polybox>)
              && (!std::same_as<std::remove_cvref_t<U>, in_place_t>)
+             && (!std::same_as<std::remove_cvref_t<U>, std::nullptr_t>)
              && std::derived_from<std::remove_cvref_t<U>, T>
              && std::constructible_from<std::remove_cvref_t<U>, U>
     constexpr polybox(U&& value)
@@ -529,18 +544,17 @@ public:
     {
     }
 
-    // Deep polymorphic copy constructor via tracked concrete copy constructor
+    // Deep polymorphic copy constructor; yields valueless() if U is
+    // non-copyable or OOM
     constexpr polybox(const polybox& other)
         : ptr(nullptr)
         , ops(other.ops)
         , alloc(other.alloc)
     {
-        if (other.ptr != nullptr && other.ops != nullptr) {
-            GLOX_ASSERT(
-                other.ops->clone != nullptr
-                && "Stored dynamic type is not copy constructible"
+        if (!other.valueless()) {
+            ptr = static_cast<T*>(
+                other.ops(opcode::clone, static_cast<void*>(other.ptr), alloc)
             );
-            ptr = other.ops->clone(other.ptr, alloc);
             if (ptr == nullptr) {
                 ops = nullptr;
             }
@@ -559,6 +573,7 @@ public:
         return *this;
     }
 
+    // Move leaves `other` in valueless() state
     constexpr polybox(polybox&& other) noexcept
         : ptr(glox::exchange(other.ptr, nullptr))
         , ops(glox::exchange(other.ops, nullptr))
@@ -573,27 +588,30 @@ public:
         , ops(nullptr)
         , alloc(rebind_alloc<T>(RVALUE(other.alloc)))
     {
-        if (other.ptr != nullptr) {
+        if (!other.valueless()) {
             ptr = static_cast<T*>(glox::exchange(other.ptr, nullptr));
-            ops = &OPS_FOR<U>;
+            ops = OPS_FOR<U>;
             other.ops = nullptr;
         }
     }
+
     constexpr polybox& operator=(polybox&& other) noexcept
     {
         if (this != &other) {
-            using glox::swap;
-            swap(ptr, other.ptr);
-            swap(ops, other.ops);
-            swap(alloc, other.alloc);
+            if (!valueless()) {
+                ops(opcode::destroy, static_cast<void*>(ptr), alloc);
+            }
+            ptr = glox::exchange(other.ptr, nullptr);
+            ops = glox::exchange(other.ops, nullptr);
+            alloc = RVALUE(other.alloc);
         }
         return *this;
     }
 
     constexpr ~polybox()
     {
-        if (ptr != nullptr && ops != nullptr) {
-            ops->destroy_and_dealloc(ptr, alloc);
+        if (!valueless()) {
+            ops(opcode::destroy, static_cast<void*>(ptr), alloc);
             ptr = nullptr;
             ops = nullptr;
         }
@@ -606,7 +624,7 @@ public:
     constexpr static glox::option<polybox> make(Args&&... args)
     {
         polybox val(in_place_type<U>, FORWARD(args)...);
-        if (val.is_null()) {
+        if (val.valueless()) {
             return { };
         }
         return val;
@@ -616,20 +634,20 @@ public:
     constexpr static glox::option<polybox> create(auto&&... args)
     {
         glox::option<polybox> val(FORWARD(args)...);
-        if (val.val().is_null()) {
+        if (val.val().valueless()) {
             return { };
         }
         return val;
     }
 
-    [[nodiscard]] constexpr bool is_null() const noexcept
+    [[nodiscard]] constexpr bool valueless() const noexcept
     {
         return ptr == nullptr;
     }
 
-    [[nodiscard]] constexpr bool is_copyable() const noexcept
+    [[nodiscard]] constexpr bool is_null() const noexcept
     {
-        return ptr == nullptr || (ops != nullptr && ops->clone != nullptr);
+        return ptr == nullptr;
     }
 
     [[nodiscard]] constexpr auto get_allocator() const
@@ -639,7 +657,7 @@ public:
 
     [[nodiscard]] constexpr glox::option<T&> get() const noexcept
     {
-        if (ptr != nullptr) {
+        if (!valueless()) {
             return ptr;
         }
         return { };
@@ -653,18 +671,19 @@ public:
     [[nodiscard]] constexpr std::add_lvalue_reference_t<T>
     operator*() const noexcept
     {
-        GLOX_ASSERT(ptr != nullptr);
+        GLOX_ASSERT(!valueless());
         return *ptr;
     }
 
     [[nodiscard]] constexpr pointer operator->() const noexcept
     {
+        GLOX_ASSERT(!valueless());
         return ptr;
     }
 
     [[nodiscard]] constexpr explicit operator bool() const noexcept
     {
-        return ptr != nullptr;
+        return !valueless();
     }
 };
 
