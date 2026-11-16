@@ -25,6 +25,7 @@ add_executable(tests
     initgraph.cpp
     function.cpp
     mpsc_queue.cpp
+    intrusive_list.cpp
 )
 
 add_executable(benchmarks

@@ -36,7 +36,6 @@ import std.compat;
 #include "glox/intrusive_fwd_list.hpp"
 #include "glox/intrusive_list.hpp"
 #include "glox/intrusive_rb_tree.hpp"
-#include "glox/legacy_linkedlist.hpp"
 #include "glox/math.hpp"
 #include "glox/mutex.hpp"
 #include "glox/tuple.hpp"
@@ -52,3 +51,5 @@ import std.compat;
 #include "glox/initgraph.hpp"
 #include "glox/circular_buffer.hpp"
 #include "glox/function.hpp"
+#include "glox/mpsc_queue.hpp"
+#include "glox/list.hpp"
