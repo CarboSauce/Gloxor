@@ -24,6 +24,7 @@ add_executable(tests
     circular_buffer.cpp
     initgraph.cpp
     function.cpp
+    mpsc_queue.cpp
 )
 
 add_executable(benchmarks
