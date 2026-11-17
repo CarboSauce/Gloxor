@@ -1,6 +1,6 @@
 #ifndef USE_MODULES
-#include "glox/detail/moveutils.hpp"
 #include "glox/intrusive_list.hpp"
+#include "glox/detail/moveutils.hpp"
 #include <array>
 #include <cstddef>
 #include <iterator>
@@ -9,6 +9,7 @@ import std;
 import glox;
 #endif
 #include "doctest.h"
+#include "glox/macros.hpp"
 
 namespace {
 

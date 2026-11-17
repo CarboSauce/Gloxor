@@ -10,8 +10,10 @@
 #else
 import std;
 import glox;
+import std.compat;
 #endif
 #include "doctest.h"
+#include "glox/assert.hpp"
 
 using namespace glox;
 
@@ -55,7 +57,7 @@ struct alloc_stats
     size_t live_nodes = 0;
     size_t total_allocs = 0;
     size_t total_deallocs = 0;
-    size_t fail_after = SIZE_MAX;
+    size_t fail_after = -1;
 };
 
 template <typename T>

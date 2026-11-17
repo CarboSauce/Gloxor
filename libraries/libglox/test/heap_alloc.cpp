@@ -14,7 +14,6 @@ import std;
 import glox;
 #endif
 #include "doctest.h"
-#include <stdlib.h>
 
 namespace {
 
@@ -22,6 +21,16 @@ constexpr std::size_t TestPageSize = 65536;
 constexpr std::size_t TestMaxSmallSize = 2048;
 constexpr std::size_t TestGranularity = 8;
 constexpr std::size_t TestNumBuckets = TestMaxSmallSize / TestGranularity;
+
+extern "C"
+{
+extern int posix_memalign(
+    void** __memptr,
+    std::size_t __alignment,
+    std::size_t __size
+);
+extern void free(void* p);
+}
 
 // 1. Mock Page Allocator delivering 64KB page-aligned memory
 struct mock_page_allocator
