@@ -228,19 +228,19 @@ static glox::heap_allocator<Palloc, ThreadRoutines> globalHeap;
 
 void* memalloc(usize size)
 {
-    ::glox::scoped_lock<IrqLock> _;
+    gx::IrqScopeLock _;
     return globalHeap.alloc(size).ptr;
 }
 
 void memdealloc(void* ptr, usize size)
 {
-    ::glox::scoped_lock<IrqLock> _;
+    gx::IrqScopeLock _;
     return globalHeap.dealloc(ptr, size);
 }
 
 void memdealloc(void* ptr)
 {
-    ::glox::scoped_lock<IrqLock> _;
+    gx::IrqScopeLock _;
     return globalHeap.dealloc(ptr);
 }
 

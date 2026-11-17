@@ -15,4 +15,10 @@ public:
     IrqLock(const IrqLock&) = delete;
     IrqLock& operator=(const IrqLock&) = delete;
 };
+
+class IrqScopeLock
+{
+    gx::IrqLock l;
+    glox::scoped_lock<IrqLock> m { l };
+};
 }; // namespace gx

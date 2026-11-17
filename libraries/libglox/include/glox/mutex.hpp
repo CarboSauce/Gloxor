@@ -835,5 +835,10 @@ public:
     }
 };
 
+template <mutex_type T>
+unique_lock(T) -> unique_lock<T>;
+template <mutex_type... Ts>
+scoped_lock(Ts...) -> scoped_lock<Ts...>;
+
 GLOX_END_EXPORT
 } // namespace glox
