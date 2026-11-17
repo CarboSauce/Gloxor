@@ -18,7 +18,7 @@ struct alloc_handle
     }
 };
 template <typename Alloc, typename T>
-concept allocator
+concept basic_allocator
     = std::copy_constructible<Alloc> and std::move_constructible<Alloc>
   and std::destructible<Alloc>
   and requires(
@@ -37,6 +37,17 @@ concept allocator
           {
               allocator.alloc_zeroed(count, alignment)
           } -> std::same_as<alloc_handle<T>>;
+      };
+
+template <typename Alloc, typename T>
+concept allocator
+    = basic_allocator<Alloc, T>
+  and requires(
+      Alloc& allocator,
+      T* ptr,
+      std::size_t count,
+      std::size_t alignment
+  ) {
           {
               allocator.grow(ptr, count, count, alignment)
           } -> std::same_as<alloc_handle<T>>;
