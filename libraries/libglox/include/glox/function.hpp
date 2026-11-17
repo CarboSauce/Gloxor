@@ -147,8 +147,8 @@ class function<R(Args...), Allocator>
         // Slot 0: [vptr + 0]
         virtual R operator()(fast_param_t<Args>... args) = 0;
         virtual callable_base* clone() const = 0;
-        virtual void clone_into(callable_base* dst) const = 0;
-        virtual void move_and_destroy(callable_base* dst) noexcept = 0;
+        virtual void clone_into(void* dst) const = 0;
+        virtual void move_and_destroy(void* dst) noexcept = 0;
         virtual void destroy() noexcept = 0;
         virtual void destroy_deallocate() noexcept = 0;
         virtual bool is_copyable() const noexcept = 0;
@@ -189,7 +189,7 @@ class function<R(Args...), Allocator>
             }
         }
 
-        void clone_into(callable_base* dst) const override
+        void clone_into(void* dst) const override
         {
             if constexpr (std::is_copy_constructible_v<F>) {
                 std::construct_at(
@@ -202,7 +202,7 @@ class function<R(Args...), Allocator>
             }
         }
 
-        void move_and_destroy(callable_base* dst) noexcept override
+        void move_and_destroy(void* dst) noexcept override
         {
             if constexpr (std::is_move_constructible_v<F>) {
                 std::construct_at(
