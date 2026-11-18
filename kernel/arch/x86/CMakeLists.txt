@@ -21,6 +21,7 @@ target_sources(kernel
         interface/arch/irq.cppm
         interface/arch/paging.cppm
         interface/arch/arch.cppm
+        interface/arch/sched.cppm
 
         interface/asm/asm.cppm
         interface/asm/asmstubs.cppm

@@ -201,18 +201,8 @@ public:
         ptr = glox::alloc_uninitialized<T>(alloc, count).ptr;
         if (ptr != nullptr) {
             std::size_t constructed = 0;
-            try {
-                for (; constructed < count; ++constructed) {
-                    std::construct_at(ptr + constructed);
-                }
-            } catch (...) {
-                for (std::size_t i = 0; i < constructed; ++i) {
-                    ptr[i].~T();
-                }
-                glox::dealloc(alloc, ptr, count);
-                ptr = nullptr;
-                size_ = 0;
-                throw;
+            for (; constructed < count; ++constructed) {
+                std::construct_at(ptr + constructed);
             }
         } else {
             size_ = 0;

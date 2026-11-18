@@ -5,3 +5,4 @@ export import arch.archinfo;
 export import arch.cpu;
 export import arch.irq;
 export import arch.paging;
+export import arch.sched;

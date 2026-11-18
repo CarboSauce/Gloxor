@@ -33,6 +33,10 @@ target_sources(kernel
         system/system.cppm
         system/irq.cppm
 
+        sched/sched.cppm
+        sched/thread.cppm
+        sched/scheduler.cppm
+
         gloxor/mutex.cppm
         gloxor/types.cppm
         gloxor/kinfo.cppm
