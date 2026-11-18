@@ -52,6 +52,13 @@ SECTIONS
         KEEP(*(.data*))
     } :data
 
+    .percpu ALIGN(4K) : {
+        __percpu_start = .;
+        KEEP(*(.percpu.head))
+        KEEP(*(.percpu .percpu.*))
+        __percpu_end = .;
+    } :data
+
     .bss ALIGN(4K) :{
         PROVIDE(bss_begin = .);
         KEEP(*(.bss*))

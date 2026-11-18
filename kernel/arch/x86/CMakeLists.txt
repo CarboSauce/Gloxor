@@ -22,6 +22,7 @@ target_sources(kernel
         interface/arch/paging.cppm
         interface/arch/arch.cppm
         interface/arch/sched.cppm
+        interface/arch/percpu.cppm
 
         interface/asm/asm.cppm
         interface/asm/asmstubs.cppm
@@ -33,4 +34,10 @@ target_sources(kernel
         interface/asm/pic8042contr.cppm
         interface/asm/pit8042.cppm
 )
+# Percpu macro
+target_compile_definitions(
+    kernel PRIVATE
+    "DEFINE_PERCPU=[[gnu::section(\".percpu\"), gnu::used]]"
+)
+
 add_subdirectory(bootproto)

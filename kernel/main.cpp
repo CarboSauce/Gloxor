@@ -6,9 +6,7 @@ import gloxor.memory;
 import gloxor.types;
 import gloxor.kinfo;
 import arch;
-import arch.irq;
-import arch.cpu;
-import arch.addrspace;
+import arch_asm.msr;
 import std.compat;
 
 #include "cpuid.h"
@@ -103,6 +101,7 @@ void init_addr_space()
     );
     map_kernel();
 }
+
 extern "C" void gloxor_main()
 {
     (void)gx::preCpuInit.run();

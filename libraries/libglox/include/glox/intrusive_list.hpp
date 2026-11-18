@@ -281,13 +281,13 @@ public:
 
 private:
     GLOX_ALWAYS_INLINE
-    static const T* ptr_from_node(const list_node* const a) noexcept
+    inline static const T* ptr_from_node(const list_node* const a) noexcept
     {
         return container_of(a, NodePtr);
     }
 
     GLOX_ALWAYS_INLINE
-    static T* ptr_from_node(list_node* const a) noexcept
+    inline static T* ptr_from_node(list_node* const a) noexcept
     {
         return container_of(a, NodePtr);
     }

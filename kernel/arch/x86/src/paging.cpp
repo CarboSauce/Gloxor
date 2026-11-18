@@ -38,7 +38,7 @@ inline bool alloc_page_if_needed(u64& entry, u64 mask)
 {
     if (entry & present)
         return true;
-    const auto freshAdr = (u64)gx::page_alloc();
+    const auto freshAdr = (u64)gx::page_alloc(1);
     if (!freshAdr)
         return false;
     entry = mask_entry(get_real_address(freshAdr), mask);

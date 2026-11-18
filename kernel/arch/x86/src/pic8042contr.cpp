@@ -76,9 +76,11 @@ void mask_slave_irq(u8 irq)
 static void init_pic()
 {
     // In init_pic(), right after remapping and masking the 8259 PIC:
-    u64 apicBase = rdmsr(0x1B);
+    u64 apicBase = arch::msr::rdmsr(0x1B);
     apicBase &= ~(1ULL << 11); // Clear bit 11 (APIC Global Enable)
-    wrmsr(0x1B, static_cast<u32>(apicBase), static_cast<u32>(apicBase >> 32));
+    arch::msr::wrmsr(
+        0x1B, static_cast<u32>(apicBase), static_cast<u32>(apicBase >> 32)
+    );
 
     gx::pic::remap(0x20, 0x28);
     gx::log_debug("Initializing PIC\r\n");

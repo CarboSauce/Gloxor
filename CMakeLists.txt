@@ -66,6 +66,7 @@ list(APPEND KERNEL_COMPILE_FLAGS
 # alternatively we can use PIE and PIC magic
 # red zone is x86_64 abi thing
 # in kernel code it needs to be disabled because of interrupts
+    -ftls-model=local-exec
     -mno-red-zone
     -fno-stack-protector
     -fno-exceptions

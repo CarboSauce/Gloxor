@@ -2,6 +2,7 @@ module arch.cpu;
 import gloxor.system;
 import gloxor.memory;
 import arch;
+import arch.percpu;
 import arch_asm;
 import gloxor.types;
 import std.compat;
@@ -140,16 +141,20 @@ inline bool setup_pat()
     if (!(info.edx & (1 << 16)))
         return false;
     // WC UC WT WB the CPU default
-    gx::log_debug("Current ia32PAT is: %\r\n", (void*)rdmsr(msr::ia32PAT));
+    gx::log_debug("Current ia32PAT is: %\r\n", (void*)rdmsr(msr::IA32_PAT));
     u32 patlow = 0x01000406;
     // UC UC- WP WC
     u32 pathigh = 0x00070105;
-    wrmsr(msr::ia32PAT, patlow, pathigh);
+    wrmsr(msr::IA32_PAT, patlow, pathigh);
     return true;
 }
 void initialize_cpu()
 {
     initialize_gdt();
+    auto s = arch::percpu_area_size();
+    auto buf = gx::memalloc(s);
+    println("buf % with size %", buf, s);
+    arch::initialize_percpu(buf, s);
     initialize_interrupts();
     initialize_cpu_extensions();
     if (setup_pat())

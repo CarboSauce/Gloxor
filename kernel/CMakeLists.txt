@@ -32,6 +32,7 @@ target_sources(kernel
         system/terminal.cppm
         system/system.cppm
         system/irq.cppm
+        system/percpu.cppm
 
         sched/sched.cppm
         sched/thread.cppm

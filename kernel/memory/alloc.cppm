@@ -7,6 +7,9 @@ struct PmmAllocator
 {
     [[nodiscard]] static void* alloc(size_t s)
     {
+        if (s == 0) {
+            return nullptr;
+        }
         return gx::page_alloc(s / pmmChunkSize + 1);
     }
     static void dealloc(void* p, size_t s)
