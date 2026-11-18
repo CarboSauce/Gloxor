@@ -152,8 +152,7 @@ void initialize_cpu()
 {
     initialize_gdt();
     auto s = arch::percpu_area_size();
-    auto buf = gx::memalloc(s);
-    println("buf % with size %", buf, s);
+    auto buf = gx::PmmAllocator::alloc(s);
     arch::initialize_percpu(buf, s);
     initialize_interrupts();
     initialize_cpu_extensions();

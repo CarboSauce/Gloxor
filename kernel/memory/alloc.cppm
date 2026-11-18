@@ -1,6 +1,7 @@
 export module gloxor.memory.alloc;
 import gloxor.memory.pmm;
 import std.compat;
+import gloxor.system.logging;
 
 export namespace gx {
 struct PmmAllocator

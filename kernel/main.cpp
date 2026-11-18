@@ -91,7 +91,6 @@ void init_addr_space()
     gx::logln_debug("Remapping CR3 to %", &kAddrSpace);
     identity_map();
     auto [fbeg, fend] = gx::term::get_used_memory_range();
-    gx::logln_debug("Mapping framebuffer from: % to: %", fbeg, fend);
     map_region(
         (vaddr)fbeg,
         (vaddr)fend,
