@@ -1,6 +1,7 @@
 import arch;
 import glox;
 import gloxor;
+import gloxor.types;
 import gloxor.system;
 import gloxor.memory;
 import std.compat;
@@ -48,6 +49,14 @@ volatile limine_executable_address_request exec_address_request = {
     .id = LIMINE_EXECUTABLE_ADDRESS_REQUEST_ID,
     .revision = 0,
     .response = nullptr,
+};
+
+[[gnu::used, gnu::section(".limine_requests")]]
+volatile limine_stack_size_request stack_size_request = {
+    .id = LIMINE_STACK_SIZE_REQUEST_ID,
+    .revision = 0,
+    .response = nullptr,
+    .stack_size = 8192,
 };
 
 inline void initialize_pmm(limine_memmap_response* m)
@@ -151,6 +160,7 @@ void limine_main()
     }
 
     gx::machineInfo.kernelCode = { kernelFileBegin, kernelFileEnd };
-
-    gloxor_main();
+    gx::machineInfo.mainStackTop = (uintptr_t)gx::page_alloc(2);
+    gx::machineInfo.mainStackSize = 4096 * 2;
+    arch::run_on_stack(gx::machineInfo.mainStackTop, gloxor_main);
 }

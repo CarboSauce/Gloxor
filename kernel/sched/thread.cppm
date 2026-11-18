@@ -4,28 +4,39 @@ import std.compat;
 import glox;
 import gloxor;
 import arch;
+import gloxor.memory.pmm;
 
 export namespace gx {
+
+using thread_func = void (*)(void*);
+
 class Thread
 {
     glox::string name;
-    glox::function<void()> func;
-    glox::box<u8[]> stack;
+    uintptr_t stackBase;
+    uintptr_t stackTop;
 
 public:
-    Thread(glox::string name, glox::function<void()> func)
+    Thread(glox::string name, thread_func func, void* arg)
         : name(std::move(name))
-        , func(std::move(func))
-        , stack { glox::box<u8[]>::create(8192) }
     {
-        arch::setup_stack(
-            (uintptr_t)stack.get_ptr(),
-            [](void* arg) {
-                auto func = static_cast<glox::function<void()>*>(arg);
-                return (*func)();
-            },
-            &func
-        );
+        stackBase = (uintptr_t)gx::page_alloc(2);
+        stackTop = arch::setup_stack(stackBase, func, arg);
+    }
+
+    ~Thread()
+    {
+        gx::page_dealloc((void*)stackBase, 2);
+    }
+
+    Thread(glox::string name)
+        : name(std::move(name))
+    {
+    }
+
+    uintptr_t stack_top()
+    {
+        return stackTop;
     }
 };
 } // namespace gx

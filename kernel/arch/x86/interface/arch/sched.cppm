@@ -63,26 +63,29 @@ void switch_task(uintptr_t from, uintptr_t to)
     );
 }
 
-export [[gnu::naked]]
-void run_on_stack(uintptr_t stack, void (*fn)(void*), void* arg)
+export inline void run_on_stack(uintptr_t stack, void (*fn)(void*), void* arg)
 {
-    asm volatile( // save callee saved rbx
-        "pushq %%rbx\n"
-        // save old rsp in rbx
-        "movq %%rsp, %%rbx\n"
-        // align stack to 16 bytes
-        "andq $-16, %%rdi\n"
-        // switch to new stack
-        "movq %%rdi, %%rsp\n"
-        // move arg into 1st arg
-        "movq %%rdx, %%rdi\n"
-        // call fn
-        "callq *%%rsi\n"
-        // revert
-        "movq %%rbx, %%rsp\n"
-        "popq %%rbx\n"
-        "ret\n" ::
-            : "memory"
+    register uintptr_t rg asm("rdi") = (uintptr_t)arg;
+    asm volatile(
+        //
+        "mov %0, %%rsp\n"
+        "call *%1\n"
+        "ud2"
+        :
+        : "r"(stack), "r"(fn), "r"(rg)
+        : "memory"
+    );
+}
+export inline void run_on_stack(uintptr_t stack, void (*fn)())
+{
+    asm volatile(
+        //
+        "mov %0, %%rsp\n"
+        "call *%1\n"
+        "ud2"
+        :
+        : "r"(stack), "r"(fn)
+        : "memory"
     );
 }
 } // namespace arch

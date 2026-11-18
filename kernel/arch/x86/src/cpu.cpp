@@ -200,7 +200,6 @@ inline void initialize_interrupts()
     for (u64 i = 0; i < 256; ++i) {
         idt_list[i].register_handler(intVector[i], 0x8, 0, IDT_INTERRUPTGATE);
     }
-
     IdtPointer idtPtr = { sizeof(idt_list) - 1, idt_list };
     load_idt(idtPtr);
 }

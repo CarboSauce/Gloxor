@@ -1,3 +1,5 @@
+module;
+#include <cstdint>
 export module gloxor.kinfo;
 import glox;
 import gloxor.types;
@@ -39,6 +41,8 @@ struct BootInfo
 
     ::glox::span<MemoryMap> mmapEntries;
     FbInfo fbInfoEntry;
+    uintptr_t mainStackTop;
+    uintptr_t mainStackSize;
     ::glox::span<u8> kernelCode;
 };
 inline gx::BootInfo machineInfo;

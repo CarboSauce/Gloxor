@@ -21,4 +21,23 @@ class IrqScopeLock
     gx::IrqLock l;
     glox::scoped_lock<IrqLock> m { l };
 };
+
+class IrqSpinLock
+{
+    gx::IrqLock l;
+    glox::spinlock s;
+
+public:
+    void lock()
+    {
+        l.lock();
+        s.lock();
+    }
+
+    void unlock()
+    {
+        s.unlock();
+        l.unlock();
+    }
+};
 }; // namespace gx
