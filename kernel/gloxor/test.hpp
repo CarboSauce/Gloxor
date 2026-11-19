@@ -34,18 +34,18 @@ namespace gx {
     {                                           \
         name, &fnc                              \
     }
-#define KTEST_EXPECT(expr)                                              \
-    do {                                                                \
-        gx::ktestContext.assert_counter++;                              \
-        auto _tmp = (expr);                                             \
-        if (!_tmp) {                                                    \
-            gx::ktestContext.failed_counter++;                          \
-            gx::println(                                                \
-                "EXPECT(" #expr ") = %", (_tmp) ? "Success" : "Failure" \
-            );                                                          \
-        } else {                                                        \
-            gx::ktestContext.success_counter++;                         \
-        }                                                               \
+#define KTEST_EXPECT(expr)                                            \
+    do {                                                              \
+        gx::ktestContext.assert_counter++;                            \
+        auto _tmp = (expr);                                           \
+        if (!_tmp) {                                                  \
+            gx::ktestContext.failed_counter++;                        \
+            gx::println(                                              \
+                "EXPECT(%)= %", #expr, (_tmp) ? "Success" : "Failure" \
+            );                                                        \
+        } else {                                                      \
+            gx::ktestContext.success_counter++;                       \
+        }                                                             \
     } while (0)
 #define KTEST_ASSERT(expr)                                 \
     do {                                                   \

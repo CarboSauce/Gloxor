@@ -67,7 +67,7 @@ inline void initialize_pmm(limine_memmap_response* m)
         // for now reclaiming bootloader memory is too big of a risk as it can
         // corrupt page tables once memory manager can handle it, do it
         if (auto mTemp = mMap[curIndex]; mTemp->type == LIMINE_MEMMAP_USABLE) {
-            gx::pmm_add_chunk(
+            gx::boot_add_chunk(
                 reinterpret_cast<void*>(mTemp->base + arch::physicalMemBase),
                 mTemp->length
             );

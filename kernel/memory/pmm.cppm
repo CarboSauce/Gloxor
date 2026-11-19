@@ -14,6 +14,10 @@ export namespace gx {
  * its temporary workaround of not having proper initilalization functions
  */
 constexpr usize pmmChunkSize = 0x1000;
+
+void* boot_alloc(usize size, usize alignment = alignof(std::max_align_t));
+void* boot_alloc_z(usize size, usize alignment = alignof(std::max_align_t));
+void boot_dealloc(void* ptr, usize size);
 /**
  * @brief use this after adding all memory chunks with pmmAddChunk
  */
@@ -21,7 +25,7 @@ constexpr usize pmmChunkSize = 0x1000;
 /**
  * @brief Adds memory chunk to PMM
  */
-void pmm_add_chunk(void* base, usize length);
+void boot_add_chunk(void* base, usize length);
 /**
  * @brief Free the allocated page
  * @param ptr Pointer previously obtained from pmm::alloc
