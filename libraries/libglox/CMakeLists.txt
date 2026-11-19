@@ -107,6 +107,7 @@ endif()
 
 # Handle options
 if (COMPILE_TESTS)
+    enable_testing()
     add_subdirectory(test)
 endif()
 

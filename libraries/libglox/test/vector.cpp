@@ -10,19 +10,6 @@ import glox;
 #include "glox/macros.hpp"
 #include "utils.hpp"
 
-namespace glox {
-[[noreturn]] void exec_assert(const char* message, std::source_location loc)
-{
-    std::printf(
-        "Assert hit\nMessage:\nFunction: %s\n%s\nFile: %s\nLine: %d\n",
-        message,
-        loc.function_name(),
-        loc.file_name(),
-        loc.line()
-    );
-    std::exit(1);
-}
-} // namespace glox
 static_assert(
     sizeof(glox::vector<alloc_tracker>)
     == sizeof(alloc_tracker*) + sizeof(std::size_t) * 2
