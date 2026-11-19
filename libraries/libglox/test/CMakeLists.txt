@@ -27,6 +27,7 @@ add_executable(tests
     mpsc_queue.cpp
     intrusive_list.cpp
     radix_tree.cpp
+    buddy.cpp
 )
 
 add_executable(benchmarks
