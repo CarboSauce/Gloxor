@@ -18,29 +18,30 @@ using namespace arch;
 using namespace gx;
 using namespace arch::vmem;
 
-[[gnu::used]]
-static Gdt code_data[3] = {
-    { },
-    {
-        0x0000, // limit
-        0x0000, // base
-        0x00, // base
-        0b10011010, // flags
-        0b00100000, // gran
-        0x00, // base
-    },
-    {
-        0x0000, // limit
-        0x0000, // base
-        0x00, // base
-        0b10010010, // flags
-        0b00000000, // gran
-        0x00, // base
-    },
+DEFINE_PERCPU Percpu<glox::array<Gdt, 3>> code_data = {
+    .val = { .data {
+        { },
+        {
+            0x0000, // limit
+            0x0000, // base
+            0x00, // base
+            0b10011010, // flags
+            0b00100000, // gran
+            0x00, // base
+        },
+        {
+            0x0000, // limit
+            0x0000, // base
+            0x00, // base
+            0b10010010, // flags
+            0b00000000, // gran
+            0x00, // base
+        },
+    } },
 };
-[[gnu::used]]
-static Idt idt_list[256] { };
-static u64 cpuFeatures;
+
+DEFINE_PERCPU Percpu<glox::array<Idt, 256>> idt_list { };
+DEFINE_PERCPU Percpu<u64> cpuFeatures;
 
 extern "C" void int_handle(
     arch::InterruptRegs* regs,
@@ -132,7 +133,7 @@ namespace arch {
 
 bool is_feature_supported(FeatureBit features)
 {
-    return cpuFeatures & static_cast<u64>(features);
+    return *cpuFeatures & static_cast<u64>(features);
 }
 
 inline bool setup_pat()
@@ -150,16 +151,16 @@ inline bool setup_pat()
 }
 void initialize_cpu()
 {
-    initialize_gdt();
     auto s = arch::percpu_area_size();
     auto buf = gx::boot_alloc(s);
     arch::initialize_percpu(buf, s);
+    initialize_gdt();
     initialize_interrupts();
     initialize_cpu_extensions();
     if (setup_pat())
         gx::log_debug("PAT supported on boot cpu\r\n");
 
-    gx::log_debug("Cpu features: %\r\n", cpuFeatures);
+    gx::log_debug("Cpu features: %\r\n", (int)*cpuFeatures);
 }
 
 } // namespace arch
@@ -168,7 +169,7 @@ inline void initialize_gdt()
 {
     stop_irq();
 
-    GdtPointer gdt_ptr = { sizeof(code_data) - 1, code_data };
+    GdtPointer gdt_ptr = { sizeof(code_data) - 1, code_data->data };
 
     load_gdt(gdt_ptr);
     // Perform long jump after loading gdt to flush instruction cache
@@ -190,7 +191,7 @@ inline void initialize_gdt()
         "iretq\r\n"
         "1:\r\n"
         "pop %%rbp\r\n"
-        "mov %0,%%ds; mov %0,%%es; mov %0,%%fs; mov %0,%%gs; mov %0,%%ss;"
+        "mov %0,%%ds; mov %0,%%es; mov %0,%%ss;"
         :
         : "r"((uint64_t)(0x10) /* ds */), "r"((uint64_t)0x8 /* cs */)
         : "memory", "%rax"
@@ -202,9 +203,11 @@ inline void initialize_interrupts()
 {
 
     for (u64 i = 0; i < 256; ++i) {
-        idt_list[i].register_handler(intVector[i], 0x8, 0, IDT_INTERRUPTGATE);
+        idt_list->data[i].register_handler(
+            intVector[i], 0x8, 0, IDT_INTERRUPTGATE
+        );
     }
-    IdtPointer idtPtr = { sizeof(idt_list) - 1, idt_list };
+    IdtPointer idtPtr = { sizeof(idt_list) - 1, idt_list->data };
     load_idt(idtPtr);
 }
 
@@ -221,7 +224,7 @@ inline void initialize_cpu_extensions()
         write_cr0(control);
         control = read_cr4();
         control |= (1 << 9 | 1 << 10);
-        cpuFeatures |= 1;
+        *cpuFeatures = *cpuFeatures | 1;
         if (ecx & (1 << 26)) {
             control |= 1 << 18;
             isOSXsaveEnabled = true;
@@ -233,7 +236,7 @@ inline void initialize_cpu_extensions()
         auto reg = xgetbv(0);
         reg.eax |= 7;
         xsetbv(0, reg.edx, reg.eax);
-        cpuFeatures |= 1 << 1;
+        *cpuFeatures = *cpuFeatures | (1 << 1);
     }
 }
 
