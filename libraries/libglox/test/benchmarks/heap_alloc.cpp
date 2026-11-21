@@ -23,7 +23,14 @@ import glox;
 constexpr std::size_t TEST_PAGE_SIZE = 65536; // 64 KiB Page Slabs
 constexpr std::size_t TEST_MAX_SMALL_SIZE = 2048; // 2 KiB Small Upper Bound
 constexpr std::size_t TEST_GRANULARITY = 8;
-constexpr std::size_t TEST_NUM_BUCKETS = TEST_MAX_SMALL_SIZE / TEST_GRANULARITY;
+constexpr std::size_t TEST_ARENA_SIZE = 1024 * 1024;
+constexpr std::size_t TEST_HUGE_SIZE = 1024 * 1024;
+constexpr std::size_t TEST_MAX_MEDIUM_SIZE = 65536;
+constexpr std::size_t TEST_NUM_BUCKETS = glox::heap_detail::total_bucket_count<
+    TEST_MAX_SMALL_SIZE,
+    TEST_GRANULARITY,
+    TEST_MAX_MEDIUM_SIZE
+>();
 
 template <std::size_t PageSize = TEST_PAGE_SIZE>
 struct mmap_page_allocator
@@ -97,7 +104,10 @@ struct mock_thread_routines
     static void set_thread_id(std::size_t id)
     {
         currentTid = id;
-        tcache = glox::thread_cache<TEST_NUM_BUCKETS> { };
+        for (std::size_t i = 0; i < TEST_NUM_BUCKETS; ++i) {
+            tcache.pages[i] = nullptr;
+            tcache.atomic_stash[i].store(nullptr, std::memory_order_relaxed);
+        }
     }
 };
 
@@ -106,7 +116,10 @@ using bench_heap_allocator = glox::heap_allocator<
     mock_thread_routines,
     TEST_MAX_SMALL_SIZE,
     TEST_GRANULARITY,
-    TEST_PAGE_SIZE
+    TEST_PAGE_SIZE,
+    TEST_ARENA_SIZE,
+    glox::spinlock,
+    TEST_MAX_MEDIUM_SIZE
 >;
 
 static void BM_Glox_SingleThreaded_FastPath(benchmark::State& state)

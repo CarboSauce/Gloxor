@@ -7,7 +7,7 @@ namespace glox {
 GLOX_BEGIN_EXPORT
 constexpr uint32_t align_up(uint32_t x, uint32_t to)
 {
-    return ((x + to) & (~(to - 1)));
+    return ((x + to - 1) & (~(to - 1)));
 }
 
 constexpr uint32_t align(uint32_t x, uint32_t to)

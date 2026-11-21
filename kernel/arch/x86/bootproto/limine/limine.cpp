@@ -148,7 +148,6 @@ void limine_main()
             gx::machineInfo.fbInfoEntry.greenMaskShift = fb->green_mask_shift;
             gx::machineInfo.fbInfoEntry.blueMaskSize = fb->blue_mask_size;
             gx::machineInfo.fbInfoEntry.blueMaskShift = fb->blue_mask_shift;
-            gx::term::init_term(gx::machineInfo.fbInfoEntry);
         }
     }
 

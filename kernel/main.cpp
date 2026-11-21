@@ -105,6 +105,7 @@ extern "C" void gloxor_main()
 {
     (void)gx::preCpuInit.run();
     initialize_cpu();
+    gx::term::init_term(gx::machineInfo.fbInfoEntry);
     init_addr_space();
     call_global_ctors();
     (void)gx::postCpuInit.run();

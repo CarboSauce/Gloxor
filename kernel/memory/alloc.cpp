@@ -5,6 +5,8 @@ import gloxor.system.logging;
 import gloxor.mutex;
 import gloxor.types;
 import gloxor.memory.pmm;
+import gloxor.system.percpu;
+import arch.percpu;
 import std;
 import std.compat;
 
@@ -207,8 +209,12 @@ struct Palloc
 
 static constexpr std::size_t PAGE_SIZE = 65536;
 static constexpr std::size_t MAX_SMALL_SIZE = 2048;
-static constexpr std::size_t GRAUNULARITY = 8;
-static constexpr std::size_t NUM_BUCKETS = MAX_SMALL_SIZE / GRAUNULARITY;
+static constexpr std::size_t MAX_MEDIUM_SIZE = 65536;
+static constexpr std::size_t GRANULARITY = 8;
+static constexpr std::size_t ARENA_SIZE = 1024 * 1024;
+static constexpr std::size_t HUGE_SIZE = 1024 * 1024;
+static constexpr std::size_t NUM_BUCKETS = glox::heap_detail::
+    total_bucket_count<MAX_SMALL_SIZE, GRANULARITY, MAX_MEDIUM_SIZE>();
 
 struct ThreadRoutines
 {
@@ -219,28 +225,53 @@ struct ThreadRoutines
 
     auto& get_tcache()
     {
-        return tcache;
+        return *tcache.ptr();
     }
-    static inline glox::thread_cache<NUM_BUCKETS> tcache { };
+    DEFINE_PERCPU constinit static inline arch::Percpu<
+        glox::thread_cache<NUM_BUCKETS>
+    >
+        tcache { };
 };
 
-static glox::heap_allocator<Palloc, ThreadRoutines> globalHeap;
+using global_heap_alloc = glox::heap_allocator<
+    Palloc,
+    ThreadRoutines,
+    MAX_SMALL_SIZE,
+    GRANULARITY,
+    PAGE_SIZE,
+    ARENA_SIZE,
+    glox::spinlock,
+    MAX_MEDIUM_SIZE
+>;
+
+static global_heap_alloc globalHeap;
+
+static constexpr bool TRACK_MEMALLOC = true;
 
 void* memalloc(usize size)
 {
     gx::IrqScopeLock _;
+    if constexpr (TRACK_MEMALLOC) {
+        gx::println("[memalloc] Allocating with size %", size);
+    }
     return globalHeap.alloc(size).ptr;
 }
 
 void memdealloc(void* ptr, usize size)
 {
     gx::IrqScopeLock _;
+    if constexpr (TRACK_MEMALLOC) {
+        gx::println("[memalloc] Deallocating %x with size %", ptr, size);
+    }
     return globalHeap.dealloc(ptr, size);
 }
 
 void memdealloc(void* ptr)
 {
     gx::IrqScopeLock _;
+    if constexpr (TRACK_MEMALLOC) {
+        gx::println("Deallocating %x ", ptr);
+    }
     return globalHeap.dealloc(ptr);
 }
 

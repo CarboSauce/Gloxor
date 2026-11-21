@@ -29,6 +29,7 @@ static bootList bootCtx;
 static u64 memorySize = 0;
 constexpr auto SIZE_MAX = std::numeric_limits<std::size_t>::max();
 constexpr auto UINTPTR_MAX = std::numeric_limits<std::uintptr_t>::max();
+static constexpr bool TRACK_ALLOCATIONS = true;
 
 namespace {
 
@@ -214,6 +215,11 @@ void boot_add_chunk(void* base, size_t length)
 // Allocate arbitrary bytes with specified alignment.
 void* boot_alloc(usize size, usize alignment)
 {
+    if constexpr (TRACK_ALLOCATIONS) {
+        gx::println(
+            "[boot_alloc] Allocating % with alignment %", size, alignment
+        );
+    }
     return alloc_from_chunk(bootCtx, size, alignment);
 }
 
@@ -253,6 +259,9 @@ void boot_dealloc(void* ptr, usize size)
 {
     if (ptr == nullptr || size == 0) {
         return;
+    }
+    if constexpr (TRACK_ALLOCATIONS) {
+        gx::println("[boot_alloc] Deallocating %x with size %", ptr, size);
     }
 
     const uintptr_t base = reinterpret_cast<uintptr_t>(ptr);

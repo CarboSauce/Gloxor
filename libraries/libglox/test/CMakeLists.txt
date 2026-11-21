@@ -58,7 +58,14 @@ add_executable(benchmarks
     benchmarks/deque.cpp
 )
 
+add_executable(mem_benchmarks
+    benchmarks/memusage.cpp
+)
+
 target_compile_features(benchmarks
+    PUBLIC cxx_std_26
+)
+target_compile_features(mem_benchmarks
     PUBLIC cxx_std_26
 )
 
@@ -70,6 +77,12 @@ target_compile_features(benchmark PUBLIC cxx_std_23)
 target_link_libraries(benchmarks PRIVATE libglox benchmark::benchmark mimalloc)
 
 target_compile_options(benchmarks PRIVATE
+    ${WARNING_FLAGS}
+)
+
+target_link_libraries(mem_benchmarks PRIVATE libglox benchmark::benchmark mimalloc)
+
+target_compile_options(mem_benchmarks PRIVATE
     ${WARNING_FLAGS}
 )
 
