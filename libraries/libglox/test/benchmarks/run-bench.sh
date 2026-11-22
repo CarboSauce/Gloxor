@@ -33,7 +33,7 @@ echo " Running Benchmarks from: ${BENCH_BIN}"
 echo " Storing JSONs in:        ${RESULTS_DIR}"
 echo "=========================================="
 
-BENCH_GROUPS=("Glox" "Mimalloc")
+BENCH_GROUPS=("Glox" "KHeap" "Mimalloc")
 
 for GROUP in "${BENCH_GROUPS[@]}"; do
     JSON_FILE="${RESULTS_DIR}/${GROUP}.json"

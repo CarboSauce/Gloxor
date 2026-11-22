@@ -470,8 +470,7 @@ private:
             stamp(pfn + i, (std::uint64_t(i) << TAG_BITS) | TAG_LARGE_TAIL);
     }
 
-    // ---- slab block lists (16-bit indices)
-    // ------------------------------------
+    // slab block lists (16-bit indices)
 
     static std::uint16_t& link_of(void* blk) noexcept
     {
@@ -621,9 +620,7 @@ private:
         return true;
     }
 
-    // ---- page_meta pool (owner-private; no atomics)
-    // ----------------------------
-
+    // page_meta pool (owner-private; no atomics)
     void refill_meta(tcache_t& tc)
     {
         // Slots of destroyed caches first; takes the lock, but only once per
@@ -687,9 +684,7 @@ private:
         free_meta_slot(tc, pg);
     }
 
-    // ---- large spans / deferred frees
-    // -------------------------------------------
-
+    // large spans / deferred frees
     void free_large(void* ptr, std::uintptr_t pfn, std::uint64_t md)
     {
         const std::size_t pages = static_cast<std::size_t>(md >> TAG_BITS);
@@ -741,9 +736,7 @@ private:
         shared_lock.unlock();
     }
 
-    // ---- allocation slow paths
-    // ---------------------------------------------------
-
+    // allocation slow paths
     void* alloc_cached_slow(tcache_t& tc, std::size_t b)
     {
         drain_deferred();
@@ -1219,8 +1212,7 @@ public:
         }
     }
 
-    // ---- resizing
-
+    // resizing
     void* grow_inplace(void* ptr, std::size_t new_size)
     {
         return (ptr && new_size <= usable_size(ptr)) ? ptr : nullptr;

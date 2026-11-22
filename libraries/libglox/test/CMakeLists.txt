@@ -56,9 +56,15 @@ endforeach()
 
 add_executable(benchmarks
     benchmarks/heap_alloc.cpp
+    benchmarks/kheap_alloc.cpp
     benchmarks/mimalloc.cpp
     benchmarks/function.cpp
     benchmarks/deque.cpp
+)
+target_compile_options(benchmarks PRIVATE
+    $<$<BOOL:${LIBGLOX_SANITIZE}>:-fsanitize=address,undefined>
+    $<$<BOOL:${LIBGLOX_SANITIZE_THREAD}>:-fsanitize=thread>
+    ${WARNING_FLAGS}
 )
 
 add_executable(mem_benchmarks
@@ -78,14 +84,11 @@ target_compile_features(benchmark PUBLIC cxx_std_23)
 
 
 target_link_libraries(benchmarks PRIVATE libglox benchmark::benchmark mimalloc)
+target_compile_options(benchmarks PRIVATE ${WARNING_FLAGS})
 
-target_compile_options(benchmarks PRIVATE
-    ${WARNING_FLAGS}
+target_link_libraries(mem_benchmarks PRIVATE
+    libglox benchmark::benchmark mimalloc
 )
-
-target_link_libraries(mem_benchmarks PRIVATE libglox benchmark::benchmark mimalloc)
-
 target_compile_options(mem_benchmarks PRIVATE
     ${WARNING_FLAGS}
 )
-
