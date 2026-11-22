@@ -1,20 +1,12 @@
-// Memory usage benchmarks: mimalloc vs glox::heap_allocator.
+// Memory usage benchmarks: mimalloc vs glox::heap_allocator vs
+// glox::kheap_allocator.
 //
 // Linux only (reads /proc/self/statm, uses mmap). Single-threaded.
-//
-// Methodology
-//  * Every iteration starts cold. glox gets a fresh heap and every arena it
-//    mapped is unmapped afterwards; mimalloc runs with purge_delay=0 and
-//    mi_collect(true) so freed memory is handed back to the OS.
-//  * Memory is measured as resident-set-size deltas (what the process really
-//    holds), plus an allocator-specific "source" number: mi_process_info's
-//    current_commit for mimalloc, bytes mapped by the page allocator for glox.
-//  * All payloads are fully written, otherwise untouched pages never show up
-//    in RSS.
 
 #ifndef USE_MODULES
 #include "glox/alloc_types.hpp"
 #include "glox/heap_alloc.hpp"
+#include "glox/kheap_alloc.hpp"
 #include <algorithm>
 #include <benchmark/benchmark.h>
 #include <cstddef>
@@ -44,6 +36,8 @@ constexpr std::size_t MAX_MEDIUM_SIZE = 65536;
 constexpr std::size_t PAYLOAD_BUDGET = 8u * 1024 * 1024; // live bytes per run
 constexpr std::size_t NUM_BUCKETS = glox::heap_detail::
     total_bucket_count<MAX_SMALL_SIZE, GRANULARITY, MAX_MEDIUM_SIZE>();
+constexpr std::size_t KHEAP_NUM_BUCKETS = glox::kheap_detail::
+    total_bucket_count<MAX_SMALL_SIZE, GRANULARITY, MAX_MEDIUM_SIZE>();
 constexpr double MiB = 1024.0 * 1024.0;
 
 // Resident set size of this process in bytes.
@@ -59,10 +53,7 @@ inline std::int64_t rss_bytes()
     return static_cast<std::int64_t>(resident) * ::sysconf(_SC_PAGESIZE);
 }
 
-// ---- glox plumbing
-// Page allocator on top of mmap. Returns ArenaSize-aligned regions, counts the
-// bytes it has mapped, and can unmap everything the heap leaked at the end of
-// an iteration (heap_allocator never gives its arenas back).
+// glox (heap_alloc) plumbing
 struct tracking_page_allocator
 {
     static constexpr std::size_t MAX_BLOCKS = 4096;
@@ -162,16 +153,18 @@ struct tracking_page_allocator
 
 struct bench_thread_routines
 {
-    static inline thread_local glox::thread_cache<NUM_BUCKETS> tcache { };
+    static constexpr std::size_t BUCKETS = glox::heap_detail::
+        total_bucket_count<MAX_SMALL_SIZE, GRANULARITY, MAX_MEDIUM_SIZE>();
+    static inline thread_local glox::thread_cache<BUCKETS> tcache { };
 
-    glox::thread_cache<NUM_BUCKETS>& get_tcache() const noexcept
+    glox::thread_cache<BUCKETS>& get_tcache() noexcept
     {
         return tcache;
     }
 
     static void reset_tcache()
     {
-        for (std::size_t i = 0; i < NUM_BUCKETS; ++i) {
+        for (std::size_t i = 0; i < BUCKETS; ++i) {
             tcache.pages[i] = nullptr;
             tcache.atomic_stash[i].store(nullptr, std::memory_order_relaxed);
         }
@@ -189,11 +182,213 @@ using glox_heap = glox::heap_allocator<
     MAX_MEDIUM_SIZE
 >;
 
-// ---- allocator adapters
-// ---- begin() puts the
-// allocator in a cold state, end() returns what it can to the OS,
-// source_bytes() is the allocator's own view of what it holds.
+// kheap (kheap_alloc) plumbing
+constexpr std::size_t KHEAP_PAGE_SHIFT = 16;
+constexpr std::size_t KHEAP_PAGE_SIZE = std::size_t(1) << KHEAP_PAGE_SHIFT;
+constexpr std::size_t KHEAP_WINDOW_BYTES = 512ull * 1024 * 1024; // 512 MiB
+constexpr std::size_t KHEAP_MAX_PFNS = KHEAP_WINDOW_BYTES >> KHEAP_PAGE_SHIFT;
 
+struct kheap_desc
+{
+    std::uint64_t v { 0 };
+
+    static kheap_desc make_reserved() noexcept
+    {
+        return { 0 };
+    }
+    static kheap_desc make_buddy_free(std::size_t o) noexcept
+    {
+        return { (std::uint64_t(o) << 6) | 32 };
+    }
+    static kheap_desc make_allocated(std::size_t o) noexcept
+    {
+        return { std::uint64_t(o) << 6 };
+    }
+    bool is_buddy_free() const noexcept
+    {
+        return (v & 31) == 0 && (v & 32) != 0;
+    }
+    std::size_t buddy_order() const noexcept
+    {
+        return v >> 6;
+    }
+
+    static kheap_desc from_raw(std::uint64_t r) noexcept
+    {
+        return { r };
+    }
+    std::uint64_t raw() const noexcept
+    {
+        return v;
+    }
+};
+
+struct kheap_arena_state
+{
+    static inline std::uintptr_t base = 0;
+    static inline std::size_t bump_offset = 0;
+    static inline std::size_t mapped_bytes = 0;
+    static inline std::vector<kheap_desc> db;
+
+    static void init()
+    {
+        if (base == 0) {
+            void* p = ::mmap(
+                nullptr,
+                KHEAP_WINDOW_BYTES,
+                PROT_NONE,
+                MAP_PRIVATE | MAP_ANONYMOUS,
+                -1,
+                0
+            );
+            base = reinterpret_cast<std::uintptr_t>(p);
+            db.resize(KHEAP_MAX_PFNS);
+        }
+        reset();
+    }
+
+    static void reset()
+    {
+        if (base != 0 && bump_offset > 0) {
+            ::mmap(
+                reinterpret_cast<void*>(base),
+                bump_offset,
+                PROT_NONE,
+                MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
+                -1,
+                0
+            );
+            std::fill(
+                db.begin(),
+                db.begin() + (bump_offset >> KHEAP_PAGE_SHIFT),
+                kheap_desc { 0 }
+            );
+        }
+        bump_offset = 0;
+        mapped_bytes = 0;
+    }
+};
+
+struct kheap_pfndb
+{
+    kheap_desc& operator[](std::uintptr_t pfn) noexcept
+    {
+        return kheap_arena_state::db[pfn];
+    }
+    const kheap_desc& operator[](std::uintptr_t pfn) const noexcept
+    {
+        return kheap_arena_state::db[pfn];
+    }
+    bool is_valid(std::uintptr_t pfn) const noexcept
+    {
+        return pfn < (kheap_arena_state::bump_offset >> KHEAP_PAGE_SHIFT);
+    }
+    void* pfn_to_virt(std::uintptr_t pfn) const noexcept
+    {
+        return reinterpret_cast<void*>(
+            kheap_arena_state::base + (pfn << KHEAP_PAGE_SHIFT)
+        );
+    }
+    std::uintptr_t virt_to_pfn(const void* p) const noexcept
+    {
+        const auto a = reinterpret_cast<std::uintptr_t>(p);
+        if (a < kheap_arena_state::base)
+            return KHEAP_MAX_PFNS;
+        return (a - kheap_arena_state::base) >> KHEAP_PAGE_SHIFT;
+    }
+};
+
+struct kheap_page_allocator
+{
+    glox::alloc_handle<void> alloc(std::size_t n)
+    {
+        n = (n + KHEAP_PAGE_SIZE - 1) & ~(KHEAP_PAGE_SIZE - 1);
+        if (kheap_arena_state::bump_offset + n > KHEAP_WINDOW_BYTES)
+            return { nullptr, 0 };
+
+        void* ptr = reinterpret_cast<void*>(
+            kheap_arena_state::base + kheap_arena_state::bump_offset
+        );
+        void* res = ::mmap(
+            ptr,
+            n,
+            PROT_READ | PROT_WRITE,
+            MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
+            -1,
+            0
+        );
+        if (res == MAP_FAILED)
+            return { nullptr, 0 };
+
+        kheap_arena_state::bump_offset += n;
+        kheap_arena_state::mapped_bytes += n;
+        return { ptr, n };
+    }
+
+    void dealloc(void* ptr, std::size_t n)
+    {
+        if (!ptr)
+            return;
+        n = (n + KHEAP_PAGE_SIZE - 1) & ~(KHEAP_PAGE_SIZE - 1);
+        ::madvise(ptr, n, MADV_DONTNEED);
+        kheap_arena_state::mapped_bytes -= n;
+    }
+
+    glox::alloc_handle<void> grow(void*, std::size_t, std::size_t)
+    {
+        return { nullptr, 0 };
+    }
+
+    glox::alloc_handle<void> shrink(
+        void* ptr,
+        std::size_t old_n,
+        std::size_t new_n
+    )
+    {
+        old_n = (old_n + KHEAP_PAGE_SIZE - 1) & ~(KHEAP_PAGE_SIZE - 1);
+        new_n = (new_n + KHEAP_PAGE_SIZE - 1) & ~(KHEAP_PAGE_SIZE - 1);
+        if (old_n > new_n) {
+            ::madvise(
+                static_cast<char*>(ptr) + new_n, old_n - new_n, MADV_DONTNEED
+            );
+            kheap_arena_state::mapped_bytes -= (old_n - new_n);
+        }
+        return { ptr, new_n };
+    }
+};
+
+struct kheap_thread_routines
+{
+    static inline thread_local glox::kthread_cache<KHEAP_NUM_BUCKETS>
+        tcache { };
+
+    glox::kthread_cache<KHEAP_NUM_BUCKETS>& get_tcache() noexcept
+    {
+        return tcache;
+    }
+
+    static void reset_tcache()
+    {
+        for (std::size_t i = 0; i < KHEAP_NUM_BUCKETS; ++i) {
+            tcache.pages[i] = nullptr;
+            tcache.atomic_stash[i].store(nullptr, std::memory_order_relaxed);
+        }
+        tcache.meta_free_list = nullptr;
+    }
+};
+
+using kheap_alloc_t = glox::kheap_allocator<
+    kheap_page_allocator,
+    kheap_pfndb,
+    kheap_thread_routines,
+    glox::spinlock,
+    KHEAP_PAGE_SHIFT,
+    MAX_SMALL_SIZE,
+    GRANULARITY,
+    MAX_MEDIUM_SIZE
+>;
+
+// allocator adapters
 struct mimalloc_adapter
 {
     void begin()
@@ -254,16 +449,43 @@ struct glox_adapter
     }
 };
 
+struct kheap_adapter
+{
+    kheap_alloc_t heap;
+
+    void begin()
+    {
+        kheap_arena_state::init();
+        kheap_thread_routines::reset_tcache();
+    }
+    void* alloc(std::size_t n)
+    {
+        return heap.alloc(n).ptr;
+    }
+    void free(void* p, std::size_t)
+    {
+        heap.dealloc(p);
+    }
+    void end()
+    {
+        heap.release_cache(kheap_thread_routines::tcache);
+        kheap_thread_routines::reset_tcache();
+        kheap_arena_state::reset();
+    }
+
+    std::int64_t source_bytes()
+    {
+        return static_cast<std::int64_t>(kheap_arena_state::mapped_bytes);
+    }
+};
+
 static void SizeArgs(::benchmark::Benchmark* b)
 {
     for (int s : { 8, 16, 24, 48, 100, 256, 1000, 2048 })
         b->Arg(s);
 }
 
-// ---- 1. Per-object overhead
-// ---- Allocate ~8 MiB of live
-// payload in objects of one size and compare what the process holds to what the
-// caller asked for.
+// 1. Per-object overhead
 template <class Adapter>
 static void BM_Memory_Overhead(benchmark::State& state)
 {
@@ -311,10 +533,7 @@ static void BM_Memory_Overhead(benchmark::State& state)
     }
 }
 
-// ---- 2. Fragmentation and retention
-// ---- Fill, free every other object
-// (pages are half empty but still pinned), then free the rest and see how much
-// memory is still held without any trim call.
+// 2. Fragmentation and retention
 template <class Adapter>
 static void BM_Memory_Fragmentation(benchmark::State& state)
 {
@@ -363,18 +582,12 @@ static void BM_Memory_Fragmentation(benchmark::State& state)
     const double iters = static_cast<double>(state.iterations());
     if (iters > 0) {
         state.counters["rss_full_x"] = fullSum / iters / payload;
-        // Resident bytes per live byte when only half the objects remain.
         state.counters["rss_half_live_x"] = halfSum / iters / (payload / 2);
-        // Still resident after everything was freed (no explicit trim).
         state.counters["retained_MiB"] = emptySum / iters / MiB;
     }
 }
 
-// ---- 3. Steady-state churn
-// ---- Random alloc/free over
-// a fixed set of slots with mixed sizes. arg 0 = small sizes only; arg 1 also
-// mixes in 4 KiB and 20 KB blocks (above the small limit, so they use the
-// large-page path).
+// 3. Steady-state churn
 template <class Adapter>
 static void BM_Memory_Churn(benchmark::State& state)
 {
@@ -458,9 +671,11 @@ static void BM_Memory_Churn(benchmark::State& state)
 
 MEMBENCH_REGISTER(BM_Memory_Overhead, mimalloc_adapter);
 MEMBENCH_REGISTER(BM_Memory_Overhead, glox_adapter);
+MEMBENCH_REGISTER(BM_Memory_Overhead, kheap_adapter);
 
 MEMBENCH_REGISTER(BM_Memory_Fragmentation, mimalloc_adapter);
 MEMBENCH_REGISTER(BM_Memory_Fragmentation, glox_adapter);
+MEMBENCH_REGISTER(BM_Memory_Fragmentation, kheap_adapter);
 
 BENCHMARK_TEMPLATE(BM_Memory_Churn, mimalloc_adapter)
     ->Arg(0)
@@ -468,6 +683,11 @@ BENCHMARK_TEMPLATE(BM_Memory_Churn, mimalloc_adapter)
     ->Iterations(3)
     ->Unit(benchmark::kMillisecond);
 BENCHMARK_TEMPLATE(BM_Memory_Churn, glox_adapter)
+    ->Arg(0)
+    ->Arg(1)
+    ->Iterations(3)
+    ->Unit(benchmark::kMillisecond);
+BENCHMARK_TEMPLATE(BM_Memory_Churn, kheap_adapter)
     ->Arg(0)
     ->Arg(1)
     ->Iterations(3)

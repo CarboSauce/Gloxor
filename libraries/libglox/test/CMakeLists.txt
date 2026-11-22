@@ -28,6 +28,7 @@ set(test_sources
     intrusive_list.cpp
     radix_tree.cpp
     buddy.cpp
+    kheap_alloc.cpp
 )
 
 
@@ -39,9 +40,11 @@ foreach(t ${test_sources})
     target_link_libraries(${name}_test PRIVATE
         libglox doctest::doctest doctest_with_main
         $<$<BOOL:${LIBGLOX_SANITIZE}>:-fsanitize=address,undefined>
+        $<$<BOOL:${LIBGLOX_SANITIZE_THREAD}>:-fsanitize=thread>
     )
     target_compile_options(${name}_test PRIVATE
         $<$<BOOL:${LIBGLOX_SANITIZE}>:-fsanitize=address,undefined>
+        $<$<BOOL:${LIBGLOX_SANITIZE_THREAD}>:-fsanitize=thread>
         ${WARNING_FLAGS}
     )
     target_compile_features(${name}_test

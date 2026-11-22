@@ -4,6 +4,7 @@ option(USE_MODULES "Enable modules support in libglox" OFF)
 option(COMPILE_TESTS "Enable tests?" ON)
 option(SET_INSTALL_TARGETS "Should we attach installation targets?" OFF)
 option(LIBGLOX_SANITIZE "Use sanitizers" OFF)
+option(LIBGLOX_SANITIZE_THREAD "Use thread sanitizer" OFF)
 option(USE_CUSTOM_DEFAULT_ALLOCATOR "Use custom default allocator routines" OFF)
 set(DEFAULT_ALLOCATOR_PATH "" CACHE STRING
  "Header file path with default allocator that will be included in glox/alloc.hpp
