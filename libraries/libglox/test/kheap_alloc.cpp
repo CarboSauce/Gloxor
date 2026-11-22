@@ -157,6 +157,11 @@ struct test_pfndb
     {
         return reinterpret_cast<std::uintptr_t>(p) >> Shift;
     }
+    static constexpr std::uint64_t TAG_BUDDY = 0x00;
+    static constexpr std::uint64_t TAG_META = 0x01;
+    static constexpr std::uint64_t TAG_SLAB = 0x02;
+    static constexpr std::uint64_t TAG_LARGE = 0x03;
+    static constexpr std::uint64_t TAG_LARGE_TAIL = 0x04;
 };
 
 // page allocator fixture

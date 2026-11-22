@@ -231,7 +231,10 @@ concept kthread_routines = requires(T t) {
 //
 // pfndb word (per PFN), tag in [4:0]:
 //   TAG_BUDDY      0x00  page owned by palloc (free, or allocated but
-//   unstamped) TAG_META       0x01  PageSize page carved into page_meta slots
+//   unstamped)
+//
+//   TAG_META       0x01  PageSize page carved into page_meta slots
+//
 //   TAG_SLAB       0x02  [PageShift-1:5] slot index, [63:PageShift] meta page
 //                        base (every PFN of a multi-page slab: identical word)
 //   TAG_LARGE      0x03  head frame, [63:5] page_count
@@ -265,11 +268,11 @@ public:
     static constexpr std::size_t num_buckets = kheap_detail::
         total_bucket_count<MaxSmallSize, Granularity, MaxMediumSize>();
 
-    static constexpr std::uint64_t TAG_BUDDY = 0x00;
-    static constexpr std::uint64_t TAG_META = 0x01;
-    static constexpr std::uint64_t TAG_SLAB = 0x02;
-    static constexpr std::uint64_t TAG_LARGE = 0x03;
-    static constexpr std::uint64_t TAG_LARGE_TAIL = 0x04;
+    static constexpr std::uint64_t TAG_BUDDY = Accessor::TAG_BUDDY;
+    static constexpr std::uint64_t TAG_META = Accessor::TAG_META;
+    static constexpr std::uint64_t TAG_SLAB = Accessor::TAG_SLAB;
+    static constexpr std::uint64_t TAG_LARGE = Accessor::TAG_LARGE;
+    static constexpr std::uint64_t TAG_LARGE_TAIL = Accessor::TAG_LARGE_TAIL;
 
 private:
     static_assert(PageShift >= 12, "Page size must be at least 4 KiB");

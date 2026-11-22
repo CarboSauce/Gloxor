@@ -39,6 +39,11 @@ concept pfndb_accessor
           } -> std::same_as<const std::remove_cvref_t<decltype(acc[pfn])>&>;
           { cacc.is_valid(pfn) } -> std::convertible_to<bool>;
           { cacc.pfn_to_virt(pfn) } -> std::convertible_to<void*>;
+          { Accessor::TAG_BUDDY } -> std::convertible_to<uintptr_t>;
+          { Accessor::TAG_META } -> std::convertible_to<uintptr_t>;
+          { Accessor::TAG_SLAB } -> std::convertible_to<uintptr_t>;
+          { Accessor::TAG_LARGE } -> std::convertible_to<uintptr_t>;
+          { Accessor::TAG_LARGE_TAIL } -> std::convertible_to<uintptr_t>;
       };
 
 template <

@@ -90,13 +90,13 @@ struct mmap_page_allocator
 struct mock_thread_routines
 {
     static inline thread_local std::size_t currentTid = 0;
-    static inline thread_local glox::kthread_cache<TEST_NUM_BUCKETS> tcache { };
+    static inline thread_local glox::thread_cache<TEST_NUM_BUCKETS> tcache { };
 
     std::size_t thread_id() const noexcept
     {
         return currentTid;
     }
-    glox::kthread_cache<TEST_NUM_BUCKETS>& get_tcache() const noexcept
+    glox::thread_cache<TEST_NUM_BUCKETS>& get_tcache() const noexcept
     {
         return tcache;
     }

@@ -63,6 +63,12 @@ struct alignas(8) test_pfn_desc
     {
         return static_cast<std::size_t>((raw >> 8) & 0xFFu);
     }
+
+    static constexpr std::uint64_t TAG_BUDDY = 0x00;
+    static constexpr std::uint64_t TAG_META = 0x01;
+    static constexpr std::uint64_t TAG_SLAB = 0x02;
+    static constexpr std::uint64_t TAG_LARGE = 0x03;
+    static constexpr std::uint64_t TAG_LARGE_TAIL = 0x04;
 };
 
 static_assert(sizeof(test_pfn_desc) == 8);
@@ -146,6 +152,12 @@ struct mock_pfndb
     {
         return reinterpret_cast<void*>((pfn << 12) + hhdm_offset);
     }
+
+    static constexpr std::uint64_t TAG_BUDDY = 0x00;
+    static constexpr std::uint64_t TAG_META = 0x01;
+    static constexpr std::uint64_t TAG_SLAB = 0x02;
+    static constexpr std::uint64_t TAG_LARGE = 0x03;
+    static constexpr std::uint64_t TAG_LARGE_TAIL = 0x04;
 };
 
 static_assert(pfndb_accessor<mock_pfndb<test_pfn_desc>>);
@@ -301,6 +313,52 @@ TEST_CASE("buddy_allocator skips physical page 0x0 sentinel")
     }
     REQUIRE(alloc.free_pages() == 15);
 }
+struct dual_seg_pfndb
+{
+    std::uintptr_t seg1_pfn_start;
+    std::uintptr_t seg1_hhdm;
+    std::uintptr_t seg2_pfn_start;
+    std::uintptr_t seg2_hhdm;
+    test_pfn_desc seg1_meta[512] { };
+    test_pfn_desc seg2_meta[512] { };
+
+    [[nodiscard]] bool is_valid(std::uintptr_t pfn) const noexcept
+    {
+        return (pfn >= seg1_pfn_start && pfn < seg1_pfn_start + 512)
+            || (pfn >= seg2_pfn_start && pfn < seg2_pfn_start + 512);
+    }
+
+    [[nodiscard]] test_pfn_desc& operator[](std::uintptr_t pfn) noexcept
+    {
+        if (pfn >= seg1_pfn_start && pfn < seg1_pfn_start + 512) {
+            return seg1_meta[pfn - seg1_pfn_start];
+        }
+        return seg2_meta[pfn - seg2_pfn_start];
+    }
+
+    [[nodiscard]] const test_pfn_desc& operator[](
+        std::uintptr_t pfn
+    ) const noexcept
+    {
+        if (pfn >= seg1_pfn_start && pfn < seg1_pfn_start + 512) {
+            return seg1_meta[pfn - seg1_pfn_start];
+        }
+        return seg2_meta[pfn - seg2_pfn_start];
+    }
+
+    [[nodiscard]] void* pfn_to_virt(std::uintptr_t pfn) const noexcept
+    {
+        if (pfn >= seg1_pfn_start && pfn < seg1_pfn_start + 512) {
+            return reinterpret_cast<void*>((pfn << 12) + seg1_hhdm);
+        }
+        return reinterpret_cast<void*>((pfn << 12) + seg2_hhdm);
+    }
+    static constexpr std::uint64_t TAG_BUDDY = 0x00;
+    static constexpr std::uint64_t TAG_META = 0x01;
+    static constexpr std::uint64_t TAG_SLAB = 0x02;
+    static constexpr std::uint64_t TAG_LARGE = 0x03;
+    static constexpr std::uint64_t TAG_LARGE_TAIL = 0x04;
+};
 
 TEST_CASE(
     "buddy_allocator safely handles MMIO holes across unmapped 2 MiB segments"
@@ -312,48 +370,6 @@ TEST_CASE(
 
     simulated_ram ram1(segSize, seg1Phys);
     simulated_ram ram2(segSize, seg2Phys);
-
-    struct dual_seg_pfndb
-    {
-        std::uintptr_t seg1_pfn_start;
-        std::uintptr_t seg1_hhdm;
-        std::uintptr_t seg2_pfn_start;
-        std::uintptr_t seg2_hhdm;
-        test_pfn_desc seg1_meta[512] { };
-        test_pfn_desc seg2_meta[512] { };
-
-        [[nodiscard]] bool is_valid(std::uintptr_t pfn) const noexcept
-        {
-            return (pfn >= seg1_pfn_start && pfn < seg1_pfn_start + 512)
-                || (pfn >= seg2_pfn_start && pfn < seg2_pfn_start + 512);
-        }
-
-        [[nodiscard]] test_pfn_desc& operator[](std::uintptr_t pfn) noexcept
-        {
-            if (pfn >= seg1_pfn_start && pfn < seg1_pfn_start + 512) {
-                return seg1_meta[pfn - seg1_pfn_start];
-            }
-            return seg2_meta[pfn - seg2_pfn_start];
-        }
-
-        [[nodiscard]] const test_pfn_desc& operator[](
-            std::uintptr_t pfn
-        ) const noexcept
-        {
-            if (pfn >= seg1_pfn_start && pfn < seg1_pfn_start + 512) {
-                return seg1_meta[pfn - seg1_pfn_start];
-            }
-            return seg2_meta[pfn - seg2_pfn_start];
-        }
-
-        [[nodiscard]] void* pfn_to_virt(std::uintptr_t pfn) const noexcept
-        {
-            if (pfn >= seg1_pfn_start && pfn < seg1_pfn_start + 512) {
-                return reinterpret_cast<void*>((pfn << 12) + seg1_hhdm);
-            }
-            return reinterpret_cast<void*>((pfn << 12) + seg2_hhdm);
-        }
-    };
 
     static_assert(pfndb_accessor<dual_seg_pfndb>);
 

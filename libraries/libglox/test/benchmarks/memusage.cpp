@@ -296,6 +296,12 @@ struct kheap_pfndb
             return KHEAP_MAX_PFNS;
         return (a - kheap_arena_state::base) >> KHEAP_PAGE_SHIFT;
     }
+
+    static constexpr std::uint64_t TAG_BUDDY = 0x00;
+    static constexpr std::uint64_t TAG_META = 0x01;
+    static constexpr std::uint64_t TAG_SLAB = 0x02;
+    static constexpr std::uint64_t TAG_LARGE = 0x03;
+    static constexpr std::uint64_t TAG_LARGE_TAIL = 0x04;
 };
 
 struct kheap_page_allocator
