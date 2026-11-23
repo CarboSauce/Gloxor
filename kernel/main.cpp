@@ -72,7 +72,8 @@ inline void identity_map()
 {
     for (const auto& it : gx::machineInfo.mmapEntries) {
         if (it.type == BootInfo::MemTypes::usable
-            || it.type == BootInfo::MemTypes::reclaimable) {
+            || it.type == BootInfo::MemTypes::reclaimable
+            || it.type == BootInfo::MemTypes::kernel) {
             const auto from = it.base + physicalMemBase;
             const auto to = it.base;
             map_region(
@@ -99,6 +100,7 @@ void init_addr_space()
         PageCaching::writeCombine
     );
     map_kernel();
+    kAddrSpace.make_current();
 }
 
 extern "C" void gloxor_main()

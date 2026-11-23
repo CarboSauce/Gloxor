@@ -51,9 +51,8 @@ namespace gx {
     do {                                                   \
         gx::ktestContext.assert_counter++;                 \
         if (!(expr)) {                                     \
-            gx::ktestContext.failed_counter++ gx::println( \
-                "KTEST_ASSERT(" #expr ") failed"           \
-            );                                             \
+            gx::ktestContext.failed_counter++;             \
+            gx::println("KTEST_ASSERT(" #expr ") failed"); \
             return false;                                  \
         } else {                                           \
             gx::ktestContext.success_counter++;            \

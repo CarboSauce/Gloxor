@@ -20,8 +20,12 @@ struct VmapRegion
 
 ::glox::intrusive_list<VmapRegion> vmapList;
 using VmapIter = ::glox::intrusive_list<VmapRegion>::iterator;
-inline bool
-is_overlapping(uintptr base, uintptr back, uintptr obase, uintptr oback)
+inline bool is_overlapping(
+    uintptr base,
+    uintptr back,
+    uintptr obase,
+    uintptr oback
+)
 {
     return base <= oback && obase <= back;
 }
@@ -99,7 +103,9 @@ bool gx::VSpace::map(vaddr from, paddr to, Privileges pv, CacheMode cm)
 }
 bool gx::VSpace::map_huge(vaddr from, paddr to, Privileges pv, CacheMode cm)
 {
-    return arch::vmem::map(kAddrSpace.ptable, from, to, vmem_mask(pv, cm));
+    return arch::vmem::map_huge_page(
+        kAddrSpace.ptable, from, to, vmem_mask(pv, cm)
+    );
 }
 void gx::VSpace::make_current()
 {

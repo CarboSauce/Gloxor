@@ -346,7 +346,6 @@ bool boot_allocator_test()
 
         boot_dealloc(ptr, size);
     }
-
     // Test 4: Zeroed allocation.
     {
         constexpr usize size = 128;
