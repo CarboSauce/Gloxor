@@ -189,6 +189,19 @@ void* alloc_from_chunk(bootList& list, usize size, usize alignment) noexcept
 } // namespace
 
 namespace gx {
+void boot_reclaim(glox::function_ref<void(void*, usize)> cb)
+{
+    while (bootCtx.is_empty()) {
+        auto& ctx = bootCtx.front();
+        auto start = &ctx;
+        auto size = ctx.size;
+        bootCtx.erase(bootCtx.begin());
+        if constexpr (TRACK_ALLOCATIONS) {
+            println("Reclaiming (%x,%x)", start, size);
+        }
+        cb(start, size);
+    }
+}
 
 // Add a free memory region.
 void boot_add_chunk(void* base, size_t length)

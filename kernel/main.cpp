@@ -45,11 +45,11 @@ inline void map_region(
 
     while (from < to) {
         if (to - from > 0x200'000 && isalign(from, 0x200'000)) {
-            kAddrSpace.map_huge(from, start, pp, pc);
+            kAddrSpace.early_map_huge(from, start, pp, pc);
             from += 0x200'000;
             start += 0x200'000;
         } else {
-            kAddrSpace.map(from, start, pp, pc);
+            kAddrSpace.early_map(from, start, pp, pc);
             from += 0x1000;
             start += 0x1000;
         }
@@ -60,7 +60,7 @@ inline void map_kernel()
     size_t size = (kernelFileEnd - kernelFileBegin);
     gx::logln_debug("kernelPhysOffset: %", kernelPhysOffset);
     for (size_t i = 0; i < size; i += pageSize) {
-        kAddrSpace.map(
+        kAddrSpace.early_map(
             (vaddr)kernelFileBegin + i,
             kernelPhysOffset + i,
             PagePrivileges::all,
@@ -74,7 +74,7 @@ inline void identity_map()
         if (it.type == BootInfo::MemTypes::usable
             || it.type == BootInfo::MemTypes::reclaimable
             || it.type == BootInfo::MemTypes::kernel) {
-            const auto from = it.base + physicalMemBase;
+            const auto from = it.base + PHYSICAL_MEM_BASE;
             const auto to = it.base;
             map_region(
                 from,
@@ -100,15 +100,24 @@ void init_addr_space()
         PageCaching::writeCombine
     );
     map_kernel();
-    kAddrSpace.make_current();
 }
 
 extern "C" void gloxor_main()
 {
     (void)gx::preCpuInit.run();
     initialize_cpu();
+    for (const auto it : gx::machineInfo.mmapEntries) {
+        gx::println(
+            "[mmap entries] (%x - %x) %",
+            it.base,
+            it.base + it.length,
+            gx::memtype_to_str(it.type)
+        );
+    }
     gx::term::init_term(gx::machineInfo.fbInfoEntry);
     init_addr_space();
+    kAddrSpace.make_current();
+    init_pfndb();
     call_global_ctors();
     (void)gx::postCpuInit.run();
 

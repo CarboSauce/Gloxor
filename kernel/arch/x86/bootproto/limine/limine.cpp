@@ -68,7 +68,7 @@ inline void initialize_pmm(limine_memmap_response* m)
         // corrupt page tables once memory manager can handle it, do it
         if (auto mTemp = mMap[curIndex]; mTemp->type == LIMINE_MEMMAP_USABLE) {
             gx::boot_add_chunk(
-                reinterpret_cast<void*>(mTemp->base + arch::physicalMemBase),
+                reinterpret_cast<void*>(mTemp->base + arch::PHYSICAL_MEM_BASE),
                 mTemp->length
             );
         }
@@ -98,15 +98,16 @@ inline gx::BootInfo::MemTypes convert_mem_types(u32 type)
     case LIMINE_MEMMAP_RESERVED_MAPPED:
         return mtype::reserved;
     default:
-        gloxUnreachable();
+        GLOX_UNREACHABLE();
     }
+    GLOX_UNREACHABLE();
 }
 
 inline void setup_kernelmemmap(limine_memmap_response* m)
 {
     const auto* mMap = m->entries;
     const auto entryCount = m->entry_count;
-    auto* memmap = (gx::BootInfo::MemoryMap*)gx::boot_alloc(
+    auto* memmap = (gx::BootInfo::MemoryMap*)gx::PmmAllocator::alloc(
         sizeof(gx::BootInfo::MemoryMap) * entryCount
     );
     glox::uninit_def_construct(memmap, memmap + entryCount);

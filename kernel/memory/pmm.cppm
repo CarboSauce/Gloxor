@@ -1,5 +1,6 @@
 export module gloxor.memory.pmm;
 import std;
+import glox;
 import gloxor.types;
 
 #if defined(__GNUC__) && !defined(__clang__)
@@ -18,6 +19,7 @@ constexpr usize pmmChunkSize = 0x1000;
 void* boot_alloc(usize size, usize alignment = alignof(std::max_align_t));
 void* boot_alloc_z(usize size, usize alignment = alignof(std::max_align_t));
 void boot_dealloc(void* ptr, usize size);
+void boot_reclaim(glox::function_ref<void(void* ptr, usize size)> cb);
 /**
  * @brief use this after adding all memory chunks with pmmAddChunk
  */
@@ -35,19 +37,19 @@ void page_dealloc(void* ptr, usize pageCount = 1);
  * @brief Allocate pageCount amount of pages
  * @return pointer to allocated page, nullptr on out of memory
  */
-[[using gnu: malloc,
-    mallocAttribute(gx::page_dealloc, 1),
-    alloc_size(1),
-    aligned(gx::pmmChunkSize)]] void*
-page_alloc(usize pageCount = 1);
+// [[using gnu: malloc,
+//     mallocAttribute(gx::page_dealloc, 1),
+//     alloc_size(1),
+//     aligned(gx::pmmChunkSize)]]
+void* page_alloc(usize pageCount = 1);
 /**
  * @brief Allocate single page and zero it
  * @return pointer to allocated page, nullptr on out of memory
  */
-[[using gnu: malloc,
-    mallocAttribute(gx::page_dealloc, 1),
-    alloc_size(1),
-    aligned(gx::pmmChunkSize)]] void*
-page_alloc_z(usize pageCount = 1);
+// [[using gnu: malloc,
+//     mallocAttribute(gx::page_dealloc, 1),
+//     alloc_size(1),
+//     aligned(gx::pmmChunkSize)]]
+void* page_alloc_z(usize pageCount = 1);
 
 } // namespace gx

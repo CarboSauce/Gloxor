@@ -24,8 +24,8 @@ glox::span<u8> get_used_memory_range()
 void init_term(const gx::BootInfo::FbInfo& fb)
 {
     flantermContext = flanterm_fb_init(
-        [](size_t s) { return gx::memalloc(s); },
-        [](void* p, size_t s) { return gx::memdealloc(p, s); },
+        NULL, //[](size_t s) { return gx::boot_alloc(s); },
+        NULL, //[](void* p, size_t s) { return gx::boot_dealloc(p, s); },
         (uint32_t*)fb.begin,
         fb.width,
         fb.height,

@@ -54,3 +54,5 @@ import std.compat;
 #include "glox/mpsc_queue.hpp"
 #include "glox/list.hpp"
 #include "glox/radix_tree.hpp"
+#include "glox/buddy_alloc.hpp"
+#include "glox/kheap_alloc.hpp"

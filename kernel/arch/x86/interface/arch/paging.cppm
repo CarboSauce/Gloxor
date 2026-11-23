@@ -3,6 +3,7 @@ import arch_asm.paging;
 import glox;
 import arch.addrspace;
 import gloxor.types;
+import gloxor.memory.pmm;
 
 export namespace arch::vmem {
 using paging_t = u64;
@@ -47,13 +48,17 @@ bool map_huge_page(
     vmemCtxT,
     vaddr from,
     vaddr to,
-    vpage_flags flags = arch::vmem::defFlags
+    vpage_flags flags = arch::vmem::defFlags,
+    glox::function_ref<void*(void)> pageAllocCb
+    = []() { return gx::page_alloc(); }
 );
 bool map(
     vmemCtxT,
     vaddr from,
     vaddr to,
-    vpage_flags flags = arch::vmem::defFlags
+    vpage_flags flags = arch::vmem::defFlags,
+    glox::function_ref<void*(void)> pageAllocCb
+    = []() { return gx::page_alloc(); }
 );
 /**
  * @brief Unmap virtual address from current context

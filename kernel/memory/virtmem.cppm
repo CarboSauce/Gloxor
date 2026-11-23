@@ -13,6 +13,8 @@ class alignas(arch::vmem::pageSize) VSpace
 public:
     using CacheMode = arch::vmem::PageCaching;
     using Privileges = arch::vmem::PagePrivileges;
+    bool early_map(vaddr from, paddr to, Privileges, CacheMode);
+    bool early_map_huge(vaddr from, paddr to, Privileges, CacheMode);
     bool map(vaddr from, paddr to, Privileges, CacheMode);
     bool map_huge(vaddr from, paddr to, Privileges, CacheMode);
     bool unmap(vaddr whichVirtual);

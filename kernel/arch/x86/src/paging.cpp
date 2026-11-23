@@ -34,11 +34,11 @@ glox::pair<const PageTable<I - 1>*, bool> translate_single_entry(
 }
 
 namespace arch::vmem {
-inline bool alloc_page_if_needed(u64& entry, u64 mask)
+inline bool alloc_page_if_needed(u64& entry, u64 mask, auto& page_alloc)
 {
     if (entry & present)
         return true;
-    auto* page = gx::page_alloc(1);
+    auto* page = page_alloc();
     if (!page)
         return false;
 
@@ -47,30 +47,42 @@ inline bool alloc_page_if_needed(u64& entry, u64 mask)
     return true;
 }
 
-bool map_huge_page(vmemCtxT context, vaddr from, vaddr to, u64 mask)
+bool map_huge_page(
+    vmemCtxT context,
+    vaddr from,
+    vaddr to,
+    u64 mask,
+    glox::function_ref<void*(void)> pageAllocCb
+)
 {
     auto* ctx = (PageTable<4>*)context;
     auto& e4 = ctx->entry(from);
-    auto res = alloc_page_if_needed(e4.entry, mask);
+    auto res = alloc_page_if_needed(e4.entry, mask, pageAllocCb);
     GLOX_ASSERT(res);
     auto& e3 = e4.vaddr()->entry(from);
-    res = alloc_page_if_needed(e3.entry, mask);
+    res = alloc_page_if_needed(e3.entry, mask, pageAllocCb);
     GLOX_ASSERT(res);
     e3.vaddr()->entry(from).entry = mask_entry(to & ~0x100000, mask | granul);
     return true;
 }
 
-bool map(vmemCtxT context, vaddr from, vaddr to, u64 mask)
+bool map(
+    vmemCtxT context,
+    vaddr from,
+    vaddr to,
+    u64 mask,
+    glox::function_ref<void*(void)> pageAllocCb
+)
 {
     auto* ctx = (PageTable<4>*)context;
     auto& e4 = ctx->entry(from);
-    auto res = alloc_page_if_needed(e4.entry, mask);
+    auto res = alloc_page_if_needed(e4.entry, mask, pageAllocCb);
     GLOX_ASSERT(res);
     auto& e3 = e4.vaddr()->entry(from);
-    res = alloc_page_if_needed(e3.entry, mask);
+    res = alloc_page_if_needed(e3.entry, mask, pageAllocCb);
     GLOX_ASSERT(res);
     auto& e2 = e3.vaddr()->entry(from);
-    res = alloc_page_if_needed(e2.entry, mask);
+    res = alloc_page_if_needed(e2.entry, mask, pageAllocCb);
     GLOX_ASSERT(res);
     e2.vaddr()->entry(from).entry = mask_entry(get_physical(to), mask);
     return true;

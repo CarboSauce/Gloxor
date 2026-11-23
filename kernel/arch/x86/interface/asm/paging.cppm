@@ -72,8 +72,8 @@ struct PageEntry
     const auto* vaddr() const
     {
         auto realaddr = paddr();
-        if (realaddr < arch::physicalMemBase)
-            realaddr += arch::physicalMemBase;
+        if (realaddr < arch::PHYSICAL_MEM_BASE)
+            realaddr += arch::PHYSICAL_MEM_BASE;
         return reinterpret_cast<PageTable<PageLevel(lvl - 1)>*>(realaddr);
     }
     auto vaddr()

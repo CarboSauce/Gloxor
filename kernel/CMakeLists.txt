@@ -26,6 +26,8 @@ target_sources(kernel
         memory/pmm.cppm
         memory/alloc.cppm
         memory/virtmem.cppm
+        memory/buddy.cppm
+        memory/pfndb.cppm
 
         system/danger.cppm
         system/logging.cppm

@@ -97,6 +97,21 @@ inline auto to_mask(PagePrivileges p, PageCaching c)
 {
     return (u64)p | (u64)c;
 }
+bool gx::VSpace::early_map(vaddr from, paddr to, Privileges pv, CacheMode cm)
+{
+    return arch::vmem::map(kAddrSpace.ptable, from, to, vmem_mask(pv, cm));
+}
+bool gx::VSpace::early_map_huge(
+    vaddr from,
+    paddr to,
+    Privileges pv,
+    CacheMode cm
+)
+{
+    return arch::vmem::map_huge_page(
+        kAddrSpace.ptable, from, to, vmem_mask(pv, cm)
+    );
+}
 bool gx::VSpace::map(vaddr from, paddr to, Privileges pv, CacheMode cm)
 {
     return arch::vmem::map(kAddrSpace.ptable, from, to, vmem_mask(pv, cm));
