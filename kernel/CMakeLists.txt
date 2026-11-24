@@ -47,6 +47,9 @@ target_sources(kernel
         gloxor/graphics.cppm
         gloxor/gloxor.cppm
         gloxor/initgraph.cppm
+
+        lib/lib.cppm
+        lib/stack.cppm
 )
 
 add_subdirectory(arch)

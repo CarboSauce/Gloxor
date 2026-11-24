@@ -29,7 +29,7 @@ static bootList bootCtx;
 static u64 memorySize = 0;
 constexpr auto SIZE_MAX = std::numeric_limits<std::size_t>::max();
 constexpr auto UINTPTR_MAX = std::numeric_limits<std::uintptr_t>::max();
-static constexpr bool TRACK_ALLOCATIONS = true;
+static constexpr bool TRACK_ALLOCATIONS = false;
 
 namespace {
 

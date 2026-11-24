@@ -5,6 +5,7 @@ import glox;
 import gloxor;
 import arch;
 import gloxor.memory.pmm;
+import gloxor.lib;
 
 export namespace gx {
 
@@ -12,31 +13,39 @@ using thread_func = void (*)(void*);
 
 class Thread
 {
-    glox::string name;
-    uintptr_t stackBase;
-    uintptr_t stackTop;
+    glox::string name_;
+    StackBox stack;
 
 public:
     Thread(glox::string name, thread_func func, void* arg)
-        : name(std::move(name))
+        : name_(std::move(name))
+        , stack(StackBox::create().val())
     {
-        stackBase = (uintptr_t)gx::page_alloc(2);
-        stackTop = arch::setup_stack(stackBase, func, arg);
+        stack.set_saved_sp(arch::setup_stack(stack.top(), func, arg));
     }
 
-    ~Thread()
-    {
-        gx::page_dealloc((void*)stackBase, 2);
-    }
-
-    Thread(glox::string name)
-        : name(std::move(name))
+    Thread(glox::string name, StackBox stack)
+        : name_(std::move(name))
+        , stack(std::move(stack))
     {
     }
 
-    uintptr_t stack_top()
+    void* const& saved_sp() const
     {
-        return stackTop;
+        return stack.saved_sp();
+    }
+    void*& saved_sp()
+    {
+        return stack.saved_sp();
+    }
+    void set_saved_sp(void* sp)
+    {
+        stack.set_saved_sp(sp);
+    }
+
+    const glox::string& name()
+    {
+        return name_;
     }
 };
 } // namespace gx

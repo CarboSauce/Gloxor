@@ -2,21 +2,19 @@ export module arch.sched;
 import std.compat;
 
 namespace arch {
-[[gnu::naked]]
+extern "C" [[gnu::naked]]
 void trampoline()
 {
-    asm volatile(
-        //
-        "movq %%r13, %%rdi\n"
-        "callq *%%r12\n"
-        "ud2\n" ::
-            : "memory"
+    asm volatile( //
+        "movq %r13, %rdi\n"
+        "call *%r12\n"
+        "ud2\n"
     );
 }
 
-export uintptr_t setup_stack(uintptr_t stack_top, void (*fn)(void*), void* arg)
+export void* setup_stack(void* stack_top, void (*fn)(void*), void* arg)
 {
-    uintptr_t sp = stack_top;
+    void* sp = stack_top;
     asm volatile(
         // Align stack_top down to 16 bytes
         "andq $-16, %[sp]\n"
@@ -37,7 +35,7 @@ export uintptr_t setup_stack(uintptr_t stack_top, void (*fn)(void*), void* arg)
 }
 
 export [[gnu::naked]]
-void switch_task(uintptr_t from, uintptr_t to)
+void switch_task(void** from, void** to)
 {
     asm volatile(
         // Save callee-saved registers onto the current stack

@@ -1,4 +1,5 @@
 export module gloxor.sched.scheduler;
+
 import gloxor.sched.thread;
 import arch;
 import std;
@@ -6,26 +7,49 @@ import glox;
 import gloxor.mutex;
 
 export namespace gx {
+
 class Scheduler
 {
-    glox::deque<Thread> threads;
+    glox::deque<Thread*> ready_queue;
+    Thread* current = nullptr;
+
     gx::IrqSpinLock lock;
-    Thread currentThread;
 
 public:
     void create_thread(glox::string name, gx::thread_func work, void* arg)
     {
-        glox::unique_lock _ { lock };
-        threads.push_back(std::move(name), work, arg);
+        auto thread = new Thread(std::move(name), work, arg);
+
+        glox::unique_lock guard { lock };
+        ready_queue.push_back(thread);
     }
 
-    void run_next()
+    void yield()
     {
-        glox::unique_lock _ { lock };
-        auto nextThread = threads.front();
-        threads.pop_front();
-        threads.push_back(nextThread);
-        arch::switch_task(currentThread.stack_top(), nextThread.stack_top());
+        Thread* prev;
+        Thread* next;
+
+        {
+            glox::unique_lock guard { lock };
+
+            if (ready_queue.empty())
+                return;
+
+            prev = current;
+
+            if (prev != nullptr)
+                ready_queue.push_back(prev);
+
+            next = ready_queue.front();
+            ready_queue.pop_front();
+
+            current = next;
+        }
+
+        if (prev != next && prev != nullptr) {
+            arch::switch_task(&prev->saved_sp(), &next->saved_sp());
+        }
     }
 };
+
 } // namespace gx
