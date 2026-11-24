@@ -42,7 +42,7 @@ inline vaddr get_real_data_addr(vaddr virt)
     GLOX_ASSERT(virt >= arch::PHYSICAL_MEM_BASE);
     return virt - arch::PHYSICAL_MEM_BASE;
 }
-inline vaddr to_virt(vaddr addr)
+inline vaddr to_virt(paddr addr)
 {
     if (addr < arch::PHYSICAL_MEM_BASE)
         return addr + arch::PHYSICAL_MEM_BASE;

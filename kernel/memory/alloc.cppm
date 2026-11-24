@@ -4,7 +4,11 @@ import std.compat;
 import gloxor.system.logging;
 
 export namespace gx {
-struct PmmAllocator
+void* memalloc(size_t size);
+void memdealloc(void* ptr, size_t size);
+void memdealloc(void* ptr);
+
+struct EarlyPmmAllocator
 {
     [[nodiscard]] static void* alloc(size_t s)
     {
@@ -18,10 +22,6 @@ struct PmmAllocator
         gx::page_dealloc(p, s / pmmChunkSize + 1);
     }
 };
-
-void* memalloc(size_t size);
-void memdealloc(void* ptr, size_t size);
-void memdealloc(void* ptr);
 
 template <typename T>
 T* alloc(size_t ele_count = 1)

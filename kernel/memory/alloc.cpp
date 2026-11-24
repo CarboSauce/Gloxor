@@ -5,6 +5,7 @@ import gloxor.system.logging;
 import gloxor.mutex;
 import gloxor.types;
 import gloxor.memory.pmm;
+import gloxor.system.danger;
 import gloxor.system.percpu;
 import arch.percpu;
 import std;
@@ -189,12 +190,12 @@ struct Palloc
 {
     glox::alloc_handle<void> alloc(size_t s)
     {
-        return { PmmAllocator::alloc(s), s / 4096 + 1 };
+        return BuddyAllocator::alloc(s);
     }
 
     void dealloc(void* p, size_t s)
     {
-        return PmmAllocator::dealloc(p, s);
+        return BuddyAllocator::dealloc(p, s);
     }
 
     glox::alloc_handle<void> grow(void* p, size_t oldsize, size_t newsize)
@@ -207,12 +208,9 @@ struct Palloc
     }
 };
 
-static constexpr std::size_t PAGE_SIZE = 65536;
 static constexpr std::size_t MAX_SMALL_SIZE = 2048;
 static constexpr std::size_t MAX_MEDIUM_SIZE = 65536;
 static constexpr std::size_t GRANULARITY = 8;
-static constexpr std::size_t ARENA_SIZE = 1024 * 1024;
-static constexpr std::size_t HUGE_SIZE = 1024 * 1024;
 static constexpr std::size_t NUM_BUCKETS = glox::heap_detail::
     total_bucket_count<MAX_SMALL_SIZE, GRANULARITY, MAX_MEDIUM_SIZE>();
 
@@ -228,20 +226,31 @@ struct ThreadRoutines
         return *tcache.ptr();
     }
     DEFINE_PERCPU constinit static inline arch::Percpu<
-        glox::thread_cache<NUM_BUCKETS>
+        glox::kthread_cache<NUM_BUCKETS>
     >
         tcache { };
 };
 
-using global_heap_alloc = glox::heap_allocator<
+struct Policy
+{
+    static constexpr bool enabled = true;
+    static constexpr bool deep = false;
+    static void fail()
+    {
+        GLOX_ASSERT("Failure in kheap allocator");
+    }
+};
+
+using global_heap_alloc = glox::kheap_allocator<
     Palloc,
+    PfndbAccessor,
     ThreadRoutines,
+    glox::spinlock,
+    buddyAllocator.PAGE_SHIFT,
     MAX_SMALL_SIZE,
     GRANULARITY,
-    PAGE_SIZE,
-    ARENA_SIZE,
-    glox::spinlock,
-    MAX_MEDIUM_SIZE
+    MAX_MEDIUM_SIZE,
+    Policy
 >;
 
 static global_heap_alloc globalHeap;

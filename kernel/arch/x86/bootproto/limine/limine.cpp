@@ -107,7 +107,7 @@ inline void setup_kernelmemmap(limine_memmap_response* m)
 {
     const auto* mMap = m->entries;
     const auto entryCount = m->entry_count;
-    auto* memmap = (gx::BootInfo::MemoryMap*)gx::PmmAllocator::alloc(
+    auto* memmap = (gx::BootInfo::MemoryMap*)gx::EarlyPmmAllocator::alloc(
         sizeof(gx::BootInfo::MemoryMap) * entryCount
     );
     glox::uninit_def_construct(memmap, memmap + entryCount);

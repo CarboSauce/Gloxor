@@ -23,28 +23,29 @@ struct PfnDesc
         TAG_LARGE = 0x03,
         TAG_LARGE_TAIL = 0x04,
         TAG_INVALID = 0x05,
+        TAG_MASK = 0x1F
     };
-    std::atomic<u64> entry;
+    u64 entry;
 
     bool is_buddy() const
     {
-        return entry.load() & TAG_BUDDY;
+        return (entry & TAG_MASK) == TAG_BUDDY;
     }
     bool is_meta() const
     {
-        return entry.load() & TAG_META;
+        return (entry & TAG_MASK) == TAG_META;
     }
     bool is_slab() const
     {
-        return entry.load() & TAG_SLAB;
+        return (entry & TAG_MASK) == TAG_SLAB;
     }
     bool is_large() const
     {
-        return entry.load() & TAG_LARGE;
+        return (entry & TAG_MASK) == TAG_LARGE;
     }
     bool is_large_tail() const
     {
-        return entry.load() & TAG_LARGE_TAIL;
+        return (entry & TAG_MASK) == TAG_LARGE_TAIL;
     }
     static PfnDesc make_reserved()
     {
@@ -60,12 +61,12 @@ struct PfnDesc
     }
     bool is_buddy_free() const noexcept
     {
-        auto v = entry.load();
+        auto v = entry;
         return (v & 31) == 0 and (v & 32) != 0;
     }
     usize buddy_order() const noexcept
     {
-        return entry.load() >> 6;
+        return entry >> 6;
     }
 
     static PfnDesc from_raw(std::uint64_t r) noexcept
@@ -74,16 +75,18 @@ struct PfnDesc
     }
     std::uint64_t raw() const noexcept
     {
-        return entry.load();
+        return entry;
     }
     void set_desc(PfnDesc desc)
     {
-        entry.store(desc.entry.load());
+        entry = desc.entry;
     }
 };
 
 class PfndbManager
 {
+    // TODO: should be std::atomic, needs to change api of buddy allocator
+    // or maybe should change PfndbEntry to atomic<u64> entry
     PfnDesc* pfndbEntries;
     usize entryCount;
 
@@ -93,22 +96,26 @@ class PfndbManager
         = 12 + std::countr_zero(PFNS_PER_PAGE);
 
 public:
-    [[nodiscard]] PfnDesc& operator[](std::uintptr_t pfn) noexcept
+    [[nodiscard]] PfnDesc& operator[](std::uintptr_t pfn)
     {
         GLOX_ASSERT(pfn < entryCount);
 
         return reinterpret_cast<PfnDesc*>(arch::PFN_DB_BASE)[pfn];
     }
 
-    [[nodiscard]] const PfnDesc& operator[](std::uintptr_t pfn) const noexcept
+    [[nodiscard]] const PfnDesc& operator[](std::uintptr_t pfn) const
     {
         GLOX_ASSERT(pfn < entryCount);
 
         return reinterpret_cast<const PfnDesc*>(arch::PFN_DB_BASE)[pfn];
     }
-    [[nodiscard]] void* pfn_to_virt(std::uintptr_t pfn) const noexcept
+    [[nodiscard]] void* pfn_to_virt(std::uintptr_t pfn) const
     {
-        return reinterpret_cast<void*>((pfn << 12) + arch::PFN_DB_BASE);
+        return (void*)arch::to_virt(pfn << 12);
+    }
+    [[nodiscard]] bool is_valid(std::uintptr_t pfn) const
+    {
+        return pfn < entryCount;
     }
 
     static constexpr std::uint64_t TAG_BUDDY = PfnDesc::TAG_BUDDY;
@@ -122,6 +129,39 @@ public:
 };
 
 constinit inline PfndbManager pfndbManager = { };
+
+struct PfndbAccessor
+{
+    [[nodiscard]] PfnDesc& operator[](std::uintptr_t pfn)
+    {
+        return pfndbManager[pfn];
+    }
+
+    [[nodiscard]] const PfnDesc& operator[](std::uintptr_t pfn) const
+    {
+        return pfndbManager[pfn];
+    }
+    [[nodiscard]] void* pfn_to_virt(std::uintptr_t pfn) const
+    {
+        return pfndbManager.pfn_to_virt(pfn);
+    }
+    [[nodiscard]] std::uintptr_t virt_to_pfn(const void* p) const
+    {
+        return arch::get_real_address((vaddr)p) >> 12;
+    }
+    [[nodiscard]] bool is_valid(std::uintptr_t pfn) const
+    {
+        return pfndbManager.is_valid(pfn);
+    }
+
+    static constexpr std::uint64_t TAG_BUDDY = PfnDesc::TAG_BUDDY;
+    static constexpr std::uint64_t TAG_META = PfnDesc::TAG_META;
+    static constexpr std::uint64_t TAG_SLAB = PfnDesc::TAG_SLAB;
+    static constexpr std::uint64_t TAG_LARGE = PfnDesc::TAG_LARGE;
+    static constexpr std::uint64_t TAG_LARGE_TAIL = PfnDesc::TAG_LARGE_TAIL;
+    static constexpr std::uint64_t TAG_INVALID = PfnDesc::TAG_INVALID;
+};
+static_assert(glox::pfndb_accessor<PfndbAccessor>);
 
 void init_pfndb()
 {

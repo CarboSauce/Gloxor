@@ -118,6 +118,7 @@ extern "C" void gloxor_main()
     init_addr_space();
     kAddrSpace.make_current();
     init_pfndb();
+    gx::init_buddy();
     call_global_ctors();
     (void)gx::postCpuInit.run();
 

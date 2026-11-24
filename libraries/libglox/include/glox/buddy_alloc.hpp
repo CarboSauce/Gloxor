@@ -63,6 +63,7 @@ public:
         = std::remove_reference_t<decltype(std::declval<Accessor&>()[0])>;
 
     static constexpr std::size_t PAGE_SIZE = std::size_t { 1 } << PageShift;
+    static constexpr auto PAGE_SHIFT = PageShift;
     static constexpr std::size_t MAX_ORDER = MaxOrder;
 
 private:

@@ -7,6 +7,7 @@ add_executable( kernel
     system/logging.cpp
     system/font.cpp
     system/terminal.cpp
+    memory/buddy.cpp
     memory/pmm.cpp
     memory/alloc.cpp
     memory/virtmem.cpp
