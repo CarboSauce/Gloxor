@@ -148,13 +148,31 @@ add_dependencies(iso kernel limine)
 
 set(QEMU_COMMAND "qemu-system-x86_64" CACHE STRING "Command used to launch QEMU")
 set(QEMU_ARGS "" CACHE STRING "Additional args passed to QEMU")
-
+separate_arguments(QEMU_ARGS_LIST NATIVE_COMMAND "${QEMU_ARGS}")
 add_custom_target(run-qemu
     COMMAND
         ${CMAKE_CURRENT_SOURCE_DIR}/scripts/run-qemu.sh
         "${QEMU_COMMAND}"
         "${OS_ISO}"
         "${QEMU_ARGS}"
+    DEPENDS
+        iso
+    USES_TERMINAL
+)
+
+set(GDB_COMMAND "gdb" CACHE STRING "Command used to launch GDB")
+set(GDB_PORT "1234" CACHE STRING "QEMU GDB server port")
+
+add_custom_target(run-qemu-gdb
+    COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "GDB_COMMAND=${GDB_COMMAND}"
+        "GDB_PORT=${GDB_PORT}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/run-qemu-gdb.sh"
+        "${QEMU_COMMAND}"
+        "${OS_ISO}"
+        "$<TARGET_FILE:kernel>"
+        ${QEMU_ARGS_LIST}
     DEPENDS
         iso
     USES_TERMINAL
