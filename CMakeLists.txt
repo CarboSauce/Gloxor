@@ -177,3 +177,19 @@ add_custom_target(run-qemu-gdb
         iso
     USES_TERMINAL
 )
+
+set(LLDB_COMMAND "gdb" CACHE STRING "Command used to launch LLDB")
+add_custom_target(run-qemu-lldb
+    COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "GDB_COMMAND=${LLDB_COMMAND}"
+        "GDB_PORT=${GDB_PORT}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/scripts/run-qemu-lldb.sh"
+        "${QEMU_COMMAND}"
+        "${OS_ISO}"
+        "$<TARGET_FILE:kernel>"
+        ${QEMU_ARGS_LIST}
+    DEPENDS
+        iso
+    USES_TERMINAL
+)
