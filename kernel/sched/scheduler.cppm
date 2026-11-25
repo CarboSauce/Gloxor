@@ -5,6 +5,8 @@ import arch;
 import std;
 import glox;
 import gloxor.mutex;
+import gloxor.lib.stack;
+import gloxor.kinfo;
 
 export namespace gx {
 
@@ -19,6 +21,14 @@ public:
     void create_thread(glox::string name, gx::thread_func work, void* arg)
     {
         auto thread = new Thread(std::move(name), work, arg);
+
+        glox::unique_lock guard { lock };
+        ready_queue.push_back(thread);
+    }
+
+    void create_thread(glox::string name, StackBox box)
+    {
+        auto thread = new Thread(std::move(name), std::move(box));
 
         glox::unique_lock guard { lock };
         ready_queue.push_back(thread);
@@ -51,5 +61,18 @@ public:
         }
     }
 };
+
+inline Scheduler globalSched;
+
+void init_sched()
+{
+    globalSched.create_thread(
+        "boot",
+        StackBox {
+            (void*)gx::machineInfo.mainStack,
+            (void*)gx::machineInfo.mainStack,
+        }
+    );
+}
 
 } // namespace gx

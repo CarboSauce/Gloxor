@@ -160,7 +160,8 @@ void limine_main()
     }
 
     gx::machineInfo.kernelCode = { kernelFileBegin, kernelFileEnd };
-    gx::machineInfo.mainStackTop = (uintptr_t)gx::page_alloc(2);
+    auto stack = (uintptr_t)gx::page_alloc(2);
     gx::machineInfo.mainStackSize = 4096 * 2;
-    arch::run_on_stack(gx::machineInfo.mainStackTop, gloxor_main);
+    gx::machineInfo.mainStack = stack + 4096 * 2;
+    arch::run_on_stack(gx::machineInfo.mainStack, gloxor_main);
 }

@@ -12,13 +12,12 @@ class StackBox
     void* stackBase = nullptr;
     void* savedSp = nullptr;
 
+public:
     StackBox(void* base, void* sp)
         : stackBase(base)
         , savedSp(sp)
     {
     }
-
-public:
     StackBox(const StackBox&) = delete;
     StackBox& operator=(const StackBox&) = delete;
 

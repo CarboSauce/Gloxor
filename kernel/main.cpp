@@ -12,6 +12,7 @@ import std.compat;
 #include "cpuid.h"
 #include "glox/assert.hpp"
 #include "gloxor/test.hpp"
+import gloxor.sched.scheduler;
 
 using ctor_t = void (*)();
 using namespace arch;
@@ -126,10 +127,25 @@ extern "C" void gloxor_main()
     gx::ktestContext.run();
 #endif
 
+    gx::init_sched();
+    globalSched.create_thread(
+        "idle",
+        []([[maybe_unused]] void*) {
+            for (;;) {
+                arch::halt();
+                gx::println("[idle] yield");
+                globalSched.yield();
+            }
+        },
+        nullptr
+    );
+
     gx::print("Initialization Completed.\r\n");
     start_irq();
-    for (;;)
-        arch::halt();
+    for (;;) {
+        gx::println("[boot_thread] yield");
+        globalSched.yield();
+    }
 }
 
 #ifdef TEST

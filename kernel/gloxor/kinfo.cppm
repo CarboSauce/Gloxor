@@ -42,7 +42,7 @@ struct BootInfo
 
     ::glox::span<MemoryMap> mmapEntries;
     FbInfo fbInfoEntry;
-    uintptr_t mainStackTop;
+    uintptr_t mainStack;
     uintptr_t mainStackSize;
     ::glox::span<u8> kernelCode;
 };
