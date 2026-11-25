@@ -47,5 +47,5 @@ trap cleanup EXIT INT TERM
 
 echo "Starting GDB..."
 
-"$gdb_command" "$elf" 
+"$gdb_command" "$elf" \
     -ex "target remote localhost:$gdb_port"
