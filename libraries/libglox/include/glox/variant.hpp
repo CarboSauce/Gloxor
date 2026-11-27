@@ -59,18 +59,18 @@ class variant
             );
     }
 
-    template <class F>
+    template <std::size_t Base = 0, class F>
     constexpr decltype(auto) visit_at(this auto&& self, F&& f)
     {
         using R = decltype(f.template operator()<0>(*self.template ptr<0>()));
 
-#define CASE(i)                                                   \
-    case i:                                                       \
-        if constexpr (i < N)                                      \
-            return static_cast<R>(                                \
-                f.template operator()<i>(*self.template ptr<i>()) \
-            );                                                    \
-        else                                                      \
+#define CASE(offset)                                                    \
+    case Base + offset:                                                 \
+        if constexpr (Base + offset < N)                                \
+            return static_cast<R>(f.template operator()<Base + offset>( \
+                *self.template ptr<Base + offset>()                     \
+            ));                                                         \
+        else                                                            \
             GLOX_UNREACHABLE();
 
         switch (self.idx_) {
@@ -91,8 +91,8 @@ class variant
             CASE(14)
             CASE(15)
         default:
-            if constexpr (N > 16)
-                return self.visit_at(f);
+            if constexpr (Base + 16 < N)
+                return self.template visit_at<Base + 16>(FORWARD(f));
             else
                 GLOX_UNREACHABLE();
         }
