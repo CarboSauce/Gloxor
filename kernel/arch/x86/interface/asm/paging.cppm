@@ -69,7 +69,7 @@ struct PageEntry
     {
         return entry & 0x000ffffffffff000;
     }
-    const auto* vaddr() const
+    auto const* vaddr() const
     {
         auto realaddr = paddr();
         if (realaddr < arch::PHYSICAL_MEM_BASE)
@@ -80,7 +80,7 @@ struct PageEntry
     {
         // :tf:
         return const_cast<PageTable<PageLevel(lvl - 1)>*>(
-            static_cast<const PageEntry<I>&>(*this).vaddr()
+            static_cast<PageEntry<I> const&>(*this).vaddr()
         );
     }
 };
@@ -112,7 +112,7 @@ struct alignas(0x1000) PageTable
     {
         return (addr >> shift) & 0x1ff;
     }
-    const PageEntry<I>& entry(vaddr addr) const
+    PageEntry<I> const& entry(vaddr addr) const
     {
         return entries[index(addr)];
     }
@@ -120,7 +120,7 @@ struct alignas(0x1000) PageTable
     {
         // :tf:
         return const_cast<PageEntry<I>&>(
-            static_cast<const PageTable<I>&>(*this).entry(addr)
+            static_cast<PageTable<I> const&>(*this).entry(addr)
         );
     }
     /**
@@ -128,7 +128,7 @@ struct alignas(0x1000) PageTable
      * @param addr Address used for retrieving next table
      * @return Next table of lower level
      */
-    const auto* next(vaddr addr) const
+    auto const* next(vaddr addr) const
     {
         static_assert(
             I > PageLevel::lvl1, "Can't get next table from lvl1 page table"
@@ -139,7 +139,7 @@ struct alignas(0x1000) PageTable
     {
         // :tf:
         return const_cast<PageEntry<I>&>(
-            static_cast<const PageTable<I>&>(*this).next(addr)
+            static_cast<PageTable<I> const&>(*this).next(addr)
         );
     }
 };

@@ -38,7 +38,7 @@ struct node : public T
         return { nullptr };
     }
 
-    friend auto operator<=>(const node<T>& l, const node<T>& r)
+    friend auto operator<=>(node<T> const& l, node<T> const& r)
     {
         return static_cast<T>(l) <=> static_cast<T>(r);
     }

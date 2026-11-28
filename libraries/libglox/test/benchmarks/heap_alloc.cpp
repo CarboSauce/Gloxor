@@ -126,7 +126,7 @@ static void BM_Glox_SingleThreaded_FastPath(benchmark::State& state)
 {
     mock_thread_routines::set_thread_id(1);
     bench_heap_allocator alloc;
-    const std::size_t allocSize = static_cast<std::size_t>(state.range(0));
+    std::size_t const allocSize = static_cast<std::size_t>(state.range(0));
 
     for (auto _ : state) {
         auto handle = alloc.alloc(allocSize);
@@ -151,7 +151,7 @@ static void BM_Glox_Multithreaded_Scalability(benchmark::State& state)
     mock_thread_routines::set_thread_id(
         static_cast<std::size_t>(state.thread_index() + 1)
     );
-    const std::size_t allocSize = 128;
+    std::size_t const allocSize = 128;
 
     for (auto _ : state) {
         auto handle = sharedAlloc.alloc(allocSize);
@@ -169,7 +169,7 @@ static void BM_Glox_CrossThread_AtomicFree(benchmark::State& state)
 {
     static bench_heap_allocator alloc;
     static std::atomic<void*> sharedSlot { nullptr };
-    const std::size_t allocSize = 256;
+    std::size_t const allocSize = 256;
 
     if (state.thread_index() == 0) {
         mock_thread_routines::set_thread_id(1);
@@ -225,14 +225,14 @@ static void BM_Glox_Batch_Page_Thrashing(benchmark::State& state)
     mock_thread_routines::set_thread_id(1);
     ::bench_heap_allocator alloc;
 
-    const std::size_t allocSize = static_cast<std::size_t>(state.range(0));
+    std::size_t const allocSize = static_cast<std::size_t>(state.range(0));
     constexpr std::size_t batchCount = 500;
     std::vector<glox::alloc_handle<void>> handles(batchCount);
 
     for (auto _ : state) {
         for (std::size_t i = 0; i < batchCount; ++i) {
             handles[i] = alloc.alloc(allocSize);
-            *static_cast<volatile std::uint64_t*>(handles[i].ptr) = i;
+            *static_cast<std::uint64_t volatile*>(handles[i].ptr) = i;
         }
 
         benchmark::DoNotOptimize(handles.data());

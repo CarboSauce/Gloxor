@@ -22,7 +22,7 @@ public:
         : str(s)
     {
     }
-    constexpr path_view(const char* s) noexcept
+    constexpr path_view(char const* s) noexcept
         : str(s)
     {
     }
@@ -31,7 +31,7 @@ public:
     {
         return str.empty();
     }
-    [[nodiscard]] constexpr const char* data() const noexcept
+    [[nodiscard]] constexpr char const* data() const noexcept
     {
         return str.data();
     }
@@ -123,7 +123,7 @@ public:
         : str(pv.data(), pv.size())
     {
     }
-    constexpr path(const char* s)
+    constexpr path(char const* s)
         : str(s)
     {
     }
@@ -146,7 +146,7 @@ public:
     {
         return str.empty();
     }
-    [[nodiscard]] constexpr const char* c_str() const noexcept
+    [[nodiscard]] constexpr char const* c_str() const noexcept
     {
         return str.c_str();
     }
@@ -171,7 +171,7 @@ public:
 
         return *this;
     }
-    constexpr friend path operator/(const path& lhs, path_view rhs)
+    constexpr friend path operator/(path const& lhs, path_view rhs)
     {
         path result = lhs;
         result /= rhs;
@@ -219,21 +219,21 @@ public:
 
 // Equality operators
 template <glox::allocator<char> Allocator>
-constexpr bool operator==(const path<Allocator>& lhs, path_view rhs) noexcept
+constexpr bool operator==(path<Allocator> const& lhs, path_view rhs) noexcept
 {
     return lhs.view() == rhs;
 }
 
 template <glox::allocator<char> Allocator>
-constexpr bool operator==(path_view lhs, const path<Allocator>& rhs) noexcept
+constexpr bool operator==(path_view lhs, path<Allocator> const& rhs) noexcept
 {
     return lhs == rhs.view();
 }
 
 template <glox::allocator<char> Allocator1, glox::allocator<char> Allocator2>
 constexpr bool operator==(
-    const path<Allocator1>& lhs,
-    const path<Allocator2>& rhs
+    path<Allocator1> const& lhs,
+    path<Allocator2> const& rhs
 ) noexcept
 {
     return lhs.view() == rhs.view();

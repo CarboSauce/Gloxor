@@ -94,8 +94,8 @@ struct move_only_payload
     {
     }
 
-    move_only_payload(const move_only_payload&) = delete;
-    move_only_payload& operator=(const move_only_payload&) = delete;
+    move_only_payload(move_only_payload const&) = delete;
+    move_only_payload& operator=(move_only_payload const&) = delete;
     move_only_payload(move_only_payload&&) = default;
     move_only_payload& operator=(move_only_payload&&) = default;
 };
@@ -142,7 +142,7 @@ TEST_CASE("function_ref binds lambdas, const functors, and mutating functors")
     REQUIRE(ref(3) == 8);
     REQUIRE(captured == 8);
 
-    const functor_mul const_mul { 4 };
+    functor_mul const const_mul { 4 };
     glox::function_ref<int(int)> const_ref = const_mul;
     REQUIRE(const_ref(6) == 24);
 

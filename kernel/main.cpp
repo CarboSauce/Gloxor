@@ -71,12 +71,12 @@ inline void map_kernel()
 }
 inline void identity_map()
 {
-    for (const auto& it : gx::machineInfo.mmapEntries) {
+    for (auto const& it : gx::machineInfo.mmapEntries) {
         if (it.type == BootInfo::MemTypes::usable
             || it.type == BootInfo::MemTypes::reclaimable
             || it.type == BootInfo::MemTypes::kernel) {
-            const auto from = it.base + PHYSICAL_MEM_BASE;
-            const auto to = it.base;
+            auto const from = it.base + PHYSICAL_MEM_BASE;
+            auto const to = it.base;
             map_region(
                 from,
                 from + it.length,
@@ -107,7 +107,7 @@ extern "C" void gloxor_main()
 {
     (void)gx::preCpuInit.run();
     initialize_cpu();
-    for (const auto it : gx::machineInfo.mmapEntries) {
+    for (auto const it : gx::machineInfo.mmapEntries) {
         gx::println(
             "[mmap entries] (%x - %x) %",
             it.base,
@@ -155,7 +155,7 @@ static bool gogole_test()
     __get_cpuid(0x80000002, brand + 0x0, brand + 0x1, brand + 0x2, brand + 0x3);
     __get_cpuid(0x80000003, brand + 0x4, brand + 0x5, brand + 0x6, brand + 0x7);
     __get_cpuid(0x80000004, brand + 0x8, brand + 0x9, brand + 0xa, brand + 0xb);
-    gx::println("%", std::string_view { (const char*)brand, 12 });
+    gx::println("%", std::string_view { (char const*)brand, 12 });
     return true;
 }
 

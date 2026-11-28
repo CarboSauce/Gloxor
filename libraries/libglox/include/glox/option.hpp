@@ -61,10 +61,10 @@ public:
             _val.~T();
     }
 
-    constexpr option(const option&)
+    constexpr option(option const&)
         requires std::is_trivially_copy_constructible_v<T>
     = default;
-    constexpr option(const option& other)
+    constexpr option(option const& other)
         : hasValue(other.hasValue)
     {
         if (other.hasValue)
@@ -81,11 +81,11 @@ public:
             std::construct_at(&_val, RVALUE(other._val));
     }
 
-    constexpr option& operator=(const option&) = delete;
-    constexpr option& operator=(const option&)
+    constexpr option& operator=(option const&) = delete;
+    constexpr option& operator=(option const&)
         requires std::is_trivially_copy_assignable_v<T>
     = default;
-    constexpr option& operator=(const option& other)
+    constexpr option& operator=(option const& other)
         requires(not std::is_trivially_copy_assignable_v<T>)
             and std::is_destructible_v<T> and std::is_copy_constructible_v<T>
     {
@@ -132,7 +132,7 @@ public:
         return option { RVALUE(val) };
     }
     GLOX_ALWAYS_INLINE
-    static constexpr option from_val(const T& val)
+    static constexpr option from_val(T const& val)
     {
         return option { val };
     }
@@ -154,14 +154,14 @@ public:
     {
         return static_cast<bool>(hasValue);
     }
-    [[nodiscard]] constexpr auto operator<=>(const option& b)
+    [[nodiscard]] constexpr auto operator<=>(option const& b)
     {
         if (hasValue and b.hasValue)
             return _val <=> b._val;
         else
             return false;
     }
-    constexpr bool operator==(const option& b) const
+    constexpr bool operator==(option const& b) const
     {
         if (hasValue and b.hasValue)
             return _val == b._val;
@@ -247,9 +247,9 @@ public:
     }
 
     constexpr ~option() = default;
-    constexpr option(const option&) = default;
+    constexpr option(option const&) = default;
     constexpr option(option&&) = default;
-    constexpr option& operator=(const option&) = default;
+    constexpr option& operator=(option const&) = default;
     constexpr option& operator=(option&&) = default;
 
     GLOX_ALWAYS_INLINE
@@ -293,11 +293,11 @@ public:
     {
         return static_cast<bool>(_val != nullptr);
     }
-    constexpr auto operator<=>(const option& b)
+    constexpr auto operator<=>(option const& b)
     {
         return _val <=> b._val;
     }
-    constexpr bool operator==(const option& b) const
+    constexpr bool operator==(option const& b) const
     {
         return _val == b;
     }

@@ -89,8 +89,8 @@ TEST_CASE("intrusive_mpsc_queue concurrent producers and single consumer")
 
     for (std::size_t p = 0; p < producer_count; ++p) {
         producers.emplace_back([&, p]() {
-            const std::size_t begin = p * items_per_producer;
-            const std::size_t end = begin + items_per_producer;
+            std::size_t const begin = p * items_per_producer;
+            std::size_t const end = begin + items_per_producer;
 
             for (std::size_t i = begin; i < end; ++i)
                 queue.push(&items[i]);

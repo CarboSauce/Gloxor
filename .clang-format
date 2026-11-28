@@ -39,4 +39,4 @@ IndentExportBlock: false
 IndentExternBlock: NoIndent
 PenaltyReturnTypeOnItsOwnLine: 1000
 PenaltyBreakScopeResolution: 1000
-
+QualifierAlignment: Right

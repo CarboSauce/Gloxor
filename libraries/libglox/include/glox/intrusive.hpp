@@ -8,20 +8,22 @@
 namespace glox {
 GLOX_BEGIN_EXPORT
 template <typename Base, typename Member>
-GLOX_ALWAYS_INLINE inline std::ptrdiff_t offset_of(const Member Base::* ptr)
+GLOX_ALWAYS_INLINE inline std::ptrdiff_t offset_of(Member const Base::* ptr)
 {
     alignas(Base) char ahack[sizeof(Base)] { };
-    const Base* base = reinterpret_cast<const Base*>(ahack);
+    Base const* base = reinterpret_cast<Base const*>(ahack);
     return reinterpret_cast<std::ptrdiff_t>(&(base->*ptr))
          - reinterpret_cast<std::ptrdiff_t>(base);
 }
 
 template <typename T, typename U>
-GLOX_ALWAYS_INLINE inline const T*
-container_of(const U* const a, U const T::* const ptr)
+GLOX_ALWAYS_INLINE inline const T* container_of(
+    U const* const a,
+    U const T::* const ptr
+)
 {
-    return reinterpret_cast<const T*>(
-        reinterpret_cast<const char*>(a) - offset_of(ptr)
+    return reinterpret_cast<T const*>(
+        reinterpret_cast<char const*>(a) - offset_of(ptr)
     );
 }
 template <typename T, typename U>

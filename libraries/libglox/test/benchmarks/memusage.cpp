@@ -64,7 +64,7 @@ struct tracking_page_allocator
 
     static std::size_t round_os(std::size_t n)
     {
-        const std::size_t ps
+        std::size_t const ps
             = static_cast<std::size_t>(::sysconf(_SC_PAGESIZE));
         return (n + ps - 1) & ~(ps - 1);
     }
@@ -75,7 +75,7 @@ struct tracking_page_allocator
         if (blockCount == MAX_BLOCKS)
             return { nullptr, 0 };
 
-        const std::size_t span = n + ARENA_SIZE;
+        std::size_t const span = n + ARENA_SIZE;
         void* raw = ::mmap(
             nullptr,
             span,
@@ -87,11 +87,11 @@ struct tracking_page_allocator
         if (raw == MAP_FAILED)
             return { nullptr, 0 };
 
-        const auto r = reinterpret_cast<std::uintptr_t>(raw);
-        const auto a = (r + ARENA_SIZE - 1) & ~(std::uintptr_t(ARENA_SIZE) - 1);
+        auto const r = reinterpret_cast<std::uintptr_t>(raw);
+        auto const a = (r + ARENA_SIZE - 1) & ~(std::uintptr_t(ARENA_SIZE) - 1);
         if (a > r)
             ::munmap(raw, a - r);
-        const auto end = r + span;
+        auto const end = r + span;
         if (end > a + n)
             ::munmap(reinterpret_cast<void*>(a + n), end - (a + n));
 
@@ -289,9 +289,9 @@ struct kheap_pfndb
             kheap_arena_state::base + (pfn << KHEAP_PAGE_SHIFT)
         );
     }
-    std::uintptr_t virt_to_pfn(const void* p) const noexcept
+    std::uintptr_t virt_to_pfn(void const* p) const noexcept
     {
-        const auto a = reinterpret_cast<std::uintptr_t>(p);
+        auto const a = reinterpret_cast<std::uintptr_t>(p);
         if (a < kheap_arena_state::base)
             return KHEAP_MAX_PFNS;
         return (a - kheap_arena_state::base) >> KHEAP_PAGE_SHIFT;
@@ -495,9 +495,9 @@ static void SizeArgs(::benchmark::Benchmark* b)
 template <class Adapter>
 static void BM_Memory_Overhead(benchmark::State& state)
 {
-    const std::size_t size = static_cast<std::size_t>(state.range(0));
-    const std::size_t count = std::max<std::size_t>(1, PAYLOAD_BUDGET / size);
-    const double payload
+    std::size_t const size = static_cast<std::size_t>(state.range(0));
+    std::size_t const count = std::max<std::size_t>(1, PAYLOAD_BUDGET / size);
+    double const payload
         = static_cast<double>(count) * static_cast<double>(size);
     std::vector<void*> ptrs(count, nullptr);
     double rssSum = 0, srcSum = 0;
@@ -505,8 +505,8 @@ static void BM_Memory_Overhead(benchmark::State& state)
     for (auto _ : state) {
         Adapter a;
         a.begin();
-        const std::int64_t rss0 = rss_bytes();
-        const std::int64_t src0 = a.source_bytes();
+        std::int64_t const rss0 = rss_bytes();
+        std::int64_t const src0 = a.source_bytes();
 
         std::size_t done = 0;
         for (; done < count; ++done) {
@@ -530,7 +530,7 @@ static void BM_Memory_Overhead(benchmark::State& state)
         }
     }
 
-    const double iters = static_cast<double>(state.iterations());
+    double const iters = static_cast<double>(state.iterations());
     if (iters > 0) {
         state.counters["payload_MiB"] = payload / MiB;
         state.counters["rss_B_per_obj"] = rssSum / iters / double(count);
@@ -543,9 +543,9 @@ static void BM_Memory_Overhead(benchmark::State& state)
 template <class Adapter>
 static void BM_Memory_Fragmentation(benchmark::State& state)
 {
-    const std::size_t size = static_cast<std::size_t>(state.range(0));
-    const std::size_t count = std::max<std::size_t>(2, PAYLOAD_BUDGET / size);
-    const double payload
+    std::size_t const size = static_cast<std::size_t>(state.range(0));
+    std::size_t const count = std::max<std::size_t>(2, PAYLOAD_BUDGET / size);
+    double const payload
         = static_cast<double>(count) * static_cast<double>(size);
     std::vector<void*> ptrs(count, nullptr);
     double fullSum = 0, halfSum = 0, emptySum = 0;
@@ -553,7 +553,7 @@ static void BM_Memory_Fragmentation(benchmark::State& state)
     for (auto _ : state) {
         Adapter a;
         a.begin();
-        const std::int64_t rss0 = rss_bytes();
+        std::int64_t const rss0 = rss_bytes();
 
         bool ok = true;
         for (std::size_t i = 0; i < count && ok; ++i) {
@@ -585,7 +585,7 @@ static void BM_Memory_Fragmentation(benchmark::State& state)
         }
     }
 
-    const double iters = static_cast<double>(state.iterations());
+    double const iters = static_cast<double>(state.iterations());
     if (iters > 0) {
         state.counters["rss_full_x"] = fullSum / iters / payload;
         state.counters["rss_half_live_x"] = halfSum / iters / (payload / 2);
@@ -601,7 +601,7 @@ static void BM_Memory_Churn(benchmark::State& state)
     constexpr std::size_t ops = 1000000;
     constexpr std::size_t sizes[]
         = { 16, 24, 48, 64, 96, 128, 256, 512, 1000, 2048, 4096, 20000 };
-    const std::size_t nsizes = state.range(0) != 0 ? 12 : 10;
+    std::size_t const nsizes = state.range(0) != 0 ? 12 : 10;
 
     std::vector<void*> ptr(slots);
     std::vector<std::uint32_t> sz(slots);
@@ -613,7 +613,7 @@ static void BM_Memory_Churn(benchmark::State& state)
 
         Adapter a;
         a.begin();
-        const std::int64_t rss0 = rss_bytes();
+        std::int64_t const rss0 = rss_bytes();
 
         std::uint64_t rng = 0x9E3779B97F4A7C15ull;
         std::int64_t live = 0, peakLive = 0, peakRss = 0;
@@ -623,14 +623,14 @@ static void BM_Memory_Churn(benchmark::State& state)
             rng ^= rng << 13;
             rng ^= rng >> 7;
             rng ^= rng << 17;
-            const std::size_t slot = rng % slots;
+            std::size_t const slot = rng % slots;
 
             if (ptr[slot]) {
                 a.free(ptr[slot], sz[slot]);
                 live -= sz[slot];
                 ptr[slot] = nullptr;
             } else {
-                const std::size_t s = sizes[(rng >> 32) % nsizes];
+                std::size_t const s = sizes[(rng >> 32) % nsizes];
                 void* p = a.alloc(s);
                 if (!p) {
                     ok = false;
@@ -661,7 +661,7 @@ static void BM_Memory_Churn(benchmark::State& state)
         }
     }
 
-    const double iters = static_cast<double>(state.iterations());
+    double const iters = static_cast<double>(state.iterations());
     if (iters > 0) {
         state.counters["peak_live_MiB"] = peakLiveSum / iters / MiB;
         state.counters["peak_rss_MiB"] = peakRssSum / iters / MiB;

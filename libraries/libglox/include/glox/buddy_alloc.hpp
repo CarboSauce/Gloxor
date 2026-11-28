@@ -20,7 +20,7 @@ struct memory_region
 };
 
 template <typename Desc>
-concept pfn_descriptor = requires(Desc d, const Desc cd, std::size_t order) {
+concept pfn_descriptor = requires(Desc d, Desc const cd, std::size_t order) {
     { Desc::make_reserved() } -> std::same_as<Desc>;
     { Desc::make_buddy_free(order) } -> std::same_as<Desc>;
     { Desc::make_allocated(order) } -> std::same_as<Desc>;
@@ -31,7 +31,7 @@ concept pfn_descriptor = requires(Desc d, const Desc cd, std::size_t order) {
 template <typename Accessor>
 concept pfndb_accessor = requires(
     Accessor& acc,
-    const Accessor& cacc,
+    Accessor const& cacc,
     std::uintptr_t pfn
 ) {
     requires pfn_descriptor<std::remove_cvref_t<decltype(acc.get_desc(pfn))>>;
@@ -65,7 +65,7 @@ class buddy_allocator
 public:
     using accessor_type = Accessor;
     using descriptor_type
-        = std::remove_cvref_t<decltype(std::declval<const Accessor&>()
+        = std::remove_cvref_t<decltype(std::declval<Accessor const&>()
                 .get_desc(0))>;
 
     static constexpr std::size_t PAGE_SIZE = std::size_t { 1 } << PageShift;
@@ -92,7 +92,7 @@ private:
     void list_push_front(std::size_t order, std::uintptr_t pfn)
     {
         free_node* node = node_at(pfn);
-        const std::uintptr_t oldHead = free_lists_[order];
+        std::uintptr_t const oldHead = free_lists_[order];
 
         node->prev_pfn = 0;
         node->next_pfn = oldHead;
@@ -108,8 +108,8 @@ private:
     void list_remove(std::size_t order, std::uintptr_t pfn)
     {
         free_node* node = node_at(pfn);
-        const std::uintptr_t prev = node->prev_pfn;
-        const std::uintptr_t next = node->next_pfn;
+        std::uintptr_t const prev = node->prev_pfn;
+        std::uintptr_t const next = node->next_pfn;
 
         if (prev != 0) {
             node_at(prev)->next_pfn = next;
@@ -126,7 +126,7 @@ private:
 
     [[nodiscard]] std::uintptr_t list_pop_front(std::size_t order)
     {
-        const std::uintptr_t head = free_lists_[order];
+        std::uintptr_t const head = free_lists_[order];
         if (head != 0) {
             list_remove(order, head);
         }
@@ -136,14 +136,14 @@ private:
     void release_block(std::uintptr_t pfn, std::size_t order)
     {
         while (order + 1 < MaxOrder) {
-            const std::uintptr_t buddyPfn
+            std::uintptr_t const buddyPfn
                 = pfn ^ (std::uintptr_t { 1 } << order);
 
             if (buddyPfn == 0 || !pfndb_.is_valid(buddyPfn)) {
                 break;
             }
 
-            const descriptor_type buddy = pfndb_.get_desc(buddyPfn);
+            descriptor_type const buddy = pfndb_.get_desc(buddyPfn);
             if (!buddy.is_buddy_free() || buddy.buddy_order() != order) {
                 break;
             }
@@ -166,8 +166,8 @@ public:
     {
     }
 
-    buddy_allocator(const buddy_allocator&) = delete;
-    buddy_allocator& operator=(const buddy_allocator&) = delete;
+    buddy_allocator(buddy_allocator const&) = delete;
+    buddy_allocator& operator=(buddy_allocator const&) = delete;
 
     void set_accessor(Accessor accessor)
     {
@@ -179,7 +179,7 @@ public:
     {
         return pfndb_;
     }
-    [[nodiscard]] const Accessor& accessor() const
+    [[nodiscard]] Accessor const& accessor() const
     {
         return pfndb_;
     }
@@ -193,7 +193,7 @@ public:
 
         std::uintptr_t start
             = (region.phys_addr + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-        const std::uintptr_t end
+        std::uintptr_t const end
             = (region.phys_addr + region.size) & ~(PAGE_SIZE - 1);
 
         if (start == 0) {
@@ -204,12 +204,12 @@ public:
         }
 
         std::uintptr_t curPfn = start >> PageShift;
-        const std::uintptr_t endPfn = end >> PageShift;
+        std::uintptr_t const endPfn = end >> PageShift;
 
         scoped_lock guard(lock_);
 
         while (curPfn < endPfn) {
-            const std::uintptr_t remaining = endPfn - curPfn;
+            std::uintptr_t const remaining = endPfn - curPfn;
 
             std::size_t alignOrder
                 = static_cast<std::size_t>(std::countr_zero(curPfn));
@@ -223,9 +223,9 @@ public:
                 sizeOrder = MaxOrder - 1;
             }
 
-            const std::size_t order
+            std::size_t const order
                 = alignOrder < sizeOrder ? alignOrder : sizeOrder;
-            const std::uintptr_t blockPfns = std::uintptr_t { 1 } << order;
+            std::uintptr_t const blockPfns = std::uintptr_t { 1 } << order;
 
             if (!pfndb_.is_valid(curPfn)) {
                 break;
@@ -259,11 +259,11 @@ public:
             return 0;
         }
 
-        const std::uintptr_t pfn = list_pop_front(currentOrder);
+        std::uintptr_t const pfn = list_pop_front(currentOrder);
 
         while (currentOrder > order) {
             --currentOrder;
-            const std::uintptr_t buddyPfn
+            std::uintptr_t const buddyPfn
                 = pfn + (std::uintptr_t { 1 } << currentOrder);
             list_push_front(currentOrder, buddyPfn);
         }
@@ -278,8 +278,8 @@ public:
         if (bytes == 0) {
             bytes = 1;
         }
-        const std::size_t pages = (bytes + PAGE_SIZE - 1) >> PageShift;
-        const std::size_t order
+        std::size_t const pages = (bytes + PAGE_SIZE - 1) >> PageShift;
+        std::size_t const order
             = pages <= 1 ? 0
                          : static_cast<std::size_t>(std::bit_width(pages - 1));
         return alloc_order(order);
@@ -292,7 +292,7 @@ public:
             return;
         }
 
-        const std::uintptr_t pfn = phys_addr >> PageShift;
+        std::uintptr_t const pfn = phys_addr >> PageShift;
         if (!pfndb_.is_valid(pfn)) {
             return;
         }
@@ -307,8 +307,8 @@ public:
         if (bytes == 0) {
             bytes = 1;
         }
-        const std::size_t pages = (bytes + PAGE_SIZE - 1) >> PageShift;
-        const std::size_t order
+        std::size_t const pages = (bytes + PAGE_SIZE - 1) >> PageShift;
+        std::size_t const order
             = pages <= 1 ? 0
                          : static_cast<std::size_t>(std::bit_width(pages - 1));
         free_order(phys_addr, order);
@@ -321,18 +321,18 @@ public:
             return;
         }
 
-        const std::uintptr_t pfn = phys_addr >> PageShift;
+        std::uintptr_t const pfn = phys_addr >> PageShift;
         if (!pfndb_.is_valid(pfn)) {
             return;
         }
 
         scoped_lock guard(lock_);
-        const descriptor_type desc = pfndb_.get_desc(pfn);
+        descriptor_type const desc = pfndb_.get_desc(pfn);
         if (desc.is_buddy_free()) {
             return;
         }
 
-        const std::size_t order = desc.buddy_order();
+        std::size_t const order = desc.buddy_order();
         if (order >= MaxOrder) {
             return;
         }

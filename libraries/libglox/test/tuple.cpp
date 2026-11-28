@@ -13,7 +13,7 @@ static_assert(
 
 static_assert(
     glox::is_specialization<
-        std::remove_reference_t<glox::tuple<const char*, const char*, int>&>,
+        std::remove_reference_t<glox::tuple<char const*, char const*, int>&>,
         glox::tuple
     >::value
     == true
@@ -44,7 +44,7 @@ TEST_CASE("Tuple apply")
     auto assertExpr = [](auto a, auto b) { REQUIRE(a == b); };
 
     glox::apply(
-        [&, i = 0](const auto&... args) mutable {
+        [&, i = 0](auto const&... args) mutable {
             (assertExpr(args, ++i), ...);
         },
         tpl
@@ -58,7 +58,7 @@ TEST_CASE("Tuple apply")
     auto assertExpr = [](auto a, auto b) { REQUIRE(a == b); };
 
     glox::apply(
-        [&, i = 0](const auto&... args) mutable {
+        [&, i = 0](auto const&... args) mutable {
             (assertExpr(args, ++i), ...);
         },
         tpl

@@ -49,17 +49,17 @@ namespace detail {
         return l == link_left ? link_right : link_left;
     }
 
-    inline bool is_red(const node* n)
+    inline bool is_red(node const* n)
     {
         return n && n->node_color == color::red;
     }
 
-    inline bool is_black(const node* n)
+    inline bool is_black(node const* n)
     {
         return !is_red(n);
     }
 
-    inline bool is_sentinel(const node* n)
+    inline bool is_sentinel(node const* n)
     {
         return n->node_color == color::red && n->parent
             && n->parent->parent == n;
@@ -260,7 +260,7 @@ namespace detail {
 
     // returns the black height of the subtree or -1 if an invariant is broken
     // also counts nodes into count
-    inline int verify_subtree(const node* n, const node* parent, size_t& count)
+    inline int verify_subtree(node const* n, node const* parent, size_t& count)
     {
         if (!n) {
             return 1;
@@ -301,8 +301,8 @@ public:
         using iterator_category = std::bidirectional_iterator_tag;
         using value_type = T;
         using difference_type = ptrdiff_t;
-        using pointer = std::conditional_t<IsConst, const T*, T*>;
-        using reference = std::conditional_t<IsConst, const T&, T&>;
+        using pointer = std::conditional_t<IsConst, T const*, T*>;
+        using reference = std::conditional_t<IsConst, T const&, T&>;
 
         basic_iterator() = default;
 
@@ -316,7 +316,7 @@ public:
             bool OtherConst,
             typename = std::enable_if_t<IsConst && !OtherConst>
         >
-        basic_iterator(const basic_iterator<OtherConst>& other)
+        basic_iterator(basic_iterator<OtherConst> const& other)
             : current { other.current }
         {
         }
@@ -357,12 +357,12 @@ public:
             return copy;
         }
 
-        friend bool operator==(const basic_iterator& a, const basic_iterator& b)
+        friend bool operator==(basic_iterator const& a, basic_iterator const& b)
         {
             return a.current == b.current;
         }
 
-        friend bool operator!=(const basic_iterator& a, const basic_iterator& b)
+        friend bool operator!=(basic_iterator const& a, basic_iterator const& b)
         {
             return a.current != b.current;
         }
@@ -387,8 +387,8 @@ public:
         reset_sentinel();
     }
 
-    intrusive_rb_tree(const intrusive_rb_tree&) = delete;
-    intrusive_rb_tree& operator=(const intrusive_rb_tree&) = delete;
+    intrusive_rb_tree(intrusive_rb_tree const&) = delete;
+    intrusive_rb_tree& operator=(intrusive_rb_tree const&) = delete;
 
     intrusive_rb_tree(intrusive_rb_tree&& other)
         : sentinel { }
@@ -473,7 +473,7 @@ public:
         return container_of(n, NodePtr);
     }
 
-    static const T* to_object(const node* n)
+    static T const* to_object(node const* n)
     {
         return container_of(n, NodePtr);
     }
@@ -590,7 +590,7 @@ public:
             return !sentinel.parent && sentinel.left == &sentinel
                 && sentinel.right == &sentinel;
         }
-        const node* root = sentinel.parent;
+        node const* root = sentinel.parent;
         if (!root || root->node_color != color::black) {
             return false;
         }
@@ -680,58 +680,58 @@ public:
     {
     }
 
-    ordered_intrusive_rb_tree(const ordered_intrusive_rb_tree&) = delete;
-    ordered_intrusive_rb_tree& operator=(const ordered_intrusive_rb_tree&)
+    ordered_intrusive_rb_tree(ordered_intrusive_rb_tree const&) = delete;
+    ordered_intrusive_rb_tree& operator=(ordered_intrusive_rb_tree const&)
         = delete;
     ordered_intrusive_rb_tree(ordered_intrusive_rb_tree&&) = default;
     ordered_intrusive_rb_tree& operator=(ordered_intrusive_rb_tree&&) = default;
 
     // lookup
     template <typename Key>
-    iterator find(const Key& key)
+    iterator find(Key const& key)
     {
         return iterator { find_node(key) };
     }
 
     template <typename Key>
-    const_iterator find(const Key& key) const
+    const_iterator find(Key const& key) const
     {
         return const_iterator { find_node(key) };
     }
 
     template <typename Key>
-    iterator lower_bound(const Key& key)
+    iterator lower_bound(Key const& key)
     {
         return iterator { lower_bound_node(key) };
     }
 
     template <typename Key>
-    const_iterator lower_bound(const Key& key) const
+    const_iterator lower_bound(Key const& key) const
     {
         return const_iterator { lower_bound_node(key) };
     }
 
     template <typename Key>
-    iterator upper_bound(const Key& key)
+    iterator upper_bound(Key const& key)
     {
         return iterator { upper_bound_node(key) };
     }
 
     template <typename Key>
-    const_iterator upper_bound(const Key& key) const
+    const_iterator upper_bound(Key const& key) const
     {
         return const_iterator { upper_bound_node(key) };
     }
 
     // modification
     template <typename Key>
-    insert_pos find_insert_pos(const Key& key)
+    insert_pos find_insert_pos(Key const& key)
     {
         node* parent = base::end_node();
         node** link = base::root_link();
         while (*link) {
             parent = *link;
-            const T* current = base::to_object(parent);
+            T const* current = base::to_object(parent);
             if (comp(key, *current)) {
                 link = &parent->left;
             } else if (comp(*current, key)) {
@@ -764,7 +764,7 @@ public:
         std::swap(comp, other.comp);
     }
 
-    const Compare& key_comp() const
+    Compare const& key_comp() const
     {
         return comp;
     }
@@ -787,7 +787,7 @@ public:
 
 private:
     template <typename Key>
-    node* lower_bound_node(const Key& key) const
+    node* lower_bound_node(Key const& key) const
     {
         node* current = base::root_node();
         node* result = base::end_node();
@@ -803,7 +803,7 @@ private:
     }
 
     template <typename Key>
-    node* upper_bound_node(const Key& key) const
+    node* upper_bound_node(Key const& key) const
     {
         node* current = base::root_node();
         node* result = base::end_node();
@@ -819,7 +819,7 @@ private:
     }
 
     template <typename Key>
-    node* find_node(const Key& key) const
+    node* find_node(Key const& key) const
     {
         node* n = lower_bound_node(key);
         return (n != base::end_node() && !comp(key, *base::to_object(n)))
@@ -832,7 +832,7 @@ template <typename Key, typename Value>
 struct map_entry
 {
     rb_tree_node node;
-    glox::pair<const Key, Value> kv;
+    glox::pair<Key const, Value> kv;
 
     template <typename K, typename... Args>
     explicit map_entry(K&& key, Args&&... args)
@@ -863,17 +863,17 @@ class rb_tree_map
     {
         [[no_unique_address]] Compare comp { };
 
-        bool operator()(const map_entry& a, const map_entry& b) const
+        bool operator()(map_entry const& a, map_entry const& b) const
         {
             return comp(a.kv.first, b.kv.first);
         }
 
-        bool operator()(const map_entry& a, const Key& b) const
+        bool operator()(map_entry const& a, Key const& b) const
         {
             return comp(a.kv.first, b);
         }
 
-        bool operator()(const Key& a, const map_entry& b) const
+        bool operator()(Key const& a, map_entry const& b) const
         {
             return comp(a, b.kv.first);
         }
@@ -888,7 +888,7 @@ class rb_tree_map
 public:
     using key_type = Key;
     using mapped_type = Value;
-    using value_type = glox::pair<const Key, Value>;
+    using value_type = glox::pair<Key const, Value>;
     using key_compare = Compare;
     using size_type = size_t;
 
@@ -903,12 +903,12 @@ public:
 
     public:
         using iterator_category = std::bidirectional_iterator_tag;
-        using value_type = glox::pair<const Key, Value>;
+        using value_type = glox::pair<Key const, Value>;
         using difference_type = ptrdiff_t;
         using pointer
-            = std::conditional_t<IsConst, const value_type*, value_type*>;
+            = std::conditional_t<IsConst, value_type const*, value_type*>;
         using reference
-            = std::conditional_t<IsConst, const value_type&, value_type&>;
+            = std::conditional_t<IsConst, value_type const&, value_type&>;
 
         basic_iterator() = default;
 
@@ -921,7 +921,7 @@ public:
             bool OtherConst,
             typename = std::enable_if_t<IsConst && !OtherConst>
         >
-        basic_iterator(const basic_iterator<OtherConst>& other)
+        basic_iterator(basic_iterator<OtherConst> const& other)
             : inner { other.inner }
         {
         }
@@ -962,12 +962,12 @@ public:
             return copy;
         }
 
-        friend bool operator==(const basic_iterator& a, const basic_iterator& b)
+        friend bool operator==(basic_iterator const& a, basic_iterator const& b)
         {
             return a.inner == b.inner;
         }
 
-        friend bool operator!=(const basic_iterator& a, const basic_iterator& b)
+        friend bool operator!=(basic_iterator const& a, basic_iterator const& b)
         {
             return a.inner != b.inner;
         }
@@ -998,22 +998,22 @@ public:
 
     rb_tree_map(std::initializer_list<value_type> init)
     {
-        for (const value_type& kv : init) {
+        for (value_type const& kv : init) {
             insert(kv);
         }
     }
 
-    rb_tree_map(const rb_tree_map& other)
+    rb_tree_map(rb_tree_map const& other)
         : tree { other.tree.key_comp() }
     {
-        for (const value_type& kv : other) {
+        for (value_type const& kv : other) {
             try_emplace(kv.first, kv.second);
         }
     }
 
     rb_tree_map(rb_tree_map&& other) = default;
 
-    rb_tree_map& operator=(const rb_tree_map& other)
+    rb_tree_map& operator=(rb_tree_map const& other)
     {
         if (this != &other) {
             rb_tree_map copy { other };
@@ -1096,47 +1096,47 @@ public:
         return const_reverse_iterator { begin() };
     }
 
-    iterator find(const Key& key)
+    iterator find(Key const& key)
     {
         return iterator { tree.find(key) };
     }
 
-    const_iterator find(const Key& key) const
+    const_iterator find(Key const& key) const
     {
         return const_iterator { tree.find(key) };
     }
 
-    bool contains(const Key& key) const
+    bool contains(Key const& key) const
     {
         return find(key) != end();
     }
 
-    size_t count(const Key& key) const
+    size_t count(Key const& key) const
     {
         return contains(key) ? 1 : 0;
     }
 
-    iterator lower_bound(const Key& key)
+    iterator lower_bound(Key const& key)
     {
         return iterator { tree.lower_bound(key) };
     }
 
-    const_iterator lower_bound(const Key& key) const
+    const_iterator lower_bound(Key const& key) const
     {
         return const_iterator { tree.lower_bound(key) };
     }
 
-    iterator upper_bound(const Key& key)
+    iterator upper_bound(Key const& key)
     {
         return iterator { tree.upper_bound(key) };
     }
 
-    const_iterator upper_bound(const Key& key) const
+    const_iterator upper_bound(Key const& key) const
     {
         return const_iterator { tree.upper_bound(key) };
     }
 
-    glox::option<Value&> at(const Key& key)
+    glox::option<Value&> at(Key const& key)
     {
         iterator it = find(key);
         if (it == end()) {
@@ -1145,7 +1145,7 @@ public:
         return it->second;
     }
 
-    glox::option<const Value&> at(const Key& key) const
+    glox::option<Value const&> at(Key const& key) const
     {
         const_iterator it = find(key);
         if (it == end()) {
@@ -1157,8 +1157,10 @@ public:
     // modification
     // Constructs the mapped value in place only if the key is absent.
     template <typename... Args>
-    glox::pair<iterator, insert_result>
-    try_emplace(const Key& key, Args&&... args)
+    glox::pair<iterator, insert_result> try_emplace(
+        Key const& key,
+        Args&&... args
+    )
     {
         return try_emplace_impl(key, FORWARD(args)...);
     }
@@ -1170,7 +1172,7 @@ public:
     }
 
     template <typename... Args>
-    glox::pair<iterator, insert_result> insert(const Key& key, Args&&... args)
+    glox::pair<iterator, insert_result> insert(Key const& key, Args&&... args)
     {
         return try_emplace_impl(key, FORWARD(args)...);
     }
@@ -1181,7 +1183,7 @@ public:
         return try_emplace_impl(RVALUE(key), FORWARD(args)...);
     }
 
-    glox::pair<iterator, insert_result> insert(const value_type& kv)
+    glox::pair<iterator, insert_result> insert(value_type const& kv)
     {
         return try_emplace(kv.first, kv.second);
     }
@@ -1192,8 +1194,10 @@ public:
     }
 
     template <typename M>
-    glox::pair<iterator, insert_result>
-    insert_or_assign(const Key& key, M&& mapped)
+    glox::pair<iterator, insert_result> insert_or_assign(
+        Key const& key,
+        M&& mapped
+    )
     {
         auto result = try_emplace(key, FORWARD(mapped));
         if (result.second == insert_result::key_exists) {
@@ -1211,7 +1215,7 @@ public:
         return following;
     }
 
-    size_t erase(const Key& key)
+    size_t erase(Key const& key)
     {
         iterator it = find(key);
         if (it == end()) {
@@ -1246,10 +1250,12 @@ public:
 
 private:
     template <typename K, typename... Args>
-    glox::pair<iterator, insert_result>
-    try_emplace_impl(K&& key, Args&&... args)
+    glox::pair<iterator, insert_result> try_emplace_impl(
+        K&& key,
+        Args&&... args
+    )
     {
-        auto pos = tree.find_insert_pos(static_cast<const Key&>(key));
+        auto pos = tree.find_insert_pos(static_cast<Key const&>(key));
         if (pos.existing) {
             return {
                 iterator { typename tree_type::iterator { pos.existing } },

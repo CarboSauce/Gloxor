@@ -39,7 +39,7 @@ TEST_CASE("glox::list default, count, fill, and range construction")
         glox::list<alloc_tracker> filled(4, proto);
         REQUIRE(filled.size() == 4);
         REQUIRE(alloc_tracker::copy_ctor_counter == 4);
-        for (const auto& item : filled) {
+        for (auto const& item : filled) {
             REQUIRE(item.value == 42);
         }
 
@@ -67,7 +67,7 @@ TEST_CASE("glox::list copy construction and copy assignment")
         REQUIRE(alloc_tracker::copy_ctor_counter == 3);
 
         int expected = 1;
-        for (const auto& item : b) {
+        for (auto const& item : b) {
             REQUIRE(item.value == expected++);
         }
 
@@ -224,7 +224,7 @@ TEST_CASE("glox::list splice single element and whole list")
         REQUIRE(alloc_tracker::move_ctor_counter == 0);
 
         int expected = 1;
-        for (const auto& item : dst) {
+        for (auto const& item : dst) {
             REQUIRE(item.value == expected++);
         }
     }

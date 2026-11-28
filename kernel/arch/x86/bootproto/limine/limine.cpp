@@ -12,47 +12,63 @@ import std.compat;
 extern "C" void limine_main();
 extern "C" void gloxor_main();
 
-[[gnu::used, gnu::section(".limine_requests")]]
-static volatile uint64_t limine_base_revision[] = LIMINE_BASE_REVISION(6);
+[[gnu::used,
+    gnu::section(
+        ".limine_requests"
+    )]] static uint64_t volatile limine_base_revision[]
+    = LIMINE_BASE_REVISION(6);
 
-[[gnu::used, gnu::section(".limine_requests_start")]]
-static volatile std::uint64_t limine_requests_start_marker[]
+[[gnu::used,
+    gnu::section(
+        ".limine_requests_start"
+    )]] static std::uint64_t volatile limine_requests_start_marker[]
     = LIMINE_REQUESTS_START_MARKER;
 
-[[gnu::used, gnu::section(".limine_requests_end")]]
-static volatile std::uint64_t limine_requests_end_marker[]
+[[gnu::used,
+    gnu::section(
+        ".limine_requests_end"
+    )]] static std::uint64_t volatile limine_requests_end_marker[]
     = LIMINE_REQUESTS_END_MARKER;
 
-[[gnu::used, gnu::section(".limine_requests")]]
-volatile limine_framebuffer_request framebuffer_request = {
+[[gnu::used,
+    gnu::section(
+        ".limine_requests"
+    )]] limine_framebuffer_request volatile framebuffer_request = {
     .id = LIMINE_FRAMEBUFFER_REQUEST_ID,
     .revision = 0,
     .response = nullptr,
 };
 
-[[gnu::used, gnu::section(".limine_requests")]]
-volatile limine_rsdp_request rsdp_request = {
-    .id = LIMINE_RSDP_REQUEST_ID,
-    .revision = 0,
-    .response = nullptr,
-};
+[[gnu::used,
+    gnu::section(".limine_requests")]] limine_rsdp_request volatile rsdp_request
+    = {
+          .id = LIMINE_RSDP_REQUEST_ID,
+          .revision = 0,
+          .response = nullptr,
+      };
 
-[[gnu::used, gnu::section(".limine_requests")]]
-volatile limine_memmap_request memmap_request = {
+[[gnu::used,
+    gnu::section(
+        ".limine_requests"
+    )]] limine_memmap_request volatile memmap_request = {
     .id = LIMINE_MEMMAP_REQUEST_ID,
     .revision = 0,
     .response = nullptr,
 };
 
-[[gnu::used, gnu::section(".limine_requests")]]
-volatile limine_executable_address_request exec_address_request = {
+[[gnu::used,
+    gnu::section(
+        ".limine_requests"
+    )]] limine_executable_address_request volatile exec_address_request = {
     .id = LIMINE_EXECUTABLE_ADDRESS_REQUEST_ID,
     .revision = 0,
     .response = nullptr,
 };
 
-[[gnu::used, gnu::section(".limine_requests")]]
-volatile limine_stack_size_request stack_size_request = {
+[[gnu::used,
+    gnu::section(
+        ".limine_requests"
+    )]] limine_stack_size_request volatile stack_size_request = {
     .id = LIMINE_STACK_SIZE_REQUEST_ID,
     .revision = 0,
     .response = nullptr,
@@ -61,8 +77,8 @@ volatile limine_stack_size_request stack_size_request = {
 
 inline void initialize_pmm(limine_memmap_response* m)
 {
-    const auto* mMap = m->entries;
-    const auto entryCount = m->entry_count;
+    auto const* mMap = m->entries;
+    auto const entryCount = m->entry_count;
     for (size_t curIndex = 0; curIndex != entryCount; ++curIndex) {
         // for now reclaiming bootloader memory is too big of a risk as it can
         // corrupt page tables once memory manager can handle it, do it
@@ -105,8 +121,8 @@ inline gx::BootInfo::MemTypes convert_mem_types(u32 type)
 
 inline void setup_kernelmemmap(limine_memmap_response* m)
 {
-    const auto* mMap = m->entries;
-    const auto entryCount = m->entry_count;
+    auto const* mMap = m->entries;
+    auto const entryCount = m->entry_count;
     auto* memmap = (gx::BootInfo::MemoryMap*)gx::EarlyPmmAllocator::alloc(
         sizeof(gx::BootInfo::MemoryMap) * entryCount
     );

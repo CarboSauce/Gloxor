@@ -51,8 +51,8 @@ namespace heap_detail {
     >
     consteval std::size_t total_bucket_count() noexcept
     {
-        const std::size_t small_buckets = MaxSmallSize / Granularity;
-        const std::size_t med_octaves
+        std::size_t const small_buckets = MaxSmallSize / Granularity;
+        std::size_t const med_octaves
             = std::countr_zero(MaxMediumSize) - std::countr_zero(MaxSmallSize);
         return small_buckets + (med_octaves << MEDIUM_SUB_BINS_BITS);
     }
@@ -166,7 +166,7 @@ namespace heap_detail {
         bool try_resize(page_meta* m, std::uint32_t new_k) noexcept
         {
             lock.lock();
-            const std::uint32_t cur = m->slice_count;
+            std::uint32_t const cur = m->slice_count;
             bool ok = true;
             if (new_k > cur) {
                 if (m->slice_idx + new_k > NUM_SLICES) {
@@ -304,9 +304,9 @@ private:
     {
         if (size <= MaxSmallSize)
             return size == 0 ? 0 : (size - 1) / Granularity;
-        const std::size_t x = size - 1;
-        const unsigned e = static_cast<unsigned>(std::bit_width(x)) - 1;
-        const std::size_t sub = (x >> (e - SUB_BINS_BITS))
+        std::size_t const x = size - 1;
+        unsigned const e = static_cast<unsigned>(std::bit_width(x)) - 1;
+        std::size_t const sub = (x >> (e - SUB_BINS_BITS))
                               & ((std::size_t(1) << SUB_BINS_BITS) - 1);
         return SMALL_BUCKETS
              + ((static_cast<std::size_t>(e - MIN_MED_LOG2) << SUB_BINS_BITS)
@@ -317,10 +317,10 @@ private:
     {
         if (b < SMALL_BUCKETS)
             return (b + 1) * Granularity;
-        const std::size_t med_idx = b - SMALL_BUCKETS;
-        const unsigned e
+        std::size_t const med_idx = b - SMALL_BUCKETS;
+        unsigned const e
             = MIN_MED_LOG2 + static_cast<unsigned>(med_idx >> SUB_BINS_BITS);
-        const std::size_t sub
+        std::size_t const sub
             = med_idx & ((std::size_t(1) << SUB_BINS_BITS) - 1);
         return ((std::size_t(1) << SUB_BINS_BITS) + sub + 1)
             << (e - SUB_BINS_BITS);
@@ -337,8 +337,8 @@ private:
         std::size_t block_size
     ) noexcept
     {
-        const std::size_t desired = block_size * MEDIUM_TARGET_BLOCKS;
-        const std::size_t k = (desired + PageSize - 1) / PageSize;
+        std::size_t const desired = block_size * MEDIUM_TARGET_BLOCKS;
+        std::size_t const k = (desired + PageSize - 1) / PageSize;
         return static_cast<std::uint32_t>(glox::min(
             glox::max(k, std::size_t(1)), std::size_t(MAX_MEDIUM_SPAN)
         ));
@@ -369,10 +369,10 @@ private:
     }
 
     // mi_ptr_page: arena by masking, page by slice map. No in-page header.
-    static page_meta* ptr_page(const void* p) noexcept
+    static page_meta* ptr_page(void const* p) noexcept
     {
-        const auto addr = reinterpret_cast<std::uintptr_t>(p);
-        const auto baseAddr = addr & ~(std::uintptr_t(ArenaSize) - 1);
+        auto const addr = reinterpret_cast<std::uintptr_t>(p);
+        auto const baseAddr = addr & ~(std::uintptr_t(ArenaSize) - 1);
         auto* base = reinterpret_cast<heap_detail::arena_base*>(baseAddr);
         if (base->kind == heap_detail::arena_kind::huge)
             return &static_cast<huge_t*>(base)->page;
@@ -431,17 +431,17 @@ private:
     // multi-slice pages don't fault untouched slices prematurely.
     static void extend(page_meta* pg) noexcept
     {
-        const std::uint32_t remaining = pg->capacity - pg->reserved;
+        std::uint32_t const remaining = pg->capacity - pg->reserved;
         if (remaining == 0)
             return;
-        const std::uint32_t batch
+        std::uint32_t const batch
             = pg->kind == heap_detail::page_kind::medium
                 ? glox::max(
                       std::uint32_t(1),
                       static_cast<std::uint32_t>(PageSize / pg->block_size)
                   )
                 : EXTEND_BATCH;
-        const std::uint32_t n = glox::min(batch, remaining);
+        std::uint32_t const n = glox::min(batch, remaining);
         char* p = pg->start
                 + static_cast<std::size_t>(pg->reserved) * pg->block_size;
         auto* head = reinterpret_cast<free_node*>(p);
@@ -455,7 +455,7 @@ private:
         pg->reserved += n;
     }
 
-    static bool has_room(const page_meta* pg) noexcept
+    static bool has_room(page_meta const* pg) noexcept
     {
         return pg->free != nullptr || pg->reserved < pg->capacity;
     }
@@ -477,7 +477,7 @@ private:
         auto h = palloc.alloc(size);
         if (!h.ptr)
             return nullptr;
-        const auto mask = std::uintptr_t(ArenaSize) - 1;
+        auto const mask = std::uintptr_t(ArenaSize) - 1;
         if ((reinterpret_cast<std::uintptr_t>(h.ptr) & mask) == 0) {
             raw = h.ptr;
             raw_size = size;
@@ -620,7 +620,7 @@ private:
         }
 
         // 2. Adopt pages abandoned by other caches.
-        const std::uintptr_t tok = token(tc);
+        std::uintptr_t const tok = token(tc);
         while (page_meta* pg = take_abandoned(b)) {
             pg->owner.store(tok, std::memory_order_release);
             collect(pg);
@@ -631,9 +631,9 @@ private:
         }
 
         // 3. Fresh page (1 slice for small, multi-slice span for medium).
-        const bool medium = is_medium_bucket(b);
-        const std::size_t blk_size = get_block_size(b);
-        const std::uint32_t span = medium ? medium_span_slices(blk_size) : 1;
+        bool const medium = is_medium_bucket(b);
+        std::size_t const blk_size = get_block_size(b);
+        std::uint32_t const span = medium ? medium_span_slices(blk_size) : 1;
         page_meta* pg = acquire_span(span);
         if (!pg)
             return nullptr;
@@ -652,9 +652,9 @@ private:
 
     alloc_handle<void> alloc_huge(std::size_t n, std::size_t alignment)
     {
-        const std::size_t offset
+        std::size_t const offset
             = align_up(sizeof(huge_t), glox::max(alignment, std::size_t(64)));
-        const std::size_t total = align_up(n + offset, PageSize);
+        std::size_t const total = align_up(n + offset, PageSize);
         void* raw = nullptr;
         std::size_t rawSize = 0;
         void* base = reserve_region(total, raw, rawSize);
@@ -677,7 +677,7 @@ private:
     alloc_handle<void> alloc_large(std::size_t n, std::size_t alignment)
     {
         drain_deferred();
-        const std::size_t k = n == 0 ? 1 : (n + PageSize - 1) / PageSize;
+        std::size_t const k = n == 0 ? 1 : (n + PageSize - 1) / PageSize;
         if (k > MAX_ARENA_SPAN)
             return alloc_huge(n, alignment);
 
@@ -701,7 +701,7 @@ public:
         if (!is_cached(alignedN))
             return alloc_large(n, alignment);
 
-        const std::size_t b = get_bucket_index(alignedN);
+        std::size_t const b = get_bucket_index(alignedN);
         auto& tc = troutines.get_tcache();
 
         // Fast path: entirely page-local, no atomics, no locks.
@@ -788,7 +788,7 @@ public:
         std::size_t alignedN = 0;
         if (!normalize(n, alignment, alignedN) || !is_cached(alignedN))
             return 0;
-        const std::size_t b = get_bucket_index(alignedN);
+        std::size_t const b = get_bucket_index(alignedN);
         auto& stash = troutines.get_tcache().atomic_stash[b];
         std::size_t got = 0;
         while (got < count) {
@@ -810,7 +810,7 @@ public:
         std::size_t alignedN = 0;
         if (!normalize(n, alignment, alignedN) || !is_cached(alignedN))
             return { nullptr, 0 };
-        const std::size_t b = get_bucket_index(alignedN);
+        std::size_t const b = get_bucket_index(alignedN);
         auto& stash = troutines.get_tcache().atomic_stash[b];
 
         // Take the whole stack (ABA-free), keep one, push the rest back.
@@ -890,7 +890,7 @@ public:
             dealloc(ptr);
             return { nullptr, 0 };
         }
-        const std::size_t cur = usable_size(ptr);
+        std::size_t const cur = usable_size(ptr);
         if (new_size <= cur)
             return { ptr, cur };
 
@@ -900,7 +900,7 @@ public:
             && pg->arena->kind == heap_detail::arena_kind::regular
             && static_cast<char*>(ptr) == pg->start
             && new_size <= MAX_REQUEST) {
-            const std::size_t k = (new_size + PageSize - 1) / PageSize;
+            std::size_t const k = (new_size + PageSize - 1) / PageSize;
             if (k <= MAX_ARENA_SPAN
                 && static_cast<arena_t*>(pg->arena)->try_resize(
                     pg, static_cast<std::uint32_t>(k)
@@ -931,7 +931,7 @@ public:
             dealloc(ptr);
             return { nullptr, 0 };
         }
-        const std::size_t cur = usable_size(ptr);
+        std::size_t const cur = usable_size(ptr);
         if (new_size >= cur)
             return { ptr, cur };
         page_meta* pg = ptr_page(ptr);
@@ -939,7 +939,7 @@ public:
         if (pg->kind == heap_detail::page_kind::large
             && static_cast<char*>(ptr) == pg->start) {
             if (pg->arena->kind == heap_detail::arena_kind::regular) {
-                const std::size_t k = (new_size + PageSize - 1) / PageSize;
+                std::size_t const k = (new_size + PageSize - 1) / PageSize;
                 if (k < pg->slice_count) {
                     static_cast<arena_t*>(pg->arena)->try_resize(
                         pg, static_cast<std::uint32_t>(k)

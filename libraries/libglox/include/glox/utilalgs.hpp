@@ -12,7 +12,7 @@ namespace glox {
 GLOX_BEGIN_EXPORT
 
 template <typename iter, typename T>
-constexpr iter find(iter a, iter b, const T& val)
+constexpr iter find(iter a, iter b, T const& val)
 {
     for (; a != b; ++a)
         if (*a == val)
@@ -36,7 +36,7 @@ constexpr void reverse(iter a, iter b)
 }
 
 template <typename iter, typename T>
-constexpr void set_range(iter beg, iter end, const T& val)
+constexpr void set_range(iter beg, iter end, T const& val)
 {
     for (; beg != end; ++beg) {
         *beg = val;
@@ -135,7 +135,7 @@ constexpr auto max(std::initializer_list<T> list)
 }
 
 template <typename T>
-constexpr const T& max(const T& l, const T& r)
+constexpr T const& max(T const& l, T const& r)
 {
     return l > r ? l : r;
 }
@@ -147,7 +147,7 @@ constexpr auto min(std::initializer_list<T> list)
 }
 
 template <typename T>
-constexpr const T& min(const T& l, const T& r)
+constexpr T const& min(T const& l, T const& r)
 {
     return l < r ? l : r;
 }
@@ -155,7 +155,7 @@ constexpr const T& min(const T& l, const T& r)
 template <typename T, typename... Args>
 T* construct(T* at, Args&&... args)
 {
-    return ::new (const_cast<void*>(static_cast<const volatile void*>(at)))
+    return ::new (const_cast<void*>(static_cast<void const volatile*>(at)))
         T(FWD(args)...);
 }
 

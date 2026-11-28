@@ -113,7 +113,7 @@ struct radix_db
     {
         std::lock_guard g(mtx());
         for (std::size_t i = 0; i < count;) {
-            const std::uintptr_t pfn = first + i;
+            std::uintptr_t const pfn = first + i;
             auto& slot = root().c[pfn >> 24];
             mid* m = slot.load(std::memory_order_acquire);
             if (!m) {
@@ -151,7 +151,7 @@ struct test_pfndb
     {
         return reinterpret_cast<void*>(pfn << Shift);
     }
-    std::uintptr_t virt_to_pfn(const void* p) const
+    std::uintptr_t virt_to_pfn(void const* p) const
     {
         return reinterpret_cast<std::uintptr_t>(p) >> Shift;
     }
@@ -184,7 +184,7 @@ struct page_fixture
     void (*cleanup)(page_fixture&) = nullptr;
 
     page_fixture() = default;
-    page_fixture(const page_fixture&) = delete;
+    page_fixture(page_fixture const&) = delete;
 
     ~page_fixture()
     {
@@ -223,12 +223,12 @@ struct page_fixture
         }
         if (n > budget - used_bytes || n > (std::size_t(1) << 30))
             return { nullptr, 0 }; // OOM / absurd request
-        const std::size_t pages = n >> S;
-        const std::size_t cap = std::bit_ceil(pages);
+        std::size_t const pages = n >> S;
+        std::size_t const cap = std::bit_ceil(pages);
         void* p = nullptr;
         if (posix_memalign(&p, std::size_t(1) << S, cap << S) != 0)
             return { nullptr, 0 };
-        const auto pfn = reinterpret_cast<std::uintptr_t>(p) >> S;
+        auto const pfn = reinterpret_cast<std::uintptr_t>(p) >> S;
         radix_db<S>::ensure(pfn, cap);
         for (std::size_t i = 0; i < cap; ++i)
             if (radix_db<S>::find(pfn + i)->load(std::memory_order_relaxed)
@@ -252,7 +252,7 @@ struct page_fixture
         }
         if (it->second.bytes != n)
             ++bad_size;
-        const auto pfn = it->first >> S;
+        auto const pfn = it->first >> S;
         for (std::size_t i = 0; i < it->second.cap_pages; ++i)
             if (radix_db<S>::find(pfn + i)->load(std::memory_order_relaxed)
                 != 0)
@@ -294,7 +294,7 @@ struct page_fixture
         }
         if (it->second.bytes != o)
             ++bad_size;
-        const auto pfn = it->first >> S;
+        auto const pfn = it->first >> S;
         for (std::size_t i = n >> S; i < (o >> S); ++i)
             if (radix_db<S>::find(pfn + i)->load(std::memory_order_relaxed)
                 != 0)
@@ -455,7 +455,7 @@ struct basic_env
         std::size_t n = 0;
         for (auto& [addr, blk] : fx.live) {
             auto* d = radix_db<PS>::find(addr >> PS);
-            const bool is
+            bool const is
                 = d && (d->load(std::memory_order_relaxed) & 31) == tag;
             if (is == equal)
                 ++n;
@@ -472,14 +472,14 @@ struct basic_env
     }
 
     // Raw descriptor word of the page containing p.
-    std::uint64_t md_of(const void* p)
+    std::uint64_t md_of(void const* p)
     {
         auto* entry
             = radix_db<PS>::find(reinterpret_cast<std::uintptr_t>(p) >> PS);
         return entry ? entry->load(std::memory_order_relaxed) : 0;
     }
     // palloc block [base, base+bytes) holding p.
-    page_fixture::block block_of(const void* p, std::uintptr_t* base = nullptr)
+    page_fixture::block block_of(void const* p, std::uintptr_t* base = nullptr)
     {
         std::lock_guard g(fx.m);
         auto it = fx.live.upper_bound(reinterpret_cast<std::uintptr_t>(p));
@@ -501,15 +501,15 @@ static void fill(void* p, std::size_t n, unsigned char v)
 {
     std::memset(p, v, n);
 }
-static bool verify(const void* p, std::size_t n, unsigned char v)
+static bool verify(void const* p, std::size_t n, unsigned char v)
 {
-    auto* c = static_cast<const unsigned char*>(p);
+    auto* c = static_cast<unsigned char const*>(p);
     for (std::size_t i = 0; i < n; ++i)
         if (c[i] != v)
             return false;
     return true;
 }
-static std::uintptr_t addr(const void* p)
+static std::uintptr_t addr(void const* p)
 {
     return reinterpret_cast<std::uintptr_t>(p);
 }
@@ -540,8 +540,8 @@ TEST_CASE("size classes: monotone, covering, bounded waste")
     using H = env::heap_t;
     std::size_t prev = 0;
     for (std::size_t n = 1; n <= 65536; ++n) {
-        const std::size_t b = H::bucket_of(n);
-        const std::size_t bs = H::block_size_of(b);
+        std::size_t const b = H::bucket_of(n);
+        std::size_t const bs = H::block_size_of(b);
         REQUIRE(b < env::NB);
         REQUIRE(b >= prev);
         REQUIRE(bs >= n);
@@ -564,7 +564,7 @@ TEST_CASE("reciprocal multiply-shift equals integer division (exhaustive)")
 {
     using H = env::heap_t;
     for (std::size_t b = 0; b < env::NB; ++b) {
-        const std::size_t bs = H::block_size_of(b);
+        std::size_t const bs = H::block_size_of(b);
         for (std::size_t off = 0; off < H::max_slab_bytes(); ++off)
             REQUIRE_EQ(H::recip_index(b, off), off / bs);
     }
@@ -574,7 +574,7 @@ TEST_CASE("memdesc encoding keeps every bit above PageShift (LA57)")
 {
     using H = env::heap_t;
     CHECK_EQ(H::meta_slots_per_page(), 85u);
-    const std::uint64_t bases[] = {
+    std::uint64_t const bases[] = {
         0x0000'7fff'dead'b000ull, // 48-bit user
         0xffff'8880'1234'5000ull, // 48-bit kernel
         0xff00'1234'5678'9000ull, // 57-bit kernel, bit 56 set
@@ -584,7 +584,7 @@ TEST_CASE("memdesc encoding keeps every bit above PageShift (LA57)")
     for (std::uint64_t base : bases)
         for (std::uint64_t slot : { 0ull, 1ull, 42ull, 84ull }) {
             auto* pg = reinterpret_cast<glox::kpage_meta*>(base + slot * 48);
-            const std::uint64_t md = H::encode_slab(pg);
+            std::uint64_t const md = H::encode_slab(pg);
             CHECK_EQ(md & 31, H::TAG_SLAB);
             CHECK_EQ((md >> 5) & 127, slot);
             CHECK_EQ(md & ~0xFFFull, base);
@@ -653,7 +653,7 @@ TEST_CASE("medium: sizes, multi-page slabs stamp every PFN identically")
         for (void* p : v) {
             std::uintptr_t base = 0;
             auto blk = e.block_of(p, &base);
-            const std::uint64_t md = e.md_of(p);
+            std::uint64_t const md = e.md_of(p);
             REQUIRE_EQ(md & 31, H::TAG_SLAB);
             glox::kpage_meta* pg = H::decode_slab(md);
             CHECK_EQ(addr(pg->start), base);
@@ -676,7 +676,7 @@ TEST_CASE("medium: empty non-head slabs return to palloc promptly")
     for (int i = 0; i < 16; ++i) // 4096-byte blocks, 8 per slab -> 2 slabs
         v.push_back(e.heap.alloc(4096).ptr);
     CHECK_EQ(e.non_meta_live(), 2u);
-    const auto d0 = e.fx.dealloc_calls;
+    auto const d0 = e.fx.dealloc_calls;
     for (int i = 0; i < 8; ++i) // first slab (older, non-head)
         e.heap.dealloc(v[i]);
     CHECK_EQ(e.fx.dealloc_calls, d0 + 1);
@@ -697,15 +697,15 @@ TEST_CASE("large: spans, tail descriptors, interior usable_size, exact free")
         { 65537u, 70000u, 131072u, 1u << 20, (3u << 20) + 1 }) {
         auto h = e.heap.alloc(n);
         REQUIRE(h.ptr != nullptr);
-        const std::size_t pages = (n + 4095) / 4096;
+        std::size_t const pages = (n + 4095) / 4096;
         CHECK_EQ(addr(h.ptr) % 4096, 0u);
         CHECK_EQ(h.count, pages * 4096);
         CHECK_EQ(e.heap.usable_size(h.ptr), pages * 4096);
-        const std::uint64_t head = e.md_of(h.ptr);
+        std::uint64_t const head = e.md_of(h.ptr);
         CHECK_EQ(head & 31, H::TAG_LARGE);
         CHECK_EQ(head >> 5, pages);
         for (std::size_t i = 1; i < pages; ++i) {
-            const std::uint64_t t
+            std::uint64_t const t
                 = e.md_of(static_cast<char*>(h.ptr) + i * 4096);
             REQUIRE_EQ(t & 31, H::TAG_LARGE_TAIL);
             REQUIRE_EQ(t >> 5, i);
@@ -728,7 +728,7 @@ TEST_CASE("large: spans, tail descriptors, interior usable_size, exact free")
 TEST_CASE("alignment edge cases")
 {
     env e;
-    const std::size_t sizes[] = {
+    std::size_t const sizes[] = {
         0, 1, 7, 8, 9, 63, 64, 100, 1000, 2048, 2049, 4096, 5000, 65536, 70000
     };
     for (std::size_t al = 8; al <= 4096; al <<= 1)
@@ -926,7 +926,7 @@ TEST_CASE("abandon / adopt")
     CHECK_EQ(e.non_meta_live(), 1u);
     {
         vcpu_scope s(1002);
-        const auto calls = e.fx.alloc_calls;
+        auto const calls = e.fx.alloc_calls;
         auto h = e.heap.alloc(48); // adopts the abandoned slab
         CHECK_EQ(e.fx.alloc_calls, calls);
         CHECK(h.ptr != nullptr);
@@ -962,7 +962,7 @@ TEST_CASE("remote free into an abandoned slab is picked up by the adopter")
     }
     {
         vcpu_scope s(1003);
-        const auto calls = e.fx.alloc_calls;
+        auto const calls = e.fx.alloc_calls;
         void* q = e.heap.alloc(48).ptr; // adopt + collect
         CHECK_EQ(e.fx.alloc_calls, calls);
         e.heap.dealloc(q);
@@ -1200,7 +1200,7 @@ TEST_CASE("double free of a large span traps once and frees once")
     env e;
     void* p = e.heap.alloc(100000).ptr;
     e.heap.dealloc(p);
-    const int r = test_checks::reports;
+    int const r = test_checks::reports;
     e.heap.dealloc(p); // TAG_BUDDY now
     CHECK_EQ(test_checks::reports, r + 1);
     CHECK_EQ(e.fx.bad_ptr, 0); // the second free never reached palloc
@@ -1214,7 +1214,7 @@ TEST_CASE("double free of a slab block traps (deep) and is dropped")
     void* p = e.heap.alloc(32).ptr;
     void* q = e.heap.alloc(32).ptr;
     e.heap.dealloc(p);
-    const int r = test_checks::reports;
+    int const r = test_checks::reports;
     e.heap.dealloc(p);
     CHECK_EQ(test_checks::reports, r + 1);
     e.heap.dealloc(q);
@@ -1348,7 +1348,7 @@ TEST_CASE("stress: 4 threads, shared slot pool, cross-thread frees")
     auto check_and_free = [&](void* p) {
         std::uint64_t n;
         std::memcpy(&n, p, 8);
-        const auto* c = static_cast<const unsigned char*>(p);
+        auto const* c = static_cast<unsigned char const*>(p);
         for (std::uint64_t i = 8; i < n; ++i)
             if (c[i] != static_cast<unsigned char>(n)) {
                 ++corrupt;
@@ -1361,13 +1361,13 @@ TEST_CASE("stress: 4 threads, shared slot pool, cross-thread frees")
         vcpu_scope s(2000 + id);
         std::mt19937 rng(id * 7919 + 1);
         for (int it = 0; it < ITERS; ++it) {
-            const std::size_t slot = rng() % SLOTS;
+            std::size_t const slot = rng() % SLOTS;
             void* old = pool[slot].exchange(nullptr, std::memory_order_acq_rel);
             if (old) {
                 check_and_free(old);
                 continue;
             }
-            const unsigned r = rng() % 100;
+            unsigned const r = rng() % 100;
             std::size_t n = r < 70 ? 8 + rng() % 505
                           : r < 95 ? 513 + rng() % 7680
                           : r < 99 ? 8193 + rng() % 57344

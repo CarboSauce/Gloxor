@@ -291,7 +291,7 @@ TEST_CASE("Deque const iterators")
     glox::deque<int> d;
     d.push_back(42);
 
-    const auto& cd = d;
+    auto const& cd = d;
     auto it = cd.cbegin();
 
     REQUIRE(*it == 42);

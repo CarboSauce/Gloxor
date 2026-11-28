@@ -14,7 +14,7 @@
 namespace glox {
 GLOX_BEGIN_EXPORT
 namespace detail {
-    inline auto format(char* buffer, const void* addr)
+    inline auto format(char* buffer, void const* addr)
     {
         auto value = (uintptr_t)addr;
         size_t i = 0;
@@ -140,19 +140,19 @@ struct formatter<std::string_view>
         std::string_view value
     )
     {
-        for (const auto c : value) {
+        for (auto const c : value) {
             buffer.write(c);
         }
     }
 };
 
 template <>
-struct formatter<const char*>
+struct formatter<char const*>
 {
     void format(
         formattable_to<char> auto& buffer,
         [[maybe_unused]] format_options opts,
-        const char* value
+        char const* value
     )
     {
         while (char c = *value++) {
@@ -167,10 +167,10 @@ struct formatter<glox::basic_string<Alloc>>
     void format(
         formattable_to<char> auto& buffer,
         [[maybe_unused]] format_options opts,
-        const glox::basic_string<Alloc>& value
+        glox::basic_string<Alloc> const& value
     )
     {
-        for (const auto c : value) {
+        for (auto const c : value) {
             buffer.write(c);
         }
     }
@@ -200,7 +200,7 @@ namespace detail {
         std::string_view view;
         using type = format_string;
         template <size_t N>
-        GLOX_ALWAYS_INLINE consteval format_string(const char (&str)[N])
+        GLOX_ALWAYS_INLINE consteval format_string(char const (&str)[N])
             : view { str, N - 1 }
         {
             validate_fmt();
@@ -256,10 +256,10 @@ constexpr auto format_to(
     Args&&... args
 )
 {
-    const auto templ = fmt.view;
+    auto const templ = fmt.view;
 
     auto beg = templ.begin();
-    const auto end = templ.end();
+    auto const end = templ.end();
 
     auto next = [&]() -> char { return beg == end ? '\0' : *beg++; };
     auto peek = [&]() -> char { return beg == end ? '\0' : *beg; };

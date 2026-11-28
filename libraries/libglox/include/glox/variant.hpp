@@ -51,7 +51,7 @@ class variant
         using T = alt_t<I>;
         if constexpr (std::is_const_v<std::remove_reference_t<decltype(self)>>)
             return glox::launder(
-                static_cast<const T*>(static_cast<const void*>(self.buf_))
+                static_cast<T const*>(static_cast<void const*>(self.buf_))
             );
         else
             return glox::launder(
@@ -116,8 +116,8 @@ class variant
     }
 
     static constexpr bool TRIVIAL_COPY
-        = ((std::is_trivially_constructible_v<Ts, const Ts&>
-               && std::is_trivially_assignable_v<Ts&, const Ts&>)
+        = ((std::is_trivially_constructible_v<Ts, Ts const&>
+               && std::is_trivially_assignable_v<Ts&, Ts const&>)
             && ...);
     static constexpr bool TRIVIAL_MOVE
         = ((std::is_trivially_constructible_v<Ts, Ts&&>
@@ -141,17 +141,17 @@ public:
     }
 
     // copy
-    constexpr variant(const variant&)
+    constexpr variant(variant const&)
         requires TRIVIAL_COPY&& TRIVIAL_DTOR
     = default;
-    constexpr variant& operator=(const variant&)
+    constexpr variant& operator=(variant const&)
         requires TRIVIAL_COPY&& TRIVIAL_DTOR
     = default;
-    constexpr variant(const variant& o)
+    constexpr variant(variant const& o)
     {
-        o.visit_at([this]<std::size_t I>(const auto& x) { construct<I>(x); });
+        o.visit_at([this]<std::size_t I>(auto const& x) { construct<I>(x); });
     }
-    constexpr variant& operator=(const variant& o)
+    constexpr variant& operator=(variant const& o)
     {
         if (this != &o) {
             destroy();

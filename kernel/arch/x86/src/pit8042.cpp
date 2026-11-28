@@ -6,7 +6,7 @@ import gloxor.initgraph;
 import arch_asm.pic8042contr;
 import std.compat;
 
-volatile static u64 tick = 0;
+static u64 volatile tick = 0;
 using namespace gx::pit;
 
 namespace gx::pit {

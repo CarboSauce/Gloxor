@@ -82,7 +82,7 @@ struct tracking_allocator
     }
 
     template <typename U>
-    constexpr tracking_allocator(const tracking_allocator<U>& other) noexcept
+    constexpr tracking_allocator(tracking_allocator<U> const& other) noexcept
         : stats { other.stats }
     {
     }
@@ -217,7 +217,7 @@ TEST_CASE("radix_tree: dynamic upward height growth and sparse 64-bit keys")
 
         // Start at key 0 (height 0), then jump progressively across 64-bit
         // boundaries
-        const uint64_t keys[] = { 0ULL,
+        uint64_t const keys[] = { 0ULL,
             1ULL,
             63ULL,
             64ULL,
@@ -314,8 +314,8 @@ TEST_CASE("radix_tree: tagged PfnDescriptor values")
     radix_tree<test_pfn_desc> pfn_tree;
     alignas(8) int dummy_cache_page = 0;
 
-    const uint64_t pfn1 = 0x1000;
-    const uint64_t pfn2 = 0x100000;
+    uint64_t const pfn1 = 0x1000;
+    uint64_t const pfn2 = 0x100000;
 
     CHECK(pfn_tree.insert(
         pfn1,
@@ -389,25 +389,25 @@ TEST_CASE("radix_tree: randomized operations match std::unordered_map")
         bool erasesMatch = true;
 
         for (int step = 0; step < 100000; ++step) {
-            const uint64_t key = key_pool[rng() % key_pool.size()];
+            uint64_t const key = key_pool[rng() % key_pool.size()];
             switch (rng() % 4) {
             case 0:
             case 1: {
-                const uint64_t val
+                uint64_t const val
                     = static_cast<uint64_t>(step) + 1; // non-zero
                 CHECK(tree.insert(key, val));
                 reference[key] = val;
                 break;
             }
             case 2: {
-                const bool tree_erased = tree.erase(key);
-                const bool ref_erased = reference.erase(key) > 0;
+                bool const tree_erased = tree.erase(key);
+                bool const ref_erased = reference.erase(key) > 0;
                 erasesMatch &= (tree_erased == ref_erased);
                 break;
             }
             case 3: {
                 auto* slot = tree.find(key);
-                const auto it = reference.find(key);
+                auto const it = reference.find(key);
                 if (it == reference.end()) {
                     lookupsMatch
                         &= (slot == nullptr
@@ -426,14 +426,14 @@ TEST_CASE("radix_tree: randomized operations match std::unordered_map")
         CHECK(lookupsMatch);
         CHECK(erasesMatch);
 
-        for (const auto& [k, v] : reference) {
+        for (auto const& [k, v] : reference) {
             auto* slot = tree.find(k);
             REQUIRE(slot != nullptr);
             CHECK_EQ(slot->load(std::memory_order_relaxed), v);
         }
 
         // Erase remaining entries and verify every single node is pruned
-        for (const auto& [k, v] : reference) {
+        for (auto const& [k, v] : reference) {
             CHECK(tree.erase(k));
         }
         CHECK(tree.is_empty());
@@ -455,7 +455,7 @@ TEST_CASE("radix_tree: concurrent lock-free readers with serialized writer")
     std::thread writer([&] {
         for (uint64_t pass = 1; pass <= 20; ++pass) {
             for (uint64_t k = 0; k < num_keys; ++k) {
-                const uint64_t encoded = (k << 16) | pass;
+                uint64_t const encoded = (k << 16) | pass;
                 tree.insert(k, encoded);
             }
         }
@@ -468,7 +468,7 @@ TEST_CASE("radix_tree: concurrent lock-free readers with serialized writer")
             uint64_t k = static_cast<uint64_t>(t);
             while (!done.load(std::memory_order_acquire)) {
                 if (auto* slot = tree.find(k)) {
-                    const uint64_t v = slot->load(std::memory_order_acquire);
+                    uint64_t const v = slot->load(std::memory_order_acquire);
                     if (v != 0 && (v >> 16) != k) {
                         reader_ok.store(false, std::memory_order_relaxed);
                     }

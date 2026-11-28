@@ -97,7 +97,7 @@ static_assert(std::is_move_assignable_v<tracker_v>);
 // --- converting construction -----------------------------------------------
 static_assert(std::is_constructible_v<variant<int, double>, int>);
 static_assert(std::is_constructible_v<variant<int, double>, double>);
-static_assert(std::is_constructible_v<variant<int, double>, const double&>);
+static_assert(std::is_constructible_v<variant<int, double>, double const&>);
 static_assert(!std::is_constructible_v<variant<int, double>, std::string>);
 
 // --- emplace constraints ----------------------------------------------------
@@ -112,8 +112,8 @@ static_assert(std::is_same_v<
     int*
 >);
 static_assert(std::is_same_v<
-    decltype(std::declval<const variant<int, double>&>().get_if<int>()),
-    const int*
+    decltype(std::declval<variant<int, double> const&>().get_if<int>()),
+    int const*
 >);
 static_assert(std::is_same_v<
     decltype(std::declval<variant<int, double>&>().get_if<1>()),
@@ -243,8 +243,8 @@ TEST_CASE("get_if returns nullptr for the wrong alternative")
 
 TEST_CASE("get_if on a const variant")
 {
-    const variant<int, double> v(5);
-    const int* p = v.get_if<int>();
+    variant<int, double> const v(5);
+    int const* p = v.get_if<int>();
     REQUIRE(p != nullptr);
     CHECK(*p == 5);
     CHECK(v.get_if<double>() == nullptr);
@@ -269,7 +269,7 @@ TEST_CASE("visit dispatches on the active alternative")
     v = 'c';
     CHECK(v.visit(f) == -1);
 
-    const variant<int, double, char> cv(3);
+    variant<int, double, char> const cv(3);
     CHECK(cv.visit(f) == 3);
 }
 
@@ -475,7 +475,7 @@ TEST_CASE("copy assignment within the same alternative reconstructs")
         a.emplace<tracker>(1);
         b.emplace<tracker>(2);
 
-        const int dtors_before = tracker::dtor_counter;
+        int const dtors_before = tracker::dtor_counter;
         a = b;
         CHECK(a.get_if<tracker>()->value == 2);
         CHECK(tracker::dtor_counter == dtors_before + 1); // old value destroyed
@@ -520,7 +520,7 @@ TEST_CASE("self assignment is a no-op")
         variant<int, tracker> v;
         v.emplace<tracker>(5);
         auto& alias = v; // avoids -Wself-assign-overloaded
-        const int dtors_before = tracker::dtor_counter;
+        int const dtors_before = tracker::dtor_counter;
 
         v = alias;
         CHECK(v.get_if<tracker>()->value == 5);

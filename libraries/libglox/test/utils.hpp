@@ -16,7 +16,7 @@ struct alloc_tracker
     {
         ctor_counter++;
     }
-    alloc_tracker(const alloc_tracker& other)
+    alloc_tracker(alloc_tracker const& other)
     {
         copy_ctor_counter++;
         value = other.value;
@@ -26,7 +26,7 @@ struct alloc_tracker
         move_ctor_counter++;
         value = other.value;
     }
-    alloc_tracker& operator=(const alloc_tracker& other)
+    alloc_tracker& operator=(alloc_tracker const& other)
     {
         copy_assignment_counter++;
         value = other.value;

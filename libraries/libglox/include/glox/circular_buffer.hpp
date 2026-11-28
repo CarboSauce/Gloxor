@@ -29,9 +29,9 @@ class circular_buffer
         return reinterpret_cast<T*>(&storage_[idx * sizeof(T)]);
     }
 
-    const T* ptr_at(std::size_t idx) const noexcept
+    T const* ptr_at(std::size_t idx) const noexcept
     {
-        return reinterpret_cast<const T*>(&storage_[idx * sizeof(T)]);
+        return reinterpret_cast<T const*>(&storage_[idx * sizeof(T)]);
     }
 
 public:
@@ -42,7 +42,7 @@ public:
         clear();
     }
 
-    circular_buffer(const circular_buffer& other)
+    circular_buffer(circular_buffer const& other)
     {
         std::size_t idx = other.head_;
         for (std::size_t i = 0; i < other.size_; ++i) {
@@ -51,7 +51,7 @@ public:
         }
     }
 
-    circular_buffer& operator=(const circular_buffer& other)
+    circular_buffer& operator=(circular_buffer const& other)
     {
         if (this != &other) {
             clear();
@@ -97,7 +97,7 @@ public:
         return true;
     }
 
-    bool push(const T& value)
+    bool push(T const& value)
     {
         return emplace(value);
     }
@@ -131,7 +131,7 @@ public:
     {
         return *ptr_at(head_);
     }
-    const T& front() const noexcept
+    T const& front() const noexcept
     {
         return *ptr_at(head_);
     }
@@ -140,7 +140,7 @@ public:
     {
         return *ptr_at((tail_ + Capacity - 1) % Capacity);
     }
-    const T& back() const noexcept
+    T const& back() const noexcept
     {
         return *ptr_at((tail_ + Capacity - 1) % Capacity);
     }
@@ -195,9 +195,9 @@ class atomic_circular_buffer
         return reinterpret_cast<T*>(&storage_[idx * sizeof(T)]);
     }
 
-    const T* ptr_at(std::size_t idx) const noexcept
+    T const* ptr_at(std::size_t idx) const noexcept
     {
-        return reinterpret_cast<const T*>(&storage_[idx * sizeof(T)]);
+        return reinterpret_cast<T const*>(&storage_[idx * sizeof(T)]);
     }
 
 public:
@@ -206,21 +206,21 @@ public:
     ~atomic_circular_buffer()
     {
         std::size_t h = head_.load(std::memory_order_relaxed);
-        const std::size_t t = tail_.load(std::memory_order_relaxed);
+        std::size_t const t = tail_.load(std::memory_order_relaxed);
         while (h != t) {
             ptr_at(h)->~T();
             h = (h + 1) % REAL_CAPACITY;
         }
     }
 
-    atomic_circular_buffer(const atomic_circular_buffer&) = delete;
-    atomic_circular_buffer& operator=(const atomic_circular_buffer&) = delete;
+    atomic_circular_buffer(atomic_circular_buffer const&) = delete;
+    atomic_circular_buffer& operator=(atomic_circular_buffer const&) = delete;
 
     template <typename... Args>
     bool emplace(Args&&... args)
     {
-        const std::size_t currentTail = tail_.load(std::memory_order_relaxed);
-        const std::size_t nextTail = (currentTail + 1) % REAL_CAPACITY;
+        std::size_t const currentTail = tail_.load(std::memory_order_relaxed);
+        std::size_t const nextTail = (currentTail + 1) % REAL_CAPACITY;
 
         // Producer reads head with acquire semantics to check if buffer is full
         if (nextTail == head_.load(std::memory_order_acquire)) {
@@ -234,7 +234,7 @@ public:
         return true;
     }
 
-    bool push(const T& value)
+    bool push(T const& value)
     {
         return emplace(value);
     }
@@ -245,7 +245,7 @@ public:
 
     glox::option<T> pop()
     {
-        const std::size_t currentHead = head_.load(std::memory_order_relaxed);
+        std::size_t const currentHead = head_.load(std::memory_order_relaxed);
 
         // Consumer reads tail with acquire semantics to check if buffer is
         // empty
@@ -256,7 +256,7 @@ public:
         T val = std::move(*ptr_at(currentHead));
         ptr_at(currentHead)->~T();
 
-        const std::size_t nextHead = (currentHead + 1) % REAL_CAPACITY;
+        std::size_t const nextHead = (currentHead + 1) % REAL_CAPACITY;
         // Publish read slot freed with release semantics
         head_.store(nextHead, std::memory_order_release);
         return val;
@@ -270,15 +270,15 @@ public:
 
     [[nodiscard]] bool full() const noexcept
     {
-        const std::size_t nextTail
+        std::size_t const nextTail
             = (tail_.load(std::memory_order_relaxed) + 1) % REAL_CAPACITY;
         return nextTail == head_.load(std::memory_order_relaxed);
     }
 
     [[nodiscard]] std::size_t size() const noexcept
     {
-        const std::size_t h = head_.load(std::memory_order_relaxed);
-        const std::size_t t = tail_.load(std::memory_order_relaxed);
+        std::size_t const h = head_.load(std::memory_order_relaxed);
+        std::size_t const t = tail_.load(std::memory_order_relaxed);
         if (t >= h)
             return t - h;
         return REAL_CAPACITY + t - h;
@@ -306,9 +306,9 @@ class spsq_circular_buffer
         return reinterpret_cast<T*>(storage_.get_ptr() + (idx * sizeof(T)));
     }
 
-    const T* ptr_at(std::size_t idx) const noexcept
+    T const* ptr_at(std::size_t idx) const noexcept
     {
-        return reinterpret_cast<const T*>(
+        return reinterpret_cast<T const*>(
             storage_.get_ptr() + (idx * sizeof(T))
         );
     }
@@ -318,7 +318,7 @@ class spsq_circular_buffer
         if (!storage_)
             return;
         std::size_t h = head_.load(std::memory_order_relaxed);
-        const std::size_t t = tail_.load(std::memory_order_relaxed);
+        std::size_t const t = tail_.load(std::memory_order_relaxed);
         while (h != t) {
             ptr_at(h)->~T();
             h = (h + 1) % real_capacity_;
@@ -341,8 +341,8 @@ public:
         destroy_active_elements();
     }
 
-    spsq_circular_buffer(const spsq_circular_buffer&) = delete;
-    spsq_circular_buffer& operator=(const spsq_circular_buffer&) = delete;
+    spsq_circular_buffer(spsq_circular_buffer const&) = delete;
+    spsq_circular_buffer& operator=(spsq_circular_buffer const&) = delete;
 
     spsq_circular_buffer(spsq_circular_buffer&& other) noexcept
         : real_capacity_(glox::exchange(other.real_capacity_, 0))
@@ -391,8 +391,8 @@ public:
     template <typename... Args>
     bool emplace(Args&&... args)
     {
-        const std::size_t currentTail = tail_.load(std::memory_order_relaxed);
-        const std::size_t nextTail = (currentTail + 1) % real_capacity_;
+        std::size_t const currentTail = tail_.load(std::memory_order_relaxed);
+        std::size_t const nextTail = (currentTail + 1) % real_capacity_;
 
         if (nextTail == head_.load(std::memory_order_acquire)) {
             return false; // Buffer full
@@ -403,7 +403,7 @@ public:
         return true;
     }
 
-    bool push(const T& value)
+    bool push(T const& value)
     {
         return emplace(value);
     }
@@ -414,7 +414,7 @@ public:
 
     glox::option<T> pop()
     {
-        const std::size_t currentHead = head_.load(std::memory_order_relaxed);
+        std::size_t const currentHead = head_.load(std::memory_order_relaxed);
 
         if (currentHead == tail_.load(std::memory_order_acquire)) {
             return { }; // Buffer empty
@@ -423,7 +423,7 @@ public:
         T val = RVALUE(*ptr_at(currentHead));
         ptr_at(currentHead)->~T();
 
-        const std::size_t nextHead = (currentHead + 1) % real_capacity_;
+        std::size_t const nextHead = (currentHead + 1) % real_capacity_;
         head_.store(nextHead, std::memory_order_release);
         return val;
     }
@@ -436,15 +436,15 @@ public:
 
     [[nodiscard]] bool full() const noexcept
     {
-        const std::size_t nextTail
+        std::size_t const nextTail
             = (tail_.load(std::memory_order_relaxed) + 1) % real_capacity_;
         return nextTail == head_.load(std::memory_order_acquire);
     }
 
     [[nodiscard]] std::size_t size() const noexcept
     {
-        const std::size_t h = head_.load(std::memory_order_relaxed);
-        const std::size_t t = tail_.load(std::memory_order_relaxed);
+        std::size_t const h = head_.load(std::memory_order_relaxed);
+        std::size_t const t = tail_.load(std::memory_order_relaxed);
         if (t >= h)
             return t - h;
         return real_capacity_ + t - h;

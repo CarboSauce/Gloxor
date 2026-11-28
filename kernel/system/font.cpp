@@ -4103,4 +4103,4 @@ const extern uint8_t fontBitmap[] = { 0x00,
     0x00,
     0x00,
     0x00 };
-extern const auto fontSize = sizeof(fontBitmap);
+extern auto const fontSize = sizeof(fontBitmap);

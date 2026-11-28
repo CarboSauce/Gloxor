@@ -100,7 +100,7 @@ public:
     {
         GLOX_ASSERT(pfn < entryCount);
 
-        return reinterpret_cast<const std::atomic<PfnDesc>*>(
+        return reinterpret_cast<std::atomic<PfnDesc> const*>(
             arch::PFN_DB_BASE
         )[pfn]
             .load();
@@ -146,7 +146,7 @@ struct PfndbAccessor
     {
         return pfndbManager.pfn_to_virt(pfn);
     }
-    [[nodiscard]] std::uintptr_t virt_to_pfn(const void* p) const
+    [[nodiscard]] std::uintptr_t virt_to_pfn(void const* p) const
     {
         return arch::get_real_address((vaddr)p) >> 12;
     }
@@ -184,9 +184,9 @@ void init_pfndb()
     constexpr usize pageSize = 4096;
     constexpr usize pfnsPerPage = pageSize / sizeof(PfnDesc);
 
-    const usize base = arch::PFN_DB_BASE;
+    usize const base = arch::PFN_DB_BASE;
 
-    auto isAvailable = [](const auto& region) {
+    auto isAvailable = [](auto const& region) {
         return region.type == BootInfo::MemTypes::usable
             || region.type == BootInfo::MemTypes::reclaimable;
     };
@@ -194,7 +194,7 @@ void init_pfndb()
     // find the highest pfn
     usize maxPfn = 0;
 
-    for (const auto& region : gx::machineInfo.mmapEntries) {
+    for (auto const& region : gx::machineInfo.mmapEntries) {
         if (!isAvailable(region))
             continue;
 
@@ -208,23 +208,23 @@ void init_pfndb()
     gx::println("[pfndb] % PFNs", maxPfn);
 
     // build a list of populated pfn db segments
-    for (const auto& region : gx::machineInfo.mmapEntries) {
+    for (auto const& region : gx::machineInfo.mmapEntries) {
         if (!isAvailable(region) || !region.length)
             continue;
 
-        const usize first
+        usize const first
             = (region.base + pageSize - 1) / pageSize / pfnsPerPage;
 
-        const usize last
+        usize const last
             = ((region.base + region.length - 1) / pageSize) / pfnsPerPage;
 
         for (usize segment = first; segment <= last; ++segment) {
             bool exists = false;
 
-            for (const auto& entry : backingMapRegions) {
-                const usize start = (entry.region.base - base) / pageSize;
+            for (auto const& entry : backingMapRegions) {
+                usize const start = (entry.region.base - base) / pageSize;
 
-                const usize end = start + entry.region.length / pageSize;
+                usize const end = start + entry.region.length / pageSize;
 
                 if (segment >= start && segment < end) {
                     exists = true;
@@ -254,10 +254,10 @@ void init_pfndb()
     // allocate and map backing pages
     usize mappedSegments = 0;
 
-    for (const auto& entry : backingMapRegions) {
-        const usize start = (entry.region.base - base) / pageSize;
+    for (auto const& entry : backingMapRegions) {
+        usize const start = (entry.region.base - base) / pageSize;
 
-        const usize count = entry.region.length / pageSize;
+        usize const count = entry.region.length / pageSize;
 
         for (usize i = 0; i < count; ++i) {
             auto* page = static_cast<PfnDesc*>(gx::page_alloc());
@@ -284,13 +284,13 @@ void init_pfndb()
     // initialize available physical pages
     pfndbManager.pfndbEntries = reinterpret_cast<std::atomic<PfnDesc>*>(base);
 
-    for (const auto& region : gx::machineInfo.mmapEntries) {
+    for (auto const& region : gx::machineInfo.mmapEntries) {
         if (!isAvailable(region))
             continue;
 
-        const usize first = (region.base + pageSize - 1) / pageSize;
+        usize const first = (region.base + pageSize - 1) / pageSize;
 
-        const usize last = (region.base + region.length) / pageSize;
+        usize const last = (region.base + region.length) / pageSize;
 
         for (usize pfn = first; pfn < last; ++pfn)
             pfndbManager.set_desc(pfn, PfnDesc::make_allocated(0));

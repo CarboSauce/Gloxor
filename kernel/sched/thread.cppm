@@ -43,7 +43,7 @@ public:
         stack.set_saved_sp(sp);
     }
 
-    const glox::string& name()
+    glox::string const& name()
     {
         return name_;
     }

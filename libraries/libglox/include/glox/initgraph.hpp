@@ -56,8 +56,8 @@ struct edge
         eng->realize_edge(this);
     }
 
-    edge(const edge&) = delete;
-    edge& operator=(const edge&) = delete;
+    edge(edge const&) = delete;
+    edge& operator=(edge const&) = delete;
 
     node* source() const noexcept
     {
@@ -82,7 +82,7 @@ struct node
     node(
         node_type type,
         Engine* eng,
-        const char* name = nullptr,
+        char const* name = nullptr,
         activate_fn fn = nullptr,
         void* ctx = nullptr
     )
@@ -94,14 +94,14 @@ struct node
         eng->realize_node(this);
     }
 
-    node(const node&) = delete;
-    node& operator=(const node&) = delete;
+    node(node const&) = delete;
+    node& operator=(node const&) = delete;
 
     node_type type() const noexcept
     {
         return type_;
     }
-    const char* display_name() const noexcept
+    char const* display_name() const noexcept
     {
         return display_name_;
     }
@@ -114,7 +114,7 @@ struct node
     }
 
     node_type type_;
-    const char* display_name_;
+    char const* display_name_;
     activate_fn fn_;
     void* ctx_;
 
@@ -139,8 +139,8 @@ struct engine
     {
     }
 
-    engine(const engine&) = delete;
-    engine& operator=(const engine&) = delete;
+    engine(engine const&) = delete;
+    engine& operator=(engine const&) = delete;
 
     void realize_node(node* n)
     {
@@ -228,7 +228,7 @@ private:
 struct stage final : node
 {
     template <typename Engine>
-    stage(Engine* eng, const char* name = nullptr)
+    stage(Engine* eng, char const* name = nullptr)
         : node(node_type::stage, eng, name)
     {
     }
@@ -272,7 +272,7 @@ struct task final : node
     template <typename Engine>
     task(
         Engine* eng,
-        const char* name,
+        char const* name,
         require<NR> r,
         entail<NE> e,
         F invocable
@@ -289,19 +289,19 @@ struct task final : node
     }
 
     template <typename Engine>
-    task(Engine* eng, const char* name, F invocable)
+    task(Engine* eng, char const* name, F invocable)
         : task(eng, name, { }, { }, RVALUE(invocable))
     {
     }
 
     template <typename Engine>
-    task(Engine* eng, const char* name, require<NR> r, F invocable)
+    task(Engine* eng, char const* name, require<NR> r, F invocable)
         : task(eng, name, r, { }, RVALUE(invocable))
     {
     }
 
     template <typename Engine>
-    task(Engine* eng, const char* name, entail<NE> e, F invocable)
+    task(Engine* eng, char const* name, entail<NE> e, F invocable)
         : task(eng, name, { }, e, RVALUE(invocable))
     {
     }
@@ -315,7 +315,7 @@ private:
     template <typename Engine, std::size_t... Is>
     std::array<edge, NR> make_edges_to(
         Engine* eng,
-        const std::array<node*, NR>& arr,
+        std::array<node*, NR> const& arr,
         glox::index_sequence<Is...>
     )
     {
@@ -325,7 +325,7 @@ private:
     template <typename Engine, std::size_t... Is>
     std::array<edge, NE> make_edges_from(
         Engine* eng,
-        const std::array<node*, NE>& arr,
+        std::array<node*, NE> const& arr,
         glox::index_sequence<Is...>
     )
     {
@@ -338,16 +338,16 @@ private:
 };
 
 template <typename Engine, typename F>
-task(Engine*, const char*, F) -> task<F, 0, 0>;
+task(Engine*, char const*, F) -> task<F, 0, 0>;
 
 template <typename Engine, typename F, std::size_t NR>
-task(Engine*, const char*, require<NR>, F) -> task<F, NR, 0>;
+task(Engine*, char const*, require<NR>, F) -> task<F, NR, 0>;
 
 template <typename Engine, typename F, std::size_t NE>
-task(Engine*, const char*, entail<NE>, F) -> task<F, 0, NE>;
+task(Engine*, char const*, entail<NE>, F) -> task<F, 0, NE>;
 
 template <typename Engine, typename F, std::size_t NR, std::size_t NE>
-task(Engine*, const char*, require<NR>, entail<NE>, F) -> task<F, NR, NE>;
+task(Engine*, char const*, require<NR>, entail<NE>, F) -> task<F, NR, NE>;
 
 GLOX_END_EXPORT
 } // namespace glox::initgraph

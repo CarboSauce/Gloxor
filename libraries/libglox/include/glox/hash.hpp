@@ -8,7 +8,7 @@
 
 GLOX_EXPORT
 namespace glox {
-constexpr auto djb2_hash(const char* str)
+constexpr auto djb2_hash(char const* str)
 {
     uint32_t hash = 5381; // magic prime number
     uint8_t c;
@@ -38,9 +38,9 @@ struct hash<T>
 };
 
 template <>
-struct hash<const char*>
+struct hash<char const*>
 {
-    constexpr auto operator()(const char* val) const
+    constexpr auto operator()(char const* val) const
     {
         return djb2_hash(val);
     }
@@ -59,7 +59,7 @@ template <typename T>
     requires std::is_pointer_v<T>
 struct hash<T>
 {
-    constexpr auto operator()(const T* val) const
+    constexpr auto operator()(T const* val) const
     {
         return reinterpret_cast<uintptr_t>(val);
     }

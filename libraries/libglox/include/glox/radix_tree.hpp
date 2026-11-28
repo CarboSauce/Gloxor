@@ -107,7 +107,7 @@ class radix_tree
     {
         if (!p)
             return 0;
-        const auto raw = reinterpret_cast<uintptr_t>(p);
+        auto const raw = reinterpret_cast<uintptr_t>(p);
         return (static_cast<uint64_t>(raw) & ~HEIGHT_MASK)
              | (static_cast<uint64_t>(h) << HEIGHT_SHIFT);
     }
@@ -116,8 +116,8 @@ class radix_tree
     {
         if (packed == 0)
             return { nullptr, 0 };
-        const auto h = static_cast<unsigned>(packed >> HEIGHT_SHIFT);
-        const auto raw
+        auto const h = static_cast<unsigned>(packed >> HEIGHT_SHIFT);
+        auto const raw
             = static_cast<uintptr_t>(static_cast<int64_t>(packed << 6) >> 6);
         return { reinterpret_cast<node*>(raw), h };
     }
@@ -131,13 +131,13 @@ public:
 
     constexpr radix_tree() noexcept = default;
 
-    explicit constexpr radix_tree(const node_allocator_t& alloc) noexcept
+    explicit constexpr radix_tree(node_allocator_t const& alloc) noexcept
         : alloc_(alloc)
     {
     }
 
-    radix_tree(const radix_tree&) = delete;
-    radix_tree& operator=(const radix_tree&) = delete;
+    radix_tree(radix_tree const&) = delete;
+    radix_tree& operator=(radix_tree const&) = delete;
 
     ~radix_tree() noexcept
     {
@@ -157,13 +157,13 @@ public:
     std::atomic<T>* find(uint64_t key) noexcept
     {
         return const_cast<std::atomic<T>*>(
-            static_cast<const radix_tree*>(this)->find(key)
+            static_cast<radix_tree const*>(this)->find(key)
         );
     }
 
-    const std::atomic<T>* find(uint64_t key) const noexcept
+    std::atomic<T> const* find(uint64_t key) const noexcept
     {
-        const auto [currRoot, h]
+        auto const [currRoot, h]
             = unpack_root(root_.load(std::memory_order_acquire));
         if (!currRoot)
             return nullptr;
@@ -171,15 +171,15 @@ public:
         if (key > max_key_for_height(h))
             return nullptr;
 
-        const node* curr = currRoot;
+        node const* curr = currRoot;
         for (unsigned level = h; level > 0; --level) {
-            const size_t idx = index_at(key, level);
+            size_t const idx = index_at(key, level);
             curr = curr->children[idx].load(std::memory_order_acquire);
             if (!curr)
                 return nullptr;
         }
 
-        const auto* slot = &curr->values[index_at(key, 0)];
+        auto const* slot = &curr->values[index_at(key, 0)];
         if (slot->load(std::memory_order_acquire) == T { })
             return nullptr;
 
@@ -205,7 +205,7 @@ public:
         GLOX_ASSERT(curr != nullptr);
 
         for (unsigned level = h; level > 0; --level) {
-            const size_t idx = index_at(key, level);
+            size_t const idx = index_at(key, level);
             node* next = curr->children[idx].load(std::memory_order_relaxed);
             if (!next) {
                 next = alloc_node(level - 1);
@@ -217,9 +217,9 @@ public:
             curr = next;
         }
 
-        const size_t leafIdx = index_at(key, 0);
+        size_t const leafIdx = index_at(key, 0);
         auto* slot = &curr->values[leafIdx];
-        const T existing = slot->load(std::memory_order_relaxed);
+        T const existing = slot->load(std::memory_order_relaxed);
         if (existing == T { }) {
             curr->count += 1;
             return { slot, true };
@@ -255,7 +255,7 @@ public:
         size_t indices[MAX_LEVELS];
 
         for (unsigned level = h; level > 0; --level) {
-            const size_t idx = index_at(key, level);
+            size_t const idx = index_at(key, level);
             path[level] = curr;
             indices[level] = idx;
             curr = curr->children[idx].load(std::memory_order_relaxed);
@@ -263,7 +263,7 @@ public:
                 return false;
         }
 
-        const size_t leafIdx = index_at(key, 0);
+        size_t const leafIdx = index_at(key, 0);
         auto* slot = &curr->values[leafIdx];
         if (slot->load(std::memory_order_relaxed) == T { })
             return false;
@@ -277,7 +277,7 @@ public:
             if (child->count > 0)
                 break;
             node* parent = path[level];
-            const size_t idx = indices[level];
+            size_t const idx = indices[level];
             parent->children[idx].store(nullptr, std::memory_order_release);
             parent->count -= 1;
             retire_node(child);
@@ -301,7 +301,7 @@ public:
      */
     void clear() noexcept
     {
-        const auto [r, h] = unpack_root(root_.load(std::memory_order_relaxed));
+        auto const [r, h] = unpack_root(root_.load(std::memory_order_relaxed));
         root_.store(0, std::memory_order_relaxed);
         if (r)
             destroy_subtree(r, h);
@@ -315,7 +315,7 @@ private:
 
     static constexpr uint64_t max_key_for_height(unsigned h) noexcept
     {
-        const unsigned totalBits = (h + 1) * BitsPerLevel;
+        unsigned const totalBits = (h + 1) * BitsPerLevel;
         if (totalBits >= 64)
             return ~uint64_t { 0 };
         return (uint64_t { 1 } << totalBits) - 1;

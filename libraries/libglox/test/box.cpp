@@ -144,7 +144,7 @@ TEST_CASE("Box array fill construction, indexing, and iterators")
         REQUIRE(arr.back().value == 40);
 
         int sum = 0;
-        for (const auto& item : arr) {
+        for (auto const& item : arr) {
             sum += item.value;
         }
         REQUIRE(sum == 10 + 5 + 5 + 40);
@@ -223,8 +223,8 @@ struct poly_move_only : poly_base
     {
     }
 
-    poly_move_only(const poly_move_only&) = delete;
-    poly_move_only& operator=(const poly_move_only&) = delete;
+    poly_move_only(poly_move_only const&) = delete;
+    poly_move_only& operator=(poly_move_only const&) = delete;
     poly_move_only(poly_move_only&&) = default;
     poly_move_only& operator=(poly_move_only&&) = default;
 

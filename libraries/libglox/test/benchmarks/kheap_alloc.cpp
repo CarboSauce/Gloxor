@@ -113,7 +113,7 @@ struct kheap_arena_state
         std::lock_guard guard(lock);
         ensure_reserved();
 
-        const std::size_t used = bump_offset.load(std::memory_order_relaxed);
+        std::size_t const used = bump_offset.load(std::memory_order_relaxed);
         if (used > 0) {
             ::mmap(
                 reinterpret_cast<void*>(base),
@@ -159,9 +159,9 @@ struct kheap_pfndb
         );
     }
 
-    std::uintptr_t virt_to_pfn(const void* p) const noexcept
+    std::uintptr_t virt_to_pfn(void const* p) const noexcept
     {
-        const auto addr = reinterpret_cast<std::uintptr_t>(p);
+        auto const addr = reinterpret_cast<std::uintptr_t>(p);
 
         if (addr < kheap_arena_state::base)
             return MAX_PFNS;
@@ -187,7 +187,7 @@ struct kheap_page_allocator
         std::lock_guard guard(kheap_arena_state::lock);
         n = (n + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 
-        const std::size_t offset
+        std::size_t const offset
             = kheap_arena_state::bump_offset.load(std::memory_order_relaxed);
         if (offset + n > WINDOW_BYTES)
             return { nullptr, 0 };
@@ -222,8 +222,8 @@ struct kheap_page_allocator
         std::lock_guard guard(kheap_arena_state::lock);
         n = (n + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 
-        const auto addr = reinterpret_cast<std::uintptr_t>(ptr);
-        const std::size_t offset
+        auto const addr = reinterpret_cast<std::uintptr_t>(ptr);
+        std::size_t const offset
             = kheap_arena_state::bump_offset.load(std::memory_order_relaxed);
 
         if (addr + n == kheap_arena_state::base + offset) {
@@ -315,7 +315,7 @@ static void BM_KHeap_SingleThreaded_FastPath(benchmark::State& state)
     kheap_thread_routines::set_thread_id(1);
     bench_kheap_allocator alloc;
 
-    const std::size_t alloc_size = static_cast<std::size_t>(state.range(0));
+    std::size_t const alloc_size = static_cast<std::size_t>(state.range(0));
 
     for (auto _ : state) {
         auto handle = alloc.alloc(alloc_size);
@@ -363,7 +363,7 @@ static void BM_KHeap_Multithreaded_Scalability(benchmark::State& state)
         static_cast<std::size_t>(state.thread_index() + 1)
     );
 
-    const std::size_t alloc_size = 128;
+    std::size_t const alloc_size = 128;
 
     for (auto _ : state) {
         auto handle = shared_alloc->alloc(alloc_size);
@@ -493,8 +493,8 @@ static void BM_KHeap_MixedSizesAndAlignments(benchmark::State& state)
 
     std::size_t i = 0;
     for (auto _ : state) {
-        const std::size_t sz = sizes[i % sizes.size()];
-        const std::size_t align = alignments[i % alignments.size()];
+        std::size_t const sz = sizes[i % sizes.size()];
+        std::size_t const align = alignments[i % alignments.size()];
 
         auto handle = alloc.alloc(sz, align);
         if (!handle.ptr) {
@@ -523,7 +523,7 @@ static void BM_KHeap_Batch_Page_Thrashing(benchmark::State& state)
     kheap_thread_routines::set_thread_id(1);
     bench_kheap_allocator alloc;
 
-    const std::size_t alloc_size = static_cast<std::size_t>(state.range(0));
+    std::size_t const alloc_size = static_cast<std::size_t>(state.range(0));
     constexpr std::size_t batch_count = 500;
     std::vector<void*> handles(batch_count, nullptr);
 
@@ -537,7 +537,7 @@ static void BM_KHeap_Batch_Page_Thrashing(benchmark::State& state)
             }
 
             handles[allocated] = handle.ptr;
-            *static_cast<volatile std::uint64_t*>(handles[allocated])
+            *static_cast<std::uint64_t volatile*>(handles[allocated])
                 = allocated;
         }
 
@@ -568,7 +568,7 @@ static void BM_KHeap_LargeAllocations(benchmark::State& state)
     kheap_thread_routines::set_thread_id(1);
     bench_kheap_allocator alloc;
 
-    const std::size_t alloc_size = static_cast<std::size_t>(state.range(0));
+    std::size_t const alloc_size = static_cast<std::size_t>(state.range(0));
 
     for (auto _ : state) {
         auto handle = alloc.alloc(alloc_size);

@@ -85,7 +85,7 @@ private:
     constexpr void allocate_node(size_t node_idx)
     {
         if (!map[node_idx]) {
-            const auto mem = glox::alloc_uninitialized<T>(alloc, BLOCK_SIZE);
+            auto const mem = glox::alloc_uninitialized<T>(alloc, BLOCK_SIZE);
             map[node_idx] = mem.ptr;
         }
     }
@@ -97,8 +97,8 @@ private:
         using iterator_category = std::random_access_iterator_tag;
         using value_type = T;
         using difference_type = std::ptrdiff_t;
-        using pointer = std::conditional_t<IsConst, const T*, T*>;
-        using reference = std::conditional_t<IsConst, const T&, T&>;
+        using pointer = std::conditional_t<IsConst, T const*, T*>;
+        using reference = std::conditional_t<IsConst, T const&, T&>;
         using map_pointer = std::conditional_t<IsConst, T* const*, T**>;
 
     private:
@@ -120,7 +120,7 @@ private:
             bool WasConst = IsConst,
             typename = std::enable_if_t<WasConst>
         >
-        constexpr deque_iterator(const deque_iterator<false>& other)
+        constexpr deque_iterator(deque_iterator<false> const& other)
             : map(other.map)
             , global_idx(other.global_idx)
         {
@@ -191,40 +191,40 @@ private:
             return tmp -= n;
         }
 
-        constexpr difference_type operator-(const deque_iterator& other) const
+        constexpr difference_type operator-(deque_iterator const& other) const
         {
             return static_cast<difference_type>(global_idx)
                  - static_cast<difference_type>(other.global_idx);
         }
 
-        constexpr bool operator==(const deque_iterator& other) const
+        constexpr bool operator==(deque_iterator const& other) const
         {
             return global_idx == other.global_idx;
         }
-        constexpr bool operator!=(const deque_iterator& other) const
+        constexpr bool operator!=(deque_iterator const& other) const
         {
             return global_idx != other.global_idx;
         }
-        constexpr bool operator<(const deque_iterator& other) const
+        constexpr bool operator<(deque_iterator const& other) const
         {
             return global_idx < other.global_idx;
         }
-        constexpr bool operator>(const deque_iterator& other) const
+        constexpr bool operator>(deque_iterator const& other) const
         {
             return global_idx > other.global_idx;
         }
-        constexpr bool operator<=(const deque_iterator& other) const
+        constexpr bool operator<=(deque_iterator const& other) const
         {
             return global_idx <= other.global_idx;
         }
-        constexpr bool operator>=(const deque_iterator& other) const
+        constexpr bool operator>=(deque_iterator const& other) const
         {
             return global_idx >= other.global_idx;
         }
 
         friend constexpr deque_iterator operator+(
             difference_type n,
-            const deque_iterator& it
+            deque_iterator const& it
         )
         {
             return it + n;
@@ -242,9 +242,9 @@ private:
         size_t remaining = count;
 
         while (remaining > 0) {
-            const size_t srcOff = srcIdx % BLOCK_SIZE;
-            const size_t dstOff = dstIdx % BLOCK_SIZE;
-            const size_t chunk = std::min(
+            size_t const srcOff = srcIdx % BLOCK_SIZE;
+            size_t const dstOff = dstIdx % BLOCK_SIZE;
+            size_t const chunk = std::min(
                 { remaining, BLOCK_SIZE - srcOff, BLOCK_SIZE - dstOff }
             );
 
@@ -269,9 +269,9 @@ private:
         size_t remaining = count;
 
         while (remaining > 0) {
-            const size_t srcUsed = ((srcEnd - 1) % BLOCK_SIZE) + 1;
-            const size_t dstUsed = ((dstEnd - 1) % BLOCK_SIZE) + 1;
-            const size_t chunk = std::min({ remaining, srcUsed, dstUsed });
+            size_t const srcUsed = ((srcEnd - 1) % BLOCK_SIZE) + 1;
+            size_t const dstUsed = ((dstEnd - 1) % BLOCK_SIZE) + 1;
+            size_t const chunk = std::min({ remaining, srcUsed, dstUsed });
 
             srcEnd -= chunk;
             dstEnd -= chunk;
@@ -288,20 +288,20 @@ public:
     using allocator = Allocator;
     using size_type = std::size_t;
     using reference = T&;
-    using const_reference = const T&;
+    using const_reference = T const&;
     using iterator = deque_iterator<false>;
     using const_iterator = deque_iterator<true>;
 
     constexpr deque() = default;
 
-    constexpr deque(const deque& other)
+    constexpr deque(deque const& other)
         : alloc(other.alloc)
         , m_alloc(other.m_alloc)
     {
         if (other.siz == 0) {
             return;
         }
-        const size_t requiredNodes = (other.siz + BLOCK_SIZE - 1) / BLOCK_SIZE;
+        size_t const requiredNodes = (other.siz + BLOCK_SIZE - 1) / BLOCK_SIZE;
         allocate_map(requiredNodes + 2); // +1 front node, +1 back node headroom
         start_idx = BLOCK_SIZE;
 
@@ -310,14 +310,14 @@ public:
         size_t dstIdx = start_idx;
 
         while (remaining > 0) {
-            const size_t srcNode = srcIdx / BLOCK_SIZE;
-            const size_t srcOff = srcIdx % BLOCK_SIZE;
-            const size_t dstNode = dstIdx / BLOCK_SIZE;
-            const size_t dstOff = dstIdx % BLOCK_SIZE;
+            size_t const srcNode = srcIdx / BLOCK_SIZE;
+            size_t const srcOff = srcIdx % BLOCK_SIZE;
+            size_t const dstNode = dstIdx / BLOCK_SIZE;
+            size_t const dstOff = dstIdx % BLOCK_SIZE;
 
             allocate_node(dstNode);
 
-            const size_t chunk = std::min(
+            size_t const chunk = std::min(
                 { remaining, BLOCK_SIZE - srcOff, BLOCK_SIZE - dstOff }
             );
 
@@ -347,7 +347,7 @@ public:
         other.siz = 0;
     }
 
-    constexpr deque& operator=(const deque& other)
+    constexpr deque& operator=(deque const& other)
     {
         if (this != &other) {
             clear();
@@ -425,7 +425,7 @@ public:
     {
         return map[start_idx / BLOCK_SIZE][start_idx % BLOCK_SIZE];
     }
-    constexpr const auto& front() const
+    constexpr auto const& front() const
     {
         return map[start_idx / BLOCK_SIZE][start_idx % BLOCK_SIZE];
     }
@@ -435,7 +435,7 @@ public:
         size_t lastIdx = start_idx + siz - 1;
         return map[lastIdx / BLOCK_SIZE][lastIdx % BLOCK_SIZE];
     }
-    constexpr const auto& back() const
+    constexpr auto const& back() const
     {
         size_t lastIdx = start_idx + siz - 1;
         return map[lastIdx / BLOCK_SIZE][lastIdx % BLOCK_SIZE];
@@ -448,7 +448,7 @@ public:
         return map[globalIdx / BLOCK_SIZE][globalIdx % BLOCK_SIZE];
     }
 
-    constexpr const T& operator[](size_t i) const
+    constexpr T const& operator[](size_t i) const
     {
         GLOX_ASSERT(i < siz);
         size_t globalIdx = start_idx + i;
@@ -527,7 +527,7 @@ public:
 
     constexpr iterator insert(const_iterator pos, T val)
     {
-        const size_t offset = pos - cbegin();
+        size_t const offset = pos - cbegin();
 
         if (offset == 0) {
             emplace_front(RVALUE(val));
@@ -551,7 +551,7 @@ public:
         } else {
             // shift suffix right
             emplace_back(RVALUE(back()));
-            const size_t suffixCount = (siz - 2) - offset;
+            size_t const suffixCount = (siz - 2) - offset;
             if (suffixCount > 0) {
                 shift_right_range(offset, suffixCount, 1);
             }
@@ -563,7 +563,7 @@ public:
 
     constexpr iterator erase(const_iterator pos)
     {
-        const size_t offset = pos - cbegin();
+        size_t const offset = pos - cbegin();
 
         if (offset == 0) {
             pop_front();

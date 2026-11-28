@@ -5,7 +5,7 @@ import glox;
 import std.compat;
 
 export {
-inline void print_e9(const char* str)
+inline void print_e9(char const* str)
 {
     gx::IrqScopeLock _;
     while (char c = *str++) {
@@ -13,7 +13,7 @@ inline void print_e9(const char* str)
     }
 }
 
-inline void print_e9(const char* str, size_t size)
+inline void print_e9(char const* str, size_t size)
 {
     gx::IrqScopeLock _;
     for (size_t i = 0; i != size; ++i) {

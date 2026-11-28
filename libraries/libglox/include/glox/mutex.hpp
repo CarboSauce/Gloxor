@@ -112,8 +112,8 @@ public:
         }
     }
 
-    unique_lock(const unique_lock&) = delete;
-    unique_lock& operator=(const unique_lock&) = delete;
+    unique_lock(unique_lock const&) = delete;
+    unique_lock& operator=(unique_lock const&) = delete;
 
     unique_lock(unique_lock&& other) noexcept
         : mutex(glox::exchange(other.mutex, nullptr))
@@ -220,8 +220,8 @@ public:
         }
     }
 
-    shared_lock(const shared_lock&) = delete;
-    shared_lock& operator=(const shared_lock&) = delete;
+    shared_lock(shared_lock const&) = delete;
+    shared_lock& operator=(shared_lock const&) = delete;
 
     shared_lock(shared_lock&& other) noexcept
         : mutex(glox::exchange(other.mutex, nullptr))
@@ -314,7 +314,7 @@ namespace detail {
         if (!guard.owns_lock()) {
             return Index;
         }
-        const int failed = try_lock_remaining<Index + 1>(l2, l3...);
+        int const failed = try_lock_remaining<Index + 1>(l2, l3...);
         if (failed == -1) {
             guard.release();
         }
@@ -347,7 +347,7 @@ namespace detail {
                 }
             };
 
-            const int failed_offset
+            int const failed_offset
                 = try_rest(std::make_index_sequence<n - 1> { });
             if (failed_offset == -1) {
                 guard.release();
@@ -401,7 +401,7 @@ void lock(L1& l1, L2& l2, L3&... l3)
         do {
             locks[first].lock();
             for (int j = 1; j < n; ++j) {
-                const int idx = (first + j) % n;
+                int const idx = (first + j) % n;
                 if (!locks[idx].try_lock()) {
                     for (int k = j; k != 0; --k) {
                         locks[(first + k - 1) % n].unlock();
@@ -460,8 +460,8 @@ public:
         mutex.unlock();
     }
 
-    lock_guard(const lock_guard&) = delete;
-    lock_guard& operator=(const lock_guard&) = delete;
+    lock_guard(lock_guard const&) = delete;
+    lock_guard& operator=(lock_guard const&) = delete;
 };
 
 template <mutex_type... Mutexes>
@@ -493,8 +493,8 @@ public:
         unlock_impl(std::index_sequence_for<Mutexes...> { });
     }
 
-    scoped_lock(const scoped_lock&) = delete;
-    scoped_lock& operator=(const scoped_lock&) = delete;
+    scoped_lock(scoped_lock const&) = delete;
+    scoped_lock& operator=(scoped_lock const&) = delete;
 };
 
 template <mutex_type Mutex>
@@ -519,8 +519,8 @@ public:
         mutex.unlock();
     }
 
-    scoped_lock(const scoped_lock&) = delete;
-    scoped_lock& operator=(const scoped_lock&) = delete;
+    scoped_lock(scoped_lock const&) = delete;
+    scoped_lock& operator=(scoped_lock const&) = delete;
 };
 
 template <>
@@ -529,8 +529,8 @@ class scoped_lock<>
 public:
     explicit scoped_lock() noexcept = default;
     explicit scoped_lock(adopt_lock_t) noexcept { }
-    scoped_lock(const scoped_lock&) = delete;
-    scoped_lock& operator=(const scoped_lock&) = delete;
+    scoped_lock(scoped_lock const&) = delete;
+    scoped_lock& operator=(scoped_lock const&) = delete;
 };
 
 // kernel-safe spinlock primitives
@@ -541,8 +541,8 @@ class spinlock
 
 public:
     spinlock() noexcept = default;
-    spinlock(const spinlock&) = delete;
-    spinlock& operator=(const spinlock&) = delete;
+    spinlock(spinlock const&) = delete;
+    spinlock& operator=(spinlock const&) = delete;
 
     void lock() noexcept
     {
@@ -574,12 +574,12 @@ class fair_spinlock
 
 public:
     fair_spinlock() noexcept = default;
-    fair_spinlock(const fair_spinlock&) = delete;
-    fair_spinlock& operator=(const fair_spinlock&) = delete;
+    fair_spinlock(fair_spinlock const&) = delete;
+    fair_spinlock& operator=(fair_spinlock const&) = delete;
 
     void lock() noexcept
     {
-        const unsigned int my_ticket
+        unsigned int const my_ticket
             = next_ticket.fetch_add(1, std::memory_order_relaxed);
         while (serving_ticket.load(std::memory_order_acquire) != my_ticket) {
             detail::cpu_relax();
@@ -614,8 +614,8 @@ class spin_rwlock
 
 public:
     spin_rwlock() noexcept = default;
-    spin_rwlock(const spin_rwlock&) = delete;
-    spin_rwlock& operator=(const spin_rwlock&) = delete;
+    spin_rwlock(spin_rwlock const&) = delete;
+    spin_rwlock& operator=(spin_rwlock const&) = delete;
 
     void lock() noexcept
     {
@@ -721,13 +721,13 @@ class basic_recursive_spinlock
 
 public:
     basic_recursive_spinlock() noexcept = default;
-    basic_recursive_spinlock(const basic_recursive_spinlock&) = delete;
-    basic_recursive_spinlock& operator=(const basic_recursive_spinlock&)
+    basic_recursive_spinlock(basic_recursive_spinlock const&) = delete;
+    basic_recursive_spinlock& operator=(basic_recursive_spinlock const&)
         = delete;
 
     void lock() noexcept
     {
-        const auto self = GetOwnerId();
+        auto const self = GetOwnerId();
         if (owner.load(std::memory_order_relaxed) == self) {
             ++recursion_count;
             return;
@@ -745,7 +745,7 @@ public:
 
     bool try_lock() noexcept
     {
-        const auto self = GetOwnerId();
+        auto const self = GetOwnerId();
         if (owner.load(std::memory_order_relaxed) == self) {
             ++recursion_count;
             return true;
@@ -778,8 +778,8 @@ class seqlock
 
 public:
     seqlock() noexcept = default;
-    seqlock(const seqlock&) = delete;
-    seqlock& operator=(const seqlock&) = delete;
+    seqlock(seqlock const&) = delete;
+    seqlock& operator=(seqlock const&) = delete;
 
     void lock() noexcept
     {

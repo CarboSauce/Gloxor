@@ -87,7 +87,7 @@ struct [[gnu::packed]] IdtPointer
     Idt* base;
 };
 
-inline void load_idt(const IdtPointer& ptr)
+inline void load_idt(IdtPointer const& ptr)
 {
     asm("lidt %0" : : "m"(ptr));
 }

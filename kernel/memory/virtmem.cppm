@@ -23,8 +23,8 @@ public:
     VSpace() = default;
     static VSpace* create();
     void destroy();
-    VSpace(const VSpace&) = delete;
-    VSpace& operator=(const VSpace&) = delete;
+    VSpace(VSpace const&) = delete;
+    VSpace& operator=(VSpace const&) = delete;
 };
 
 extern VSpace kAddrSpace;

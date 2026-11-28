@@ -7,7 +7,7 @@ import arch_asm.e9;
 #include "glox/macros.hpp"
 
 namespace glox {
-extern "C++" void exec_assert(const char* message, std::source_location loc)
+extern "C++" void exec_assert(char const* message, std::source_location loc)
 {
     gx::println(
         "Assertion failed: \r\n (%)\r\n %:%\r\n",

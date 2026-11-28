@@ -89,7 +89,7 @@ public:
     template <typename G>
     GLOX_ALWAYS_INLINE constexpr explicit(
         not std::is_convertible_v<G, E>
-    ) result(const error<G>& err)
+    ) result(error<G> const& err)
         : _err { err.err }
         , hasValue(false)
     {
@@ -107,11 +107,11 @@ public:
             _err.~E();
     }
 
-    constexpr result(const result&)
+    constexpr result(result const&)
         requires std::is_trivially_copy_constructible_v<T>
                  and std::is_trivially_copy_constructible_v<E>
     = default;
-    constexpr result(const result& other)
+    constexpr result(result const& other)
         : hasValue(other.hasValue)
     {
         if (other.hasValue)
@@ -133,12 +133,12 @@ public:
             std::construct_at(&_err, RVALUE(other._err));
     }
 
-    constexpr result& operator=(const result&) = delete;
-    constexpr result& operator=(const result&)
+    constexpr result& operator=(result const&) = delete;
+    constexpr result& operator=(result const&)
         requires std::is_trivially_copy_assignable_v<T>
                  and std::is_trivially_copy_assignable_v<E>
     = default;
-    constexpr result& operator=(const result& other)
+    constexpr result& operator=(result const& other)
         requires(not std::is_trivially_copy_assignable_v<T>
                     or not std::is_trivially_copy_assignable_v<E>)
             and std::is_destructible_v<T> and std::is_destructible_v<E>
@@ -201,7 +201,7 @@ public:
         return result { RVALUE(val) };
     }
     GLOX_ALWAYS_INLINE
-    static constexpr result from_val(const T& val)
+    static constexpr result from_val(T const& val)
     {
         return result { val };
     }
@@ -236,7 +236,7 @@ public:
     {
         return static_cast<bool>(hasValue);
     }
-    constexpr auto operator<=>(const result& b)
+    constexpr auto operator<=>(result const& b)
     {
         if (hasValue and b.hasValue)
             return _val <=> b._val;
@@ -245,7 +245,7 @@ public:
         else
             return false;
     }
-    constexpr bool operator==(const result& b) const
+    constexpr bool operator==(result const& b) const
     {
         if (hasValue and b.hasValue)
             return _val == b._val;
@@ -254,7 +254,7 @@ public:
         else
             return false;
     }
-    constexpr bool operator==(const E& b) const
+    constexpr bool operator==(E const& b) const
     {
         if (hasValue)
             return false;
@@ -388,7 +388,7 @@ public:
     template <typename G>
     GLOX_ALWAYS_INLINE constexpr explicit(
         not std::is_convertible_v<G, E>
-    ) result(const error<G>& err)
+    ) result(error<G> const& err)
         : _val(nullptr)
         , _err { err.err }
     {
@@ -406,11 +406,11 @@ public:
             _err.~E();
     }
 
-    constexpr result(const result&)
+    constexpr result(result const&)
         requires std::is_trivially_copy_constructible_v<T>
                  and std::is_trivially_copy_constructible_v<E>
     = default;
-    constexpr result(const result& other)
+    constexpr result(result const& other)
     {
         if (other.has_val())
             _val = other._val;
@@ -433,12 +433,12 @@ public:
         }
     }
 
-    constexpr result& operator=(const result&) = delete;
-    constexpr result& operator=(const result&)
+    constexpr result& operator=(result const&) = delete;
+    constexpr result& operator=(result const&)
         requires std::is_trivially_copy_assignable_v<T>
                  and std::is_trivially_copy_assignable_v<E>
     = default;
-    constexpr result& operator=(const result& other)
+    constexpr result& operator=(result const& other)
         requires(not std::is_trivially_copy_assignable_v<E>)
             and std::is_destructible_v<E> and std::is_copy_constructible_v<E>
     {
@@ -498,7 +498,7 @@ public:
         return result { RVALUE(val) };
     }
     GLOX_ALWAYS_INLINE
-    static constexpr result from_val(const T& val)
+    static constexpr result from_val(T const& val)
     {
         return result { val };
     }
@@ -545,7 +545,7 @@ public:
     {
         return _val != nullptr;
     }
-    constexpr auto operator<=>(const result& b)
+    constexpr auto operator<=>(result const& b)
     {
         if (has_val() and b.has_val())
             return _val <=> b._val;
@@ -554,7 +554,7 @@ public:
         else
             return false;
     }
-    constexpr bool operator==(const result& b) const
+    constexpr bool operator==(result const& b) const
     {
         if (has_val() and b.has_val())
             return _val == b._val;
@@ -563,7 +563,7 @@ public:
         else
             return false;
     }
-    constexpr bool operator==(const E& b) const
+    constexpr bool operator==(E const& b) const
     {
         if (has_val())
             return false;

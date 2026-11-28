@@ -33,7 +33,7 @@ inline vaddr get_real_kernel_addr(vaddr virt)
     GLOX_ASSERT(virt >= arch::KERNEL_MEM_BASE);
     return virt + kernelMappingOffset;
 }
-inline vaddr get_real_kernel_addr(const void* virt)
+inline vaddr get_real_kernel_addr(void const* virt)
 {
     return get_real_kernel_addr((u64)virt);
 }
@@ -49,7 +49,7 @@ inline vaddr to_virt(paddr addr)
     return addr;
 }
 
-inline vaddr get_real_data_addr(const void* virt)
+inline vaddr get_real_data_addr(void const* virt)
 {
     return get_real_data_addr((u64)virt);
 }

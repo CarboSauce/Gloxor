@@ -31,7 +31,7 @@ inline bool is_overlapping(
 }
 inline bool is_there_dup(uintptr base, size_t len)
 {
-    for (const auto& it : vmapList) {
+    for (auto const& it : vmapList) {
         if (is_overlapping(
                 it.phys_base, it.phys_base + it.len, base, base + len
             )) {
@@ -136,7 +136,7 @@ paddr gx::VSpace::translate(vaddr from)
 static bool ioremap_test()
 {
     auto print_iomem = []() {
-        for (const auto& it : vmapList) {
+        for (auto const& it : vmapList) {
             gloxDebugLogln(
                 "Base: ",
                 (void*)it.phys_base,

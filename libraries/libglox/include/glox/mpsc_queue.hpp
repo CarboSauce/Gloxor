@@ -18,8 +18,8 @@ struct mpsc_node
 
     mpsc_node() = default;
 
-    mpsc_node(const mpsc_node&) = delete;
-    mpsc_node& operator=(const mpsc_node&) = delete;
+    mpsc_node(mpsc_node const&) = delete;
+    mpsc_node& operator=(mpsc_node const&) = delete;
 };
 
 template <typename T, mpsc_node T::* NodePtr = &T::mpsc_node>
@@ -38,8 +38,8 @@ class intrusive_mpsc_queue
 public:
     intrusive_mpsc_queue() = default;
 
-    intrusive_mpsc_queue(const intrusive_mpsc_queue&) = delete;
-    intrusive_mpsc_queue& operator=(const intrusive_mpsc_queue&) = delete;
+    intrusive_mpsc_queue(intrusive_mpsc_queue const&) = delete;
+    intrusive_mpsc_queue& operator=(intrusive_mpsc_queue const&) = delete;
 
     void push(T* item)
     {

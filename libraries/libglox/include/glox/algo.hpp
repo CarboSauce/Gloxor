@@ -8,7 +8,7 @@ namespace glox {
  * https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
  * @param str String for which hash is to be computed, UB if string is null
  */
-GLOX_EXPORT constexpr uint32_t fnv_hash(const char* str)
+GLOX_EXPORT constexpr uint32_t fnv_hash(char const* str)
 {
     uint32_t hash = 0x811c9dc5; // magic prime
     uint8_t c;

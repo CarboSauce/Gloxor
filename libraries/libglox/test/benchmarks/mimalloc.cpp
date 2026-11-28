@@ -28,7 +28,7 @@ constexpr std::size_t TestNumBuckets = TestMaxSmallSize / TestGranularity;
 
 static void BM_Mimalloc_SingleThreaded_FastPath(benchmark::State& state)
 {
-    const std::size_t alloc_size = static_cast<std::size_t>(state.range(0));
+    std::size_t const alloc_size = static_cast<std::size_t>(state.range(0));
 
     for (auto _ : state) {
         void* ptr = mi_malloc(alloc_size);
@@ -48,7 +48,7 @@ BENCHMARK(BM_Mimalloc_SingleThreaded_FastPath)
 
 static void BM_Mimalloc_Multithreaded_Scalability(benchmark::State& state)
 {
-    const std::size_t alloc_size = 128;
+    std::size_t const alloc_size = 128;
 
     for (auto _ : state) {
         void* ptr = mi_malloc(alloc_size);
@@ -65,7 +65,7 @@ BENCHMARK(BM_Mimalloc_Multithreaded_Scalability)
 static void BM_Mimalloc_CrossThread_AtomicFree(benchmark::State& state)
 {
     static std::atomic<void*> shared_slot { nullptr };
-    const std::size_t alloc_size = 256;
+    std::size_t const alloc_size = 256;
 
     if (state.thread_index() == 0) {
         for (auto _ : state) {
@@ -113,14 +113,14 @@ BENCHMARK(BM_Mimalloc_MixedSizesAndAlignments);
 
 static void BM_Mimalloc_Batch_Page_Thrashing(benchmark::State& state)
 {
-    const std::size_t allocSize = static_cast<std::size_t>(state.range(0));
+    std::size_t const allocSize = static_cast<std::size_t>(state.range(0));
     constexpr std::size_t batchCount = 500;
     std::vector<void*> handles(batchCount);
 
     for (auto _ : state) {
         for (std::size_t i = 0; i < batchCount; ++i) {
             handles[i] = mi_malloc(allocSize);
-            *static_cast<volatile std::uint64_t*>(handles[i]) = i;
+            *static_cast<std::uint64_t volatile*>(handles[i]) = i;
         }
 
         benchmark::DoNotOptimize(handles.data());

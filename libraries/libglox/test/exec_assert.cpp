@@ -7,7 +7,7 @@ import std;
 import glox;
 #endif
 namespace glox {
-[[noreturn]] void exec_assert(const char* message, std::source_location loc)
+[[noreturn]] void exec_assert(char const* message, std::source_location loc)
 {
     std::printf(
         "Assert hit\nMessage:\nFunction: %s\n%s\nFile: %s\nLine: %d\n",

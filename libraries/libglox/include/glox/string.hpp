@@ -95,9 +95,9 @@ public:
     using allocator = Allocator;
     using size_type = std::size_t;
     using reference = char&;
-    using const_reference = const char&;
+    using const_reference = char const&;
     using iterator = char*;
-    using const_iterator = const char*;
+    using const_iterator = char const*;
 
     constexpr basic_string()
         : r()
@@ -112,7 +112,7 @@ public:
         init(s);
     }
 
-    constexpr basic_string(const char* str)
+    constexpr basic_string(char const* str)
         : r()
     {
         size_t n = glox::strlen(str);
@@ -122,7 +122,7 @@ public:
         }
     }
 
-    constexpr basic_string(const char* str, size_t n)
+    constexpr basic_string(char const* str, size_t n)
         : r()
     {
         reserve(n);
@@ -139,7 +139,7 @@ public:
             push_back(c);
     }
 
-    constexpr basic_string(const basic_string& other)
+    constexpr basic_string(basic_string const& other)
         : alloc(other.alloc)
     {
         if (not other.is_big()) {
@@ -153,7 +153,7 @@ public:
         }
     }
 
-    constexpr basic_string& operator=(const basic_string& other)
+    constexpr basic_string& operator=(basic_string const& other)
     {
         if (this == &other) {
             return *this;
@@ -201,7 +201,7 @@ public:
         return is_big() ? r.b.data : r.s.data;
     }
 
-    constexpr const char* data() const
+    constexpr char const* data() const
     {
         return is_big() ? r.b.data : r.s.data;
     }
@@ -299,8 +299,8 @@ public:
         return std::string_view { data(), size() };
     }
 
-    constexpr bool operator==(const basic_string&) const = default;
-    constexpr auto operator<=>(const basic_string& other) const
+    constexpr bool operator==(basic_string const&) const = default;
+    constexpr auto operator<=>(basic_string const& other) const
     {
         return view() <=> other.view();
     }
@@ -310,12 +310,12 @@ public:
     //     return l <=> r.view();
     // }
     template <std::convertible_to<std::string_view> T>
-    constexpr auto operator<=>(const T& l) const
+    constexpr auto operator<=>(T const& l) const
     {
         return std::string_view(l) <=> this->view();
     }
     template <std::convertible_to<std::string_view> T>
-    constexpr auto operator==(const T& l) const
+    constexpr auto operator==(T const& l) const
     {
         return std::string_view(l) == this->view();
     }
@@ -343,7 +343,7 @@ public:
     }
 
     template <std::convertible_to<std::string_view> T>
-    constexpr void append(const T& str)
+    constexpr void append(T const& str)
     {
         auto view = std::string_view(str);
         reserve(capacity() + view.size());
@@ -354,8 +354,8 @@ public:
 
     constexpr iterator insert(const_iterator pos, char val)
     {
-        const auto d = data();
-        const auto index = pos - d;
+        auto const d = data();
+        auto const index = pos - d;
         if (pos == end()) {
             push_back(val);
             return d + index;
@@ -369,8 +369,8 @@ public:
 
     constexpr iterator erase(const_iterator pos)
     {
-        const auto d = data();
-        const auto p = d + (pos - d);
+        auto const d = data();
+        auto const p = d + (pos - d);
         glox::move_range(p + 1, end(), p);
         pop_back();
         return p;
@@ -432,15 +432,15 @@ private:
 
     constexpr bool ensure_can_fit(size_t new_size)
     {
-        const auto cap = capacity();
+        auto const cap = capacity();
         if (new_size > cap) {
             new_size = cap < 32 ? 32 : cap + cap / 2;
-            const auto mem = realloc_buffer(cap, new_size);
+            auto const mem = realloc_buffer(cap, new_size);
             if (not mem.ptr)
                 return false;
             if (not is_big()) {
                 begin_lifetime(mem.ptr, 0, mem.count);
-                const size_t sz = r.s.size;
+                size_t const sz = r.s.size;
                 for (size_t i = 0; i != sz; ++i)
                     mem.ptr[i] = r.s.data[i];
                 r.b = big_str();
@@ -469,9 +469,9 @@ class cstring
 public:
     using size_type = std::size_t;
     using reference = char&;
-    using const_reference = const char&;
+    using const_reference = char const&;
     using iterator = char*;
-    using const_iterator = const char*;
+    using const_iterator = char const*;
 
     constexpr cstring()
         : inner()
@@ -479,13 +479,13 @@ public:
         inner.push_back('\0');
     }
 
-    constexpr cstring(const char* s)
+    constexpr cstring(char const* s)
         : inner(s)
     {
         inner.push_back('\0');
     }
 
-    constexpr cstring(const char* s, size_t n)
+    constexpr cstring(char const* s, size_t n)
         : inner(s, n)
     {
         inner.push_back('\0');
@@ -517,12 +517,12 @@ public:
         return size() == 0;
     }
 
-    [[nodiscard]] constexpr const char* c_str() const noexcept
+    [[nodiscard]] constexpr char const* c_str() const noexcept
     {
         return inner.data();
     }
 
-    [[nodiscard]] constexpr const char* data() const noexcept
+    [[nodiscard]] constexpr char const* data() const noexcept
     {
         return inner.data();
     }
@@ -552,7 +552,7 @@ public:
     }
 
     template <std::convertible_to<std::string_view> T>
-    constexpr void append(const T& str)
+    constexpr void append(T const& str)
     {
         std::string_view view(str);
         if (view.empty())
@@ -564,7 +564,7 @@ public:
     }
 
     template <std::convertible_to<std::string_view> T>
-    constexpr cstring& operator+=(const T& str)
+    constexpr cstring& operator+=(T const& str)
     {
         append(str);
         return *this;
@@ -640,13 +640,13 @@ public:
     }
 
     template <std::convertible_to<std::string_view> T>
-    constexpr auto operator<=>(const T& rhs) const
+    constexpr auto operator<=>(T const& rhs) const
     {
         return view() <=> std::string_view(rhs);
     }
 
     template <std::convertible_to<std::string_view> T>
-    constexpr bool operator==(const T& rhs) const
+    constexpr bool operator==(T const& rhs) const
     {
         return view() == std::string_view(rhs);
     }
@@ -662,7 +662,7 @@ struct comptime_string
 {
     char buf[N];
     consteval comptime_string() = default;
-    consteval comptime_string(const char (&str)[N])
+    consteval comptime_string(char const (&str)[N])
     {
         for (size_t i = 0; i != N; ++i) {
             buf[i] = str[i];

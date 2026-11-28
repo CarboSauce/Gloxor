@@ -32,15 +32,15 @@ struct foo_compare
 {
     using is_transparent = void;
 
-    bool operator()(const foo& a, const foo& b) const
+    bool operator()(foo const& a, foo const& b) const
     {
         return a.key < b.key;
     }
-    bool operator()(const foo& a, int b) const
+    bool operator()(foo const& a, int b) const
     {
         return a.key < b;
     }
-    bool operator()(int a, const foo& b) const
+    bool operator()(int a, foo const& b) const
     {
         return a < b.key;
     }
@@ -100,7 +100,7 @@ TEST_CASE("base tree: comparator-free structure")
 
     int expected = 0;
     bool inOrder = true;
-    for (const foo& f : tree) {
+    for (foo const& f : tree) {
         inOrder &= f.key == expected++;
     }
     CHECK(inOrder);
@@ -143,7 +143,7 @@ TEST_CASE("ordered tree: insert keeps invariants and order")
 
     int expected = 0;
     bool inOrder = true;
-    for (const foo& f : tree) {
+    for (foo const& f : tree) {
         inOrder &= f.key == expected++;
     }
     CHECK(inOrder);
@@ -339,7 +339,7 @@ TEST_CASE("map: at fails on missing key")
     rb_tree_map<int, int> map;
     map.insert(1, 1);
     CHECK(map.at(2).has_val() == false);
-    const auto& constMap = map;
+    auto const& constMap = map;
     CHECK(constMap.at(2).has_val() == false);
 }
 
@@ -431,7 +431,7 @@ TEST_CASE("map: erase")
         it = (it->first % 2) ? map.erase(it) : std::next(it);
     }
     bool allEven = true;
-    for (const auto& kv : map) {
+    for (auto const& kv : map) {
         allEven &= kv.first % 2 == 0;
     }
     CHECK(allEven);
@@ -486,9 +486,9 @@ TEST_CASE("map: move, swap and clear")
 
 TEST_CASE("map: const iteration")
 {
-    const rb_tree_map<int, int> map { { 1, 1 }, { 2, 2 } };
+    rb_tree_map<int, int> const map { { 1, 1 }, { 2, 2 } };
     int sum = 0;
-    for (const auto& kv : map) {
+    for (auto const& kv : map) {
         sum += kv.second;
     }
     CHECK_EQ(sum, 3);
@@ -537,7 +537,7 @@ TEST_CASE("map: randomized operations match std::map")
 
     auto it = map.begin();
     bool contentsMatch = true;
-    for (const auto& [key, value] : reference) {
+    for (auto const& [key, value] : reference) {
         contentsMatch &= it->first == key && it->second == value;
         ++it;
     }

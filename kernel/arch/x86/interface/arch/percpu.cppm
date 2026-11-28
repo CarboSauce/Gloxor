@@ -28,9 +28,9 @@ export namespace arch {
 void initialize_percpu(void* buf, size_t s)
 {
     glox::memcpy(buf, __percpu_start, s);
-    const uintptr_t base = reinterpret_cast<uintptr_t>(buf);
+    uintptr_t const base = reinterpret_cast<uintptr_t>(buf);
     // monkey patch self pointer
-    *reinterpret_cast<volatile uintptr_t*>(buf) = base;
+    *reinterpret_cast<uintptr_t volatile*>(buf) = base;
 
     msr::wrmsr(msr::IA32_GS_BASE, base);
 }
@@ -63,11 +63,11 @@ struct Percpu
                     : "memory");
                 return out;
             } else {
-                return *reinterpret_cast<const T*>(gs_base() + offset_);
+                return *reinterpret_cast<T const*>(gs_base() + offset_);
             }
         }
 
-        Proxy& operator=(const T& rhs) noexcept
+        Proxy& operator=(T const& rhs) noexcept
         {
             if constexpr (
                 sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4
@@ -105,9 +105,9 @@ struct Percpu
         return reinterpret_cast<T*>(gs_base() + offset());
     }
 
-    [[nodiscard]] const T* operator->() const noexcept
+    [[nodiscard]] T const* operator->() const noexcept
     {
-        return reinterpret_cast<const T*>(gs_base() + offset());
+        return reinterpret_cast<T const*>(gs_base() + offset());
     }
 
     [[nodiscard]] T* ptr() noexcept
@@ -115,9 +115,9 @@ struct Percpu
         return reinterpret_cast<T*>(gs_base() + offset());
     }
 
-    [[nodiscard]] const T* ptr() const noexcept
+    [[nodiscard]] T const* ptr() const noexcept
     {
-        return reinterpret_cast<const T*>(gs_base() + offset());
+        return reinterpret_cast<T const*>(gs_base() + offset());
     }
 };
 } // namespace arch

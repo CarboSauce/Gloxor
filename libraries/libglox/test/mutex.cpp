@@ -309,7 +309,7 @@ TEST_CASE("spin_rwlock multi-threaded readers and writers")
         threads.emplace_back([&]() {
             for (int j = 0; j < write_iterations; ++j) {
                 unique_lock<spin_rwlock> wlock(rw);
-                const int w = ++active_writers;
+                int const w = ++active_writers;
                 if (w != 1
                     || active_readers.load(std::memory_order_acquire) != 0) {
                     invariant_violated.store(true, std::memory_order_relaxed);

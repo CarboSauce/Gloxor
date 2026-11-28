@@ -48,8 +48,8 @@ namespace kheap_detail {
     >
     consteval std::size_t total_bucket_count() noexcept
     {
-        const std::size_t smallBuckets = MaxSmallSize / Granularity;
-        const std::size_t medOctaves
+        std::size_t const smallBuckets = MaxSmallSize / Granularity;
+        std::size_t const medOctaves
             = std::countr_zero(MaxMediumSize) - std::countr_zero(MaxSmallSize);
         return smallBuckets + (medOctaves << MEDIUM_SUB_BINS_BITS);
     }
@@ -96,8 +96,8 @@ namespace kheap_detail {
     template <typename A>
     concept memdesc_accessor = requires(
         A& a,
-        const A& ca,
-        const void* p,
+        A const& ca,
+        void const* p,
         std::uintptr_t pfn,
         std::uint64_t raw
     ) {
@@ -126,9 +126,9 @@ namespace kheap_detail {
         {
             if (size <= MaxSmallSize)
                 return size == 0 ? 0 : (size - 1) / Granularity;
-            const std::size_t x = size - 1;
-            const unsigned e = static_cast<unsigned>(std::bit_width(x)) - 1;
-            const std::size_t sub = (x >> (e - SUB_BINS_BITS))
+            std::size_t const x = size - 1;
+            unsigned const e = static_cast<unsigned>(std::bit_width(x)) - 1;
+            std::size_t const sub = (x >> (e - SUB_BINS_BITS))
                                   & ((std::size_t(1) << SUB_BINS_BITS) - 1);
             return SMALL_BUCKETS
                  + ((static_cast<std::size_t>(e - MIN_MED_LOG2)
@@ -140,10 +140,10 @@ namespace kheap_detail {
         {
             if (b < SMALL_BUCKETS)
                 return (b + 1) * Granularity;
-            const std::size_t medIdx = b - SMALL_BUCKETS;
-            const unsigned e
+            std::size_t const medIdx = b - SMALL_BUCKETS;
+            unsigned const e
                 = MIN_MED_LOG2 + static_cast<unsigned>(medIdx >> SUB_BINS_BITS);
-            const std::size_t sub
+            std::size_t const sub
                 = medIdx & ((std::size_t(1) << SUB_BINS_BITS) - 1);
             return ((std::size_t(1) << SUB_BINS_BITS) + sub + 1)
                 << (e - SUB_BINS_BITS);
@@ -174,10 +174,10 @@ namespace kheap_detail {
         static_assert(OffsetBits <= 30, "reciprocal must fit 32 bits");
         bucket_table<NumBuckets> t { };
         for (std::size_t b = 0; b < NumBuckets; ++b) {
-            const std::uint64_t d = Classes::block_size(b);
-            const unsigned lg = static_cast<unsigned>(std::bit_width(d - 1));
-            const unsigned shift = OffsetBits + lg;
-            const std::uint64_t m = ((std::uint64_t(1) << shift) + d - 1) / d;
+            std::uint64_t const d = Classes::block_size(b);
+            unsigned const lg = static_cast<unsigned>(std::bit_width(d - 1));
+            unsigned const shift = OffsetBits + lg;
+            std::uint64_t const m = ((std::uint64_t(1) << shift) + d - 1) / d;
             t.spec[b] = bucket_spec { static_cast<std::uint32_t>(d),
                 static_cast<std::uint32_t>(m),
                 static_cast<std::uint8_t>(shift) };
@@ -287,7 +287,7 @@ private:
     );
 
     using desc_t
-        = std::remove_cvref_t<decltype(kheap_detail::declref<const Accessor>()
+        = std::remove_cvref_t<decltype(kheap_detail::declref<Accessor const>()
                 .get_desc(std::uintptr_t(0)))>;
     using tcache_t = kthread_cache<num_buckets>;
     using sizes_t = kheap_detail::size_classes<MaxSmallSize, Granularity>;
@@ -375,8 +375,8 @@ private:
         std::size_t block_size
     ) noexcept
     {
-        const std::size_t desired = block_size * MEDIUM_TARGET_BLOCKS;
-        const std::size_t k = (desired + PageSize - 1) / PageSize;
+        std::size_t const desired = block_size * MEDIUM_TARGET_BLOCKS;
+        std::size_t const k = (desired + PageSize - 1) / PageSize;
         return static_cast<std::uint32_t>(glox::min(
             glox::max(k, std::size_t(1)), std::size_t(MAX_MEDIUM_SPAN)
         ));
@@ -431,22 +431,22 @@ private:
     // ---- memdesc encode / decode
     // ---------------------------------------------
 
-    static std::uint64_t encode_slab_md(const kpage_meta* pg) noexcept
+    static std::uint64_t encode_slab_md(kpage_meta const* pg) noexcept
     {
-        const auto a = reinterpret_cast<std::uint64_t>(pg);
-        const std::uint64_t slot = (a & ~PAGE_MASK) / sizeof(kpage_meta);
+        auto const a = reinterpret_cast<std::uint64_t>(pg);
+        std::uint64_t const slot = (a & ~PAGE_MASK) / sizeof(kpage_meta);
         return (a & PAGE_MASK) | (slot << TAG_BITS) | TAG_SLAB;
     }
 
     static kpage_meta* decode_slab_md(std::uint64_t md) noexcept
     {
-        const std::uint64_t slot = (md >> TAG_BITS) & SLOT_MASK;
+        std::uint64_t const slot = (md >> TAG_BITS) & SLOT_MASK;
         return reinterpret_cast<kpage_meta*>(
             (md & PAGE_MASK) + slot * sizeof(kpage_meta)
         );
     }
 
-    std::uintptr_t pfn_of(const void* p) const noexcept
+    std::uintptr_t pfn_of(void const* p) const noexcept
     {
         return pfndb.virt_to_pfn(p);
     }
@@ -481,22 +481,22 @@ private:
         return *static_cast<std::uint16_t*>(blk);
     }
 
-    static char* block_at(const kpage_meta* pg, std::size_t idx) noexcept
+    static char* block_at(kpage_meta const* pg, std::size_t idx) noexcept
     {
         return pg->start + idx * pg->block_size;
     }
 
     // ptr -> block index, without a hardware divide. False on interior ptrs.
     static bool slab_index(
-        const kpage_meta* pg,
-        const void* ptr,
+        kpage_meta const* pg,
+        void const* ptr,
         std::size_t& idx
     ) noexcept
     {
-        const std::size_t off = static_cast<std::size_t>(
-            static_cast<const char*>(ptr) - pg->start
+        std::size_t const off = static_cast<std::size_t>(
+            static_cast<char const*>(ptr) - pg->start
         );
-        const auto& sp = specs.spec[pg->bucket];
+        auto const& sp = specs.spec[pg->bucket];
         idx = (off * sp.recip_mult) >> sp.recip_shift;
         return idx < pg->capacity && idx * pg->block_size == off;
     }
@@ -537,14 +537,14 @@ private:
     {
         if (pg->xthread_head.load(std::memory_order_relaxed)
             != kpage_meta::EMPTY) {
-            const std::uint16_t x = pg->xthread_head.exchange(
+            std::uint16_t const x = pg->xthread_head.exchange(
                 kpage_meta::EMPTY, std::memory_order_acquire
             );
             if (x != kpage_meta::EMPTY) {
                 std::uint32_t n = 1;
                 std::uint16_t tail = x;
                 for (;;) {
-                    const std::uint16_t nx = link_of(block_at(pg, tail));
+                    std::uint16_t const nx = link_of(block_at(pg, tail));
                     if (nx == kpage_meta::EMPTY)
                         break;
                     tail = nx;
@@ -567,21 +567,21 @@ private:
     // multi-page slabs don't fault untouched pages prematurely.
     static void extend(kpage_meta* pg) noexcept
     {
-        const std::uint32_t remaining
+        std::uint32_t const remaining
             = static_cast<std::uint32_t>(pg->capacity - pg->reserved);
         if (remaining == 0)
             return;
-        const std::uint32_t batch
+        std::uint32_t const batch
             = pg->kind == kheap_detail::page_kind::medium
                 ? glox::max(
                       std::uint32_t(1),
                       static_cast<std::uint32_t>(PageSize / pg->block_size)
                   )
                 : EXTEND_BATCH;
-        const std::uint32_t n = glox::min(batch, remaining);
-        const std::uint32_t first = pg->reserved;
+        std::uint32_t const n = glox::min(batch, remaining);
+        std::uint32_t const first = pg->reserved;
         for (std::uint32_t i = 0; i < n; ++i) {
-            const std::uint32_t idx = first + i;
+            std::uint32_t const idx = first + i;
             link_of(block_at(pg, idx)) = (i + 1 < n)
                                            ? static_cast<std::uint16_t>(idx + 1)
                                            : kpage_meta::EMPTY;
@@ -590,7 +590,7 @@ private:
         pg->reserved = static_cast<std::uint16_t>(first + n);
     }
 
-    static bool has_room(const kpage_meta* pg) noexcept
+    static bool has_room(kpage_meta const* pg) noexcept
     {
         return pg->free_head != kpage_meta::EMPTY
             || pg->reserved < pg->capacity;
@@ -608,12 +608,12 @@ private:
 
     // Debug (DebugChecks::deep): is `idx` carved and not already on one of the
     // owner's free lists?
-    static bool owner_free_ok(const kpage_meta* pg, std::size_t idx) noexcept
+    static bool owner_free_ok(kpage_meta const* pg, std::size_t idx) noexcept
     {
         if (idx >= pg->reserved)
             return false;
-        const std::uint16_t heads[2] = { pg->free_head, pg->local_free_head };
-        for (const std::uint16_t h : heads) {
+        std::uint16_t const heads[2] = { pg->free_head, pg->local_free_head };
+        for (std::uint16_t const h : heads) {
             std::uint32_t guard = 0;
             for (std::uint16_t i = h;
                 i != kpage_meta::EMPTY && guard <= pg->reserved;
@@ -642,7 +642,7 @@ private:
         auto h = palloc.alloc(PageSize);
         if (!h.ptr)
             return;
-        const std::uintptr_t pfn = pfn_of(h.ptr);
+        std::uintptr_t const pfn = pfn_of(h.ptr);
         if ((reinterpret_cast<std::uintptr_t>(h.ptr) & (PageSize - 1)) != 0
             || !pfndb.is_valid(pfn)) {
             palloc.dealloc(h.ptr, PageSize);
@@ -682,7 +682,7 @@ private:
     void retire_slab(tcache_t& tc, kpage_meta* pg)
     {
         char* start = pg->start;
-        const std::size_t pages = pg->page_count;
+        std::size_t const pages = pg->page_count;
         reset_range(pfn_of(start), pages);
         palloc.dealloc(start, pages << PageShift);
         free_meta_slot(tc, pg);
@@ -691,7 +691,7 @@ private:
     // large spans / deferred frees
     void free_large(void* ptr, std::uintptr_t pfn, std::uint64_t md)
     {
-        const std::size_t pages = static_cast<std::size_t>(md >> TAG_BITS);
+        std::size_t const pages = static_cast<std::size_t>(md >> TAG_BITS);
         reset_range(pfn, pages);
         palloc.dealloc(ptr, pages << PageShift);
     }
@@ -713,8 +713,8 @@ private:
         void* p = deferred.exchange(nullptr, std::memory_order_acquire);
         while (p) {
             void* nx = *static_cast<void**>(p); // read first: p dies below
-            const std::uintptr_t pfn = pfn_of(p);
-            const std::uint64_t md = pfndb.get_desc(pfn).raw();
+            std::uintptr_t const pfn = pfn_of(p);
+            std::uint64_t const md = pfndb.get_desc(pfn).raw();
             if ((md & TAG_MASK) == TAG_LARGE)
                 free_large(p, pfn, md);
             p = nx;
@@ -773,7 +773,7 @@ private:
         }
 
         // 2. Adopt slabs abandoned by other caches.
-        const std::uintptr_t tok = token(tc);
+        std::uintptr_t const tok = token(tc);
         while (kpage_meta* pg = take_abandoned(b)) {
             store_owner(pg, tok);
             collect(pg);
@@ -784,9 +784,9 @@ private:
         }
 
         // 3. Fresh slab: a page_meta slot plus `span` pages from palloc.
-        const bool medium = is_medium_bucket(b);
-        const std::size_t blk_size = get_block_size(b);
-        const std::uint32_t span = medium ? medium_span_pages(blk_size) : 1;
+        bool const medium = is_medium_bucket(b);
+        std::size_t const blk_size = get_block_size(b);
+        std::uint32_t const span = medium ? medium_span_pages(blk_size) : 1;
 
         kpage_meta* pg = alloc_meta_slot(tc);
         if (!pg)
@@ -796,7 +796,7 @@ private:
             free_meta_slot(tc, pg); // roll back
             return nullptr;
         }
-        const std::uintptr_t pfn = pfn_of(h.ptr);
+        std::uintptr_t const pfn = pfn_of(h.ptr);
         if ((reinterpret_cast<std::uintptr_t>(h.ptr) & (PageSize - 1)) != 0
             || !pfndb.is_valid(pfn) || !pfndb.is_valid(pfn + span - 1)) {
             palloc.dealloc(h.ptr, std::size_t(span) << PageShift);
@@ -815,7 +815,7 @@ private:
         );
         store_owner(pg, tok);
 
-        const std::uint64_t md = encode_slab_md(pg);
+        std::uint64_t const md = encode_slab_md(pg);
         for (std::uint32_t i = 0; i < span; ++i)
             stamp(pfn + i, md);
 
@@ -827,11 +827,11 @@ private:
     alloc_handle<void> alloc_large(std::size_t n)
     {
         drain_deferred();
-        const std::size_t k = n == 0 ? 1 : (n + PageSize - 1) >> PageShift;
+        std::size_t const k = n == 0 ? 1 : (n + PageSize - 1) >> PageShift;
         auto h = palloc.alloc(k << PageShift);
         if (!h.ptr)
             return { nullptr, 0 };
-        const std::uintptr_t pfn = pfn_of(h.ptr);
+        std::uintptr_t const pfn = pfn_of(h.ptr);
         if ((reinterpret_cast<std::uintptr_t>(h.ptr) & (PageSize - 1)) != 0
             || !pfndb.is_valid(pfn) || !pfndb.is_valid(pfn + k - 1)) {
             palloc.dealloc(h.ptr, k << PageShift);
@@ -847,14 +847,14 @@ private:
     {
         if ((reinterpret_cast<std::uintptr_t>(ptr) & (PageSize - 1)) != 0)
             return 0;
-        const std::uintptr_t pfn = pfn_of(ptr);
+        std::uintptr_t const pfn = pfn_of(ptr);
         if (!pfndb.is_valid(pfn))
             return 0;
-        const std::uint64_t md = pfndb.get_desc(pfn).raw();
+        std::uint64_t const md = pfndb.get_desc(pfn).raw();
         if ((md & TAG_MASK) != TAG_LARGE)
             return 0;
-        const std::size_t old_pages = static_cast<std::size_t>(md >> TAG_BITS);
-        const std::size_t new_pages
+        std::size_t const old_pages = static_cast<std::size_t>(md >> TAG_BITS);
+        std::size_t const new_pages
             = glox::max((new_size + PageSize - 1) >> PageShift, std::size_t(1));
         if (new_pages == old_pages)
             return old_pages << PageShift;
@@ -937,8 +937,8 @@ public:
     {
     }
 
-    kheap_allocator(const kheap_allocator&) = delete;
-    kheap_allocator& operator=(const kheap_allocator&) = delete;
+    kheap_allocator(kheap_allocator const&) = delete;
+    kheap_allocator& operator=(kheap_allocator const&) = delete;
 
     [[nodiscard]] PAllocator& page_allocator_ref() noexcept
     {
@@ -977,7 +977,7 @@ public:
     {
         return META_SLOTS;
     }
-    static std::uint64_t encode_slab(const kpage_meta* pg) noexcept
+    static std::uint64_t encode_slab(kpage_meta const* pg) noexcept
     {
         return encode_slab_md(pg);
     }
@@ -995,12 +995,12 @@ public:
         if (!is_cached(alignedN))
             return alloc_large(n);
 
-        const std::size_t b = get_bucket_index(alignedN);
+        std::size_t const b = get_bucket_index(alignedN);
         auto& tc = troutines.get_tcache();
 
         // Fast path: entirely slab-local, no atomics, no locks.
         if (kpage_meta* pg = tc.pages[b]) {
-            const std::uint16_t i = pg->free_head;
+            std::uint16_t const i = pg->free_head;
             if (i != kpage_meta::EMPTY) {
                 char* blk = block_at(pg, i);
                 pg->free_head = link_of(blk);
@@ -1018,13 +1018,13 @@ public:
     {
         if (!ptr)
             return 0;
-        const std::uintptr_t pfn = pfn_of(ptr);
+        std::uintptr_t const pfn = pfn_of(ptr);
         if (!pfndb.is_valid(pfn)) {
             report();
             return 0;
         }
-        const std::uint64_t md = pfndb.get_desc(pfn).raw();
-        const std::size_t off
+        std::uint64_t const md = pfndb.get_desc(pfn).raw();
+        std::size_t const off
             = reinterpret_cast<std::uintptr_t>(ptr) & (PageSize - 1);
         switch (md & TAG_MASK) {
         case TAG_SLAB:
@@ -1033,8 +1033,8 @@ public:
             return (static_cast<std::size_t>(md >> TAG_BITS) << PageShift)
                  - off;
         case TAG_LARGE_TAIL: {
-            const std::uint64_t i = md >> TAG_BITS;
-            const std::uint64_t head = pfndb.get_desc(pfn - i).raw();
+            std::uint64_t const i = md >> TAG_BITS;
+            std::uint64_t const head = pfndb.get_desc(pfn - i).raw();
             if ((head & TAG_MASK) != TAG_LARGE) {
                 report();
                 return 0;
@@ -1053,12 +1053,12 @@ public:
     {
         if (!ptr)
             return;
-        const std::uintptr_t pfn = pfn_of(ptr);
+        std::uintptr_t const pfn = pfn_of(ptr);
         if (!pfndb.is_valid(pfn)) { // foreign pointer
             report();
             return;
         }
-        const std::uint64_t md = pfndb.get_desc(pfn).raw();
+        std::uint64_t const md = pfndb.get_desc(pfn).raw();
         switch (md & TAG_MASK) {
         case TAG_SLAB:
             dealloc_slab(ptr, decode_slab_md(md));
@@ -1102,7 +1102,7 @@ public:
         std::size_t alignedN = 0;
         if (!normalize(n, alignment, alignedN) || !is_cached(alignedN))
             return 0;
-        const std::size_t b = get_bucket_index(alignedN);
+        std::size_t const b = get_bucket_index(alignedN);
         auto& stash = troutines.get_tcache().atomic_stash[b];
         std::size_t got = 0;
         while (got < count) {
@@ -1124,7 +1124,7 @@ public:
         std::size_t alignedN = 0;
         if (!normalize(n, alignment, alignedN) || !is_cached(alignedN))
             return { nullptr, 0 };
-        const std::size_t b = get_bucket_index(alignedN);
+        std::size_t const b = get_bucket_index(alignedN);
         auto& stash = troutines.get_tcache().atomic_stash[b];
 
         // Take the whole stack (ABA-free), keep one, push the rest back.
@@ -1145,12 +1145,12 @@ public:
     {
         if (!ptr)
             return;
-        const std::uintptr_t pfn = pfn_of(ptr);
+        std::uintptr_t const pfn = pfn_of(ptr);
         if (!pfndb.is_valid(pfn)) {
             report();
             return;
         }
-        const std::uint64_t md = pfndb.get_desc(pfn).raw();
+        std::uint64_t const md = pfndb.get_desc(pfn).raw();
         switch (md & TAG_MASK) {
         case TAG_SLAB: {
             kpage_meta* pg = decode_slab_md(md);
@@ -1239,14 +1239,14 @@ public:
             dealloc(ptr);
             return { nullptr, 0 };
         }
-        const std::size_t cur = usable_size(ptr);
+        std::size_t const cur = usable_size(ptr);
         if (new_size <= cur)
             return { ptr, cur };
 
         // Large spans first try to grow in place through palloc; the
         // descriptors (and the user pointer) stay put.
         if (new_size <= MAX_REQUEST) {
-            if (const std::size_t got = resize_large_inplace(ptr, new_size))
+            if (std::size_t const got = resize_large_inplace(ptr, new_size))
                 return { ptr, got };
         }
 
@@ -1270,14 +1270,14 @@ public:
             dealloc(ptr);
             return { nullptr, 0 };
         }
-        const std::size_t cur = usable_size(ptr);
+        std::size_t const cur = usable_size(ptr);
         if (new_size >= cur)
             return { ptr, cur };
 
-        const std::uint64_t md = pfndb.get_desc(pfn_of(ptr)).raw();
+        std::uint64_t const md = pfndb.get_desc(pfn_of(ptr)).raw();
         switch (md & TAG_MASK) {
         case TAG_LARGE:
-            if (const std::size_t got = resize_large_inplace(ptr, new_size))
+            if (std::size_t const got = resize_large_inplace(ptr, new_size))
                 return { ptr, got };
             break;
         case TAG_SLAB:

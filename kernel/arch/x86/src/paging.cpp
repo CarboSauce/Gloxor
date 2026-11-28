@@ -20,8 +20,8 @@ using namespace x86::vmem;
 using namespace gx;
 
 template <size_t I>
-glox::pair<const PageTable<I - 1>*, bool> translate_single_entry(
-    const PageTable<I>& ctx,
+glox::pair<PageTable<I - 1> const*, bool> translate_single_entry(
+    PageTable<I> const& ctx,
     vaddr from
 )
 {
@@ -29,7 +29,7 @@ glox::pair<const PageTable<I - 1>*, bool> translate_single_entry(
     if (!(entry.entry & present))
         return { nullptr, true };
     else if (entry.entry & granul)
-        return { (const PageTable<I - 1>*)entry.paddr(), true };
+        return { (PageTable<I - 1> const*)entry.paddr(), true };
     return { entry.vaddr(), false };
 }
 
@@ -88,7 +88,7 @@ bool map(
     return true;
 }
 
-bool unmap(vmemCtxT context, const void* whichVirtual)
+bool unmap(vmemCtxT context, void const* whichVirtual)
 {
     (void)context;
     (void)whichVirtual;
@@ -97,7 +97,7 @@ bool unmap(vmemCtxT context, const void* whichVirtual)
 
 vaddr translate(vmemCtxT pt, vaddr from)
 {
-    auto* ctx = (const PageTable<4>*)pt;
+    auto* ctx = (PageTable<4> const*)pt;
     auto e4 = translate_single_entry(*ctx, from);
     if (e4.second)
         return (vaddr)e4.first;

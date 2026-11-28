@@ -31,7 +31,7 @@ struct tuple_leaf
     {
         return val;
     }
-    constexpr auto operator<=>(const tuple_leaf&) const = default;
+    constexpr auto operator<=>(tuple_leaf const&) const = default;
     static T type_identity(std::integral_constant<std::size_t, I>);
 };
 template <typename... T>
@@ -67,8 +67,11 @@ template <std::size_t I, typename Tup>
 }
 namespace detail {
     template <typename Cb, typename Tup, std::size_t... I>
-    constexpr decltype(auto)
-    apply(Cb&& cb, Tup&& tup, glox::index_sequence<I...>)
+    constexpr decltype(auto) apply(
+        Cb&& cb,
+        Tup&& tup,
+        glox::index_sequence<I...>
+    )
     {
         return FORWARD(cb)(FORWARD(tup).template get<I>()...);
     }

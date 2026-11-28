@@ -49,7 +49,7 @@ public:
         }
     }
 
-    constexpr box(const box& other)
+    constexpr box(box const& other)
         requires std::is_copy_constructible_v<T>
                  and (not std::is_polymorphic_v<T>)
         : ptr(nullptr)
@@ -62,7 +62,7 @@ public:
             }
         }
     }
-    constexpr box& operator=(const box& other)
+    constexpr box& operator=(box const& other)
         requires std::is_copy_assignable_v<T> and (not std::is_polymorphic_v<T>)
     {
         using glox::swap;
@@ -72,8 +72,8 @@ public:
         return *this;
     }
 
-    box(const box&) = delete;
-    box& operator=(const box&) = delete;
+    box(box const&) = delete;
+    box& operator=(box const&) = delete;
 
     constexpr box(box&& other)
         : ptr(glox::exchange(other.ptr, nullptr))
@@ -115,7 +115,7 @@ public:
         return alloc;
     }
 
-    constexpr glox::option<const T&> get() const
+    constexpr glox::option<T const&> get() const
     {
         if (ptr != nullptr) {
             return *ptr;
@@ -178,9 +178,9 @@ public:
     using allocator_type = Allocator;
     using value_type = T;
     using reference = T&;
-    using const_reference = const T&;
+    using const_reference = T const&;
     using pointer = T*;
-    using const_pointer = const T*;
+    using const_pointer = T const*;
     using size_type = std::size_t;
 
     constexpr box() noexcept
@@ -209,7 +209,7 @@ public:
         }
     }
 
-    constexpr box(std::size_t count, const T& value)
+    constexpr box(std::size_t count, T const& value)
         : ptr(nullptr)
         , size_(count)
         , alloc(Allocator { })
@@ -227,7 +227,7 @@ public:
         }
     }
 
-    constexpr box(const box& other)
+    constexpr box(box const& other)
         requires std::is_copy_constructible_v<T>
                  and (not std::is_polymorphic_v<T>)
         : ptr(nullptr)
@@ -246,7 +246,7 @@ public:
             size_ = 0;
         }
     }
-    constexpr box& operator=(const box& other)
+    constexpr box& operator=(box const& other)
         requires std::is_copy_assignable_v<T> and (not std::is_polymorphic_v<T>)
     {
         using glox::swap;
@@ -288,7 +288,7 @@ public:
         return b;
     }
 
-    constexpr static glox::option<box> create(std::size_t count, const T& value)
+    constexpr static glox::option<box> create(std::size_t count, T const& value)
     {
         box b(count, value);
         if (count > 0 && b.is_null()) {
@@ -402,10 +402,10 @@ class [[clang::trivial_abi]] polybox
     );
 
     template <typename U, typename SrcAlloc = Allocator>
-    static constexpr auto rebind_alloc(const SrcAlloc& a) noexcept
+    static constexpr auto rebind_alloc(SrcAlloc const& a) noexcept
     {
         using ReboundAlloc = typename SrcAlloc::template rebind<U>::other;
-        if constexpr (std::constructible_from<ReboundAlloc, const SrcAlloc&>) {
+        if constexpr (std::constructible_from<ReboundAlloc, SrcAlloc const&>) {
             return ReboundAlloc(a);
         } else {
             return ReboundAlloc { };
@@ -448,8 +448,8 @@ class [[clang::trivial_abi]] polybox
             auto rebound = rebind_alloc<U>(alloc);
             U* mem = glox::alloc_uninitialized<U>(rebound, 1).ptr;
             if (mem != nullptr) {
-                const U* src
-                    = static_cast<const U*>(static_cast<const T*>(ptr));
+                U const* src
+                    = static_cast<U const*>(static_cast<T const*>(ptr));
                 std::construct_at(mem, *src);
             }
             return static_cast<T*>(mem);
@@ -536,7 +536,7 @@ public:
 
     // Deep polymorphic copy constructor; yields valueless() if U is
     // non-copyable or OOM
-    constexpr polybox(const polybox& other)
+    constexpr polybox(polybox const& other)
         : ptr(nullptr)
         , ops(other.ops)
         , alloc(other.alloc)
@@ -551,7 +551,7 @@ public:
         }
     }
 
-    constexpr polybox& operator=(const polybox& other)
+    constexpr polybox& operator=(polybox const& other)
     {
         if (this != &other) {
             using glox::swap;

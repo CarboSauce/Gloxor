@@ -22,21 +22,21 @@ class intrusive_fwd_list
     template <bool IsConst>
     struct iter_base
     {
-        using iter = std::conditional_t<IsConst, const T*, T*>;
+        using iter = std::conditional_t<IsConst, T const*, T*>;
         iter it;
 
     public:
-        using pointer = std::conditional_t<IsConst, const T*, T*>;
-        using reference = std::conditional_t<IsConst, const T&, T&>;
+        using pointer = std::conditional_t<IsConst, T const*, T*>;
+        using reference = std::conditional_t<IsConst, T const&, T&>;
         using iterator_category = std::forward_iterator_tag;
         iter_base() = default;
         iter_base(pointer p)
             : it(p)
         {
         }
-        iter_base(const iter_base&) = default;
+        iter_base(iter_base const&) = default;
         iter_base(iter_base&&) = default;
-        iter_base& operator=(const iter_base&) = default;
+        iter_base& operator=(iter_base const&) = default;
         iter_base& operator=(iter_base&&) = default;
         auto operator++()
         {
@@ -67,8 +67,8 @@ public:
         : first_node(pb)
     {
     }
-    intrusive_fwd_list(const intrusive_fwd_list&) = delete;
-    intrusive_fwd_list& operator=(const intrusive_fwd_list&) = delete;
+    intrusive_fwd_list(intrusive_fwd_list const&) = delete;
+    intrusive_fwd_list& operator=(intrusive_fwd_list const&) = delete;
     intrusive_fwd_list(intrusive_fwd_list&& other)
     {
         first_node = other.first_node;
@@ -93,15 +93,15 @@ public:
     {
         return *first_node;
     }
-    const iterator begin() const
+    iterator const begin() const
     {
         return { first_node };
     }
-    const iterator end() const
+    iterator const end() const
     {
         return { nullptr };
     }
-    const T& front() const
+    T const& front() const
     {
         return *first_node;
     }

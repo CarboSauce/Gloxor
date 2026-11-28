@@ -9,7 +9,7 @@ import glox;
 
 using namespace gx;
 
-extern "C++" const u8 fontBitmap[];
+extern "C++" u8 const fontBitmap[];
 
 namespace gx::term {
 static flanterm_context* flantermContext = nullptr;
@@ -21,7 +21,7 @@ glox::span<u8> get_used_memory_range()
     };
 }
 
-void init_term(const gx::BootInfo::FbInfo& fb)
+void init_term(gx::BootInfo::FbInfo const& fb)
 {
     flantermContext = flanterm_fb_init(
         NULL, //[](size_t s) { return gx::boot_alloc(s); },
@@ -53,7 +53,7 @@ void init_term(const gx::BootInfo::FbInfo& fb)
         0
     );
 }
-void write_str(const char* str, size_t size)
+void write_str(char const* str, size_t size)
 {
     if (flantermContext != nullptr)
         flanterm_write(flantermContext, str, size);

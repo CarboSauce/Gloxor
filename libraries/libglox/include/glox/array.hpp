@@ -13,20 +13,20 @@ struct array
 {
     T data[N];
     static constexpr size_t size = N;
-    constexpr const T& operator[](size_t i) const
+    constexpr T const& operator[](size_t i) const
     {
         GLOX_ASSERT(i < N, "Out of bounds access");
         return data[i];
     }
     constexpr T& operator[](size_t i)
     {
-        return const_cast<T&>(static_cast<const array<T, N>&>(*this)[i]);
+        return const_cast<T&>(static_cast<array<T, N> const&>(*this)[i]);
     }
     constexpr explicit operator T*()
     {
         return data;
     }
-    constexpr explicit operator const T*() const
+    constexpr explicit operator T const*() const
     {
         return data;
     }

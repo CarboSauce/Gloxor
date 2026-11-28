@@ -12,7 +12,7 @@
 
 namespace glox {
 extern "C++" [[noreturn]] void exec_assert(
-    const char* message,
+    char const* message,
     std::source_location
 );
 }

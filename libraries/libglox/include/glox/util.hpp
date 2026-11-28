@@ -21,7 +21,7 @@ struct pair
 {
     [[no_unique_address]] T first;
     [[no_unique_address]] U second;
-    constexpr friend auto operator<=>(const pair&, const pair&) = default;
+    constexpr friend auto operator<=>(pair const&, pair const&) = default;
 };
 
 template <typename T>
@@ -64,18 +64,18 @@ public:
     {
         return to - from;
     }
-    constexpr const T& operator[](size_t i) const
+    constexpr T const& operator[](size_t i) const
     {
         GLOX_ASSERT(i < size(), "Span access out of bounds");
         return *(from + i);
     }
     constexpr T& operator[](size_t i)
     {
-        return const_cast<T&>(static_cast<const span<T>&>(*this)[i]);
+        return const_cast<T&>(static_cast<span<T> const&>(*this)[i]);
     }
 
     template <int I>
-    friend constexpr auto get(const span& sp)
+    friend constexpr auto get(span const& sp)
     {
         if constexpr (I == 0)
             return sp.from;
@@ -86,7 +86,7 @@ public:
 template <typename T>
 struct less
 {
-    constexpr bool operator()(const T& l, const T& r)
+    constexpr bool operator()(T const& l, T const& r)
     {
         return l < r;
     }

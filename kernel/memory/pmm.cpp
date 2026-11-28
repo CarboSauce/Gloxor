@@ -17,7 +17,7 @@ struct BootChunk
     glox::list_node list_node { };
     size_t size = 0;
 
-    friend auto operator<=>(const BootChunk& l, const BootChunk& r) noexcept
+    friend auto operator<=>(BootChunk const& l, BootChunk const& r) noexcept
     {
         return &l <=> &r;
     }
@@ -33,7 +33,7 @@ static constexpr bool TRACK_ALLOCATIONS = false;
 
 namespace {
 
-inline uintptr_t chunk_addr(const BootChunk* chunk) noexcept
+inline uintptr_t chunk_addr(BootChunk const* chunk) noexcept
 {
     return reinterpret_cast<uintptr_t>(chunk);
 }
@@ -116,13 +116,13 @@ void* alloc_from_chunk(bootList& list, usize size, usize alignment) noexcept
 
     // Ensure the allocation can hold free-list metadata when returned.
     // This is necessary because allocations can later be freed.
-    const usize allocSize = size;
+    usize const allocSize = size;
 
     for (auto it = list.begin(); it != list.end(); ++it) {
         BootChunk* cur = &(*it);
 
-        const uintptr_t base = chunk_addr(cur);
-        const uintptr_t end = base + cur->size;
+        uintptr_t const base = chunk_addr(cur);
+        uintptr_t const end = base + cur->size;
 
         if (end < base) {
             continue;
@@ -154,8 +154,8 @@ void* alloc_from_chunk(bootList& list, usize size, usize alignment) noexcept
             continue;
         }
 
-        const uintptr_t allocationEnd = allocated + allocSize;
-        const usize suffix = end - allocationEnd;
+        uintptr_t const allocationEnd = allocated + allocSize;
+        usize const suffix = end - allocationEnd;
 
         // A suffix must either be large enough to hold metadata,
         // or be absorbed into the allocation.
@@ -212,7 +212,7 @@ void boot_add_chunk(void* base, size_t length)
 
     GLOX_ASSERT(length >= sizeof(BootChunk), "Boot chunk too small");
 
-    const auto realBase
+    auto const realBase
         = static_cast<uintptr_t>(arch::to_virt(reinterpret_cast<vaddr>(base)));
 
     GLOX_ASSERT(
@@ -277,7 +277,7 @@ void boot_dealloc(void* ptr, usize size)
         gx::println("[boot_alloc] Deallocating %x with size %", ptr, size);
     }
 
-    const uintptr_t base = reinterpret_cast<uintptr_t>(ptr);
+    uintptr_t const base = reinterpret_cast<uintptr_t>(ptr);
 
     GLOX_ASSERT(
         size >= sizeof(BootChunk), "Deallocated chunk too small for metadata"
@@ -314,7 +314,7 @@ namespace {
 bool boot_allocator_test()
 {
     // Save initial free memory.
-    const usize initialChunkCount = [&] {
+    usize const initialChunkCount = [&] {
         usize count = 0;
         for (auto it = bootCtx.begin(); it != bootCtx.end(); ++it) {
             ++count;
@@ -322,7 +322,7 @@ bool boot_allocator_test()
         return count;
     }();
 
-    const u64 initialMemorySize = memorySize;
+    u64 const initialMemorySize = memorySize;
 
     // Test 1: Arbitrary allocation size.
     {
@@ -391,9 +391,9 @@ bool boot_allocator_test()
         KTEST_EXPECT(b != nullptr);
         KTEST_EXPECT(c != nullptr);
 
-        const auto aStart = reinterpret_cast<uintptr_t>(a);
-        const auto bStart = reinterpret_cast<uintptr_t>(b);
-        const auto cStart = reinterpret_cast<uintptr_t>(c);
+        auto const aStart = reinterpret_cast<uintptr_t>(a);
+        auto const bStart = reinterpret_cast<uintptr_t>(b);
+        auto const cStart = reinterpret_cast<uintptr_t>(c);
 
         KTEST_EXPECT(aStart + 128 <= bStart || bStart + 256 <= aStart);
 
@@ -412,8 +412,8 @@ bool boot_allocator_test()
         KTEST_EXPECT(a != nullptr);
         KTEST_EXPECT(b != nullptr);
 
-        const auto aStart = reinterpret_cast<uintptr_t>(a);
-        const auto bStart = reinterpret_cast<uintptr_t>(b);
+        auto const aStart = reinterpret_cast<uintptr_t>(a);
+        auto const bStart = reinterpret_cast<uintptr_t>(b);
 
         // Only test adjacent allocations.
         if (aStart + 128 == bStart) {

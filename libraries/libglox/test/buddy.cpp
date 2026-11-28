@@ -128,13 +128,13 @@ struct mock_pfndb
             return;
         }
 
-        const std::size_t firstSeg = phys_addr >> SEGMENT_SHIFT;
-        const std::size_t lastSeg = (phys_addr + size - 1) >> SEGMENT_SHIFT;
+        std::size_t const firstSeg = phys_addr >> SEGMENT_SHIFT;
+        std::size_t const lastSeg = (phys_addr + size - 1) >> SEGMENT_SHIFT;
 
         for (std::size_t seg = firstSeg; seg <= lastSeg; ++seg) {
             auto [it, inserted] = segments.try_emplace(seg, PFNS_PER_PAGE);
             if (inserted) {
-                const auto reserved = Desc::make_reserved().raw;
+                auto const reserved = Desc::make_reserved().raw;
                 for (auto& entry : it->second) {
                     entry.store(
                         static_cast<raw_type>(reserved),
@@ -152,7 +152,7 @@ struct mock_pfndb
 
     [[nodiscard]] Desc get_desc(std::uintptr_t pfn) const noexcept
     {
-        const auto& entry = segments.at(
+        auto const& entry = segments.at(
             pfn >> (SEGMENT_SHIFT - 12)
         )[pfn & (PFNS_PER_PAGE - 1)];
 
@@ -195,8 +195,8 @@ struct simulated_ram
         : storage(bytes + 4096)
         , phys_base(fake_phys_base)
     {
-        const auto raw = reinterpret_cast<std::uintptr_t>(storage.data());
-        const auto aligned = (raw + 4095) & ~std::uintptr_t { 4095 };
+        auto const raw = reinterpret_cast<std::uintptr_t>(storage.data());
+        auto const aligned = (raw + 4095) & ~std::uintptr_t { 4095 };
         hhdm_offset = aligned - phys_base;
     }
 
@@ -223,8 +223,8 @@ TEST_CASE("buddy_allocator basic alloc, orderless free, and coalescing")
     REQUIRE(alloc.free_pages() == 64);
     REQUIRE(alloc.free_bytes() == 64 * 4096);
 
-    const std::uintptr_t p1 = alloc.alloc_order(2); // 4 pages
-    const std::uintptr_t p2 = alloc.alloc_order(0); // 1 page
+    std::uintptr_t const p1 = alloc.alloc_order(2); // 4 pages
+    std::uintptr_t const p2 = alloc.alloc_order(0); // 1 page
     REQUIRE(p1 != 0);
     REQUIRE(p2 != 0);
     REQUIRE(
@@ -243,7 +243,7 @@ TEST_CASE("buddy_allocator basic alloc, orderless free, and coalescing")
     REQUIRE(alloc.free_pages() == 64);
 
     // coalesces back into a single 64 page (order 6) block
-    const std::uintptr_t full = alloc.alloc_order(6);
+    std::uintptr_t const full = alloc.alloc_order(6);
     REQUIRE(full == base);
     REQUIRE(alloc.free_pages() == 0);
     REQUIRE(alloc.alloc_order(0) == 0); // OOM returns 0
@@ -267,7 +267,7 @@ TEST_CASE("buddy_allocator set_accessor and alloc_bytes/free_bytes")
     alloc.add_region(base, ramBytes);
 
     // 12 kb rounds up to 3 pages -> order 2 (4 pages = 16 kb)
-    const std::uintptr_t p = alloc.alloc_bytes(12 * 1024);
+    std::uintptr_t const p = alloc.alloc_bytes(12 * 1024);
     REQUIRE(p != 0);
     REQUIRE(alloc.free_pages() == 28);
 
@@ -303,7 +303,7 @@ TEST_CASE(
     alloc.add_region(base, 4096);
     REQUIRE(alloc.free_pages() == 8);
 
-    const std::uintptr_t merged = alloc.alloc_order(3);
+    std::uintptr_t const merged = alloc.alloc_order(3);
     REQUIRE(merged == base);
     alloc.free(merged);
     REQUIRE(alloc.free_pages() == 8);
@@ -327,7 +327,7 @@ TEST_CASE("buddy_allocator skips physical page 0x0 sentinel")
     REQUIRE(alloc.free_pages() == 15);
 
     std::vector<std::uintptr_t> pages;
-    while (const auto p = alloc.alloc_order(0)) {
+    while (auto const p = alloc.alloc_order(0)) {
         REQUIRE(p >= 0x1000);
         pages.push_back(p);
     }
@@ -360,8 +360,8 @@ struct dual_seg_pfndb
     {
     }
 
-    dual_seg_pfndb(const dual_seg_pfndb&) = delete;
-    dual_seg_pfndb& operator=(const dual_seg_pfndb&) = delete;
+    dual_seg_pfndb(dual_seg_pfndb const&) = delete;
+    dual_seg_pfndb& operator=(dual_seg_pfndb const&) = delete;
 
     dual_seg_pfndb(dual_seg_pfndb&& other) noexcept
         : seg1_pfn_start(other.seg1_pfn_start)
@@ -389,7 +389,7 @@ struct dual_seg_pfndb
 
     [[nodiscard]] test_pfn_desc get_desc(std::uintptr_t pfn) const noexcept
     {
-        const auto& entry
+        auto const& entry
             = (pfn >= seg1_pfn_start && pfn < seg1_pfn_start + 512)
                 ? seg1_meta[pfn - seg1_pfn_start]
                 : seg2_meta[pfn - seg2_pfn_start];
@@ -442,8 +442,8 @@ TEST_CASE(
     alloc.add_region({ seg2Phys, segSize });
     REQUIRE(alloc.free_pages() == 1024);
 
-    const std::uintptr_t b1 = alloc.alloc_order(9);
-    const std::uintptr_t b2 = alloc.alloc_order(9);
+    std::uintptr_t const b1 = alloc.alloc_order(9);
+    std::uintptr_t const b2 = alloc.alloc_order(9);
     REQUIRE(b1 != 0);
     REQUIRE(b2 != 0);
     REQUIRE(alloc.free_pages() == 0);
@@ -478,9 +478,9 @@ TEST_CASE("buddy_allocator multi-threaded stress")
             held.reserve(16);
 
             for (int i = 0; i < iterations; ++i) {
-                const std::size_t order
+                std::size_t const order
                     = static_cast<std::size_t>((i + tid) % 4);
-                if (const auto addr = alloc.alloc_order(order); addr != 0) {
+                if (auto const addr = alloc.alloc_order(order); addr != 0) {
                     std::memset(
                         ram.phys_to_ptr(addr),
                         static_cast<int>(tid + 1),

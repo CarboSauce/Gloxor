@@ -210,16 +210,16 @@ void fill_pattern(void* p, std::size_t n)
         b[i] = static_cast<unsigned char>(i % 251);
 }
 
-bool check_pattern(const void* p, std::size_t n)
+bool check_pattern(void const* p, std::size_t n)
 {
-    auto* b = static_cast<const unsigned char*>(p);
+    auto* b = static_cast<unsigned char const*>(p);
     for (std::size_t i = 0; i < n; ++i)
         if (b[i] != static_cast<unsigned char>(i % 251))
             return false;
     return true;
 }
 
-std::uintptr_t page_of(const void* p)
+std::uintptr_t page_of(void const* p)
 {
     return reinterpret_cast<std::uintptr_t>(p) & ~(TEST_PAGE_SIZE - 1);
 }
@@ -307,7 +307,7 @@ TEST_CASE("heap_allocator medium size classes")
 
     SUBCASE("Logarithmic sub-bins bound internal fragmentation below 20%")
     {
-        const std::size_t sizes[]
+        std::size_t const sizes[]
             = { 2056, 3072, 4096, 6000, 10000, 20000, 32768, 50000, 65536 };
 
         for (std::size_t sz : sizes) {
@@ -340,10 +340,10 @@ TEST_CASE("heap_allocator medium size classes")
         }
 
         // All 12 blocks come from a single 2-slice medium page.
-        const auto base = reinterpret_cast<std::uintptr_t>(handles[0].ptr);
+        auto const base = reinterpret_cast<std::uintptr_t>(handles[0].ptr);
         REQUIRE(base % TEST_PAGE_SIZE == 0);
         for (std::size_t i = 0; i < count; ++i) {
-            const auto addr = reinterpret_cast<std::uintptr_t>(handles[i].ptr);
+            auto const addr = reinterpret_cast<std::uintptr_t>(handles[i].ptr);
             REQUIRE(addr == base + i * 10240);
             REQUIRE(check_pattern(handles[i].ptr, 10000));
         }
@@ -393,7 +393,7 @@ TEST_CASE("heap_allocator medium size classes")
         void* page_b_blk = call_alloc.alloc(32768).ptr;
         REQUIRE(page_b_blk != nullptr);
 
-        const std::size_t before_free = counting_mutex::lock_calls;
+        std::size_t const before_free = counting_mutex::lock_calls;
         // Freeing all blocks of non-head page_a releases its span to the arena.
         for (void* p : page_a)
             call_alloc.dealloc(p);
@@ -401,7 +401,7 @@ TEST_CASE("heap_allocator medium size classes")
 
         // Freeing the sole block on head page_b keeps page_b cached (no lock),
         // and the next allocation reuses it without locking.
-        const std::size_t after_release = counting_mutex::lock_calls;
+        std::size_t const after_release = counting_mutex::lock_calls;
         call_alloc.dealloc(page_b_blk);
         auto reused = call_alloc.alloc(32768);
         REQUIRE(reused.ptr != nullptr);
@@ -417,7 +417,7 @@ TEST_CASE("heap_allocator alignment guarantees")
 
     SUBCASE("Valid alignments up to MaxSmallSize")
     {
-        const std::size_t alignments[]
+        std::size_t const alignments[]
             = { 8, 16, 32, 64, 128, 256, 512, 1024, 2048 };
 
         for (std::size_t align : alignments) {
@@ -430,7 +430,7 @@ TEST_CASE("heap_allocator alignment guarantees")
 
     SUBCASE("Alignments above MaxSmallSize up to PageSize")
     {
-        const std::size_t alignments[] = { 4096, 16384, TEST_PAGE_SIZE };
+        std::size_t const alignments[] = { 4096, 16384, TEST_PAGE_SIZE };
 
         for (std::size_t align : alignments) {
             auto handle = alloc.alloc(100, align);
@@ -476,7 +476,7 @@ TEST_CASE("heap_allocator cross-thread deallocation")
         REQUIRE(h.ptr != nullptr);
         blocks.push_back(h.ptr);
     }
-    const std::uintptr_t page0 = page_of(blocks[0]);
+    std::uintptr_t const page0 = page_of(blocks[0]);
     for (void* b : blocks)
         REQUIRE(page_of(b) == page0);
 
@@ -938,7 +938,7 @@ TEST_CASE("heap_allocator atomic allocation and deallocation (interrupt-like)")
         // Instead: a full page's worth of allocations must hand out every
         // block exactly once and never spill onto a second page. That only
         // works if the atomic frees were collected and counted correctly.
-        const std::uintptr_t page0 = page_of(staged[0]);
+        std::uintptr_t const page0 = page_of(staged[0]);
         bool seen[per_page] = { };
         std::vector<void*> all;
         for (std::size_t i = 0; i < per_page; ++i) {
@@ -989,7 +989,7 @@ TEST_CASE("heap_allocator custom mutex type")
 
     // Further small and medium allocations and frees on the same pages never
     // lock.
-    const std::size_t baseline = counting_mutex::lock_calls;
+    std::size_t const baseline = counting_mutex::lock_calls;
     std::vector<void*> blocks;
     for (std::size_t i = 0; i < 100; ++i)
         blocks.push_back(alloc.alloc(64).ptr);
@@ -1001,7 +1001,7 @@ TEST_CASE("heap_allocator custom mutex type")
 
     auto first_med = alloc.alloc(4096);
     REQUIRE(first_med.ptr != nullptr);
-    const std::size_t med_baseline = counting_mutex::lock_calls;
+    std::size_t const med_baseline = counting_mutex::lock_calls;
     std::vector<void*> med_blocks;
     for (int i = 0; i < 15; ++i)
         med_blocks.push_back(alloc.alloc(4096).ptr);

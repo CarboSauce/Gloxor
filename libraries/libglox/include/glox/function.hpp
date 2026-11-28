@@ -28,7 +28,7 @@ class [[clang::trivial_abi]] function_ref<R(Args...)>
     union storage_t
     {
         void* obj;
-        const void* const_obj;
+        void const* const_obj;
         void (*fn_ptr)();
     };
 
@@ -53,8 +53,8 @@ class [[clang::trivial_abi]] function_ref<R(Args...)>
             };
         } else if constexpr (std::is_const_v<F>) {
             return +[](storage_t s, Args&&... args) -> R {
-                const auto& obj
-                    = *static_cast<const std::remove_const_t<F>*>(s.const_obj);
+                auto const& obj
+                    = *static_cast<std::remove_const_t<F> const*>(s.const_obj);
                 if constexpr (std::is_void_v<R>) {
                     obj(FORWARD(args)...);
                 } else {
@@ -77,8 +77,8 @@ public:
     constexpr function_ref() noexcept = default;
     constexpr function_ref(std::nullptr_t) noexcept { }
 
-    constexpr function_ref(const function_ref&) noexcept = default;
-    constexpr function_ref& operator=(const function_ref&) noexcept = default;
+    constexpr function_ref(function_ref const&) noexcept = default;
+    constexpr function_ref& operator=(function_ref const&) noexcept = default;
 
     template <typename F>
         requires std::is_function_v<F> && std::is_invocable_r_v<R, F*, Args...>
@@ -99,7 +99,7 @@ public:
         using RawF = std::remove_reference_t<F>;
         if constexpr (std::is_const_v<RawF>) {
             storage_.const_obj
-                = static_cast<const void*>(std::addressof(callable));
+                = static_cast<void const*>(std::addressof(callable));
         } else {
             storage_.obj = static_cast<void*>(std::addressof(callable));
         }
@@ -141,8 +141,8 @@ class function<R(Args...), Allocator>
     struct callable_base
     {
         callable_base() = default;
-        callable_base(const callable_base&) = delete;
-        callable_base& operator=(const callable_base&) = delete;
+        callable_base(callable_base const&) = delete;
+        callable_base& operator=(callable_base const&) = delete;
 
         // Slot 0: [vptr + 0]
         virtual R operator()(fast_param_t<Args>... args) = 0;
@@ -164,7 +164,7 @@ class function<R(Args...), Allocator>
         [[no_unique_address]] Allocator alloc_;
 
         template <typename FnArg>
-        explicit callable_impl(FnArg&& fn, const Allocator& alloc)
+        explicit callable_impl(FnArg&& fn, Allocator const& alloc)
             : fn_(FORWARD(fn))
             , alloc_(alloc)
         {
@@ -261,10 +261,10 @@ class function<R(Args...), Allocator>
     }
 
     template <typename Target>
-    static constexpr auto rebind_impl(const Allocator& a) noexcept
+    static constexpr auto rebind_impl(Allocator const& a) noexcept
     {
         using Rebound = typename Allocator::template rebind<Target>::other;
-        if constexpr (std::constructible_from<Rebound, const Allocator&>) {
+        if constexpr (std::constructible_from<Rebound, Allocator const&>) {
             return Rebound(a);
         } else {
             return Rebound { };
@@ -307,8 +307,8 @@ class function<R(Args...), Allocator>
         if (is_trivial_local()) {
             return true;
         }
-        const auto p = reinterpret_cast<std::uintptr_t>(ptr_);
-        const auto base = reinterpret_cast<std::uintptr_t>(sbo_);
+        auto const p = reinterpret_cast<std::uintptr_t>(ptr_);
+        auto const base = reinterpret_cast<std::uintptr_t>(sbo_);
         return p >= base && p < base + SBO_SIZE;
     }
 
@@ -385,7 +385,7 @@ public:
         invoker_ = make_invoker<DecayedF>();
     }
 
-    function(const function& other)
+    function(function const& other)
         : ptr_(nullptr)
         , invoker_(other.invoker_)
         , alloc_(other.alloc_)
@@ -403,7 +403,7 @@ public:
         }
     }
 
-    function& operator=(const function& other)
+    function& operator=(function const& other)
     {
         if (this != &other) {
             function tmp(other);

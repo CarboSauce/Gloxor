@@ -96,7 +96,7 @@ constexpr auto test_option_transform_mutation()
 constexpr auto test_option_const_ref()
 {
     int a = 5;
-    auto b = glox::option<const int&>::from_val(a);
+    auto b = glox::option<int const&>::from_val(a);
     return b.val() + 5;
 }
 

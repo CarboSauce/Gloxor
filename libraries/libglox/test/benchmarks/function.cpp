@@ -11,7 +11,7 @@ import glox;
 #include <benchmark/benchmark.h>
 
 namespace glox {
-[[noreturn]] void exec_assert(const char* message, std::source_location loc)
+[[noreturn]] void exec_assert(char const* message, std::source_location loc)
 {
     std::printf(
         "Assert hit\nMessage:\nFunction: %s\n%s\nFile: %s\nLine: %d\n",
@@ -346,7 +346,7 @@ BENCHMARK(BM_GloxFunctionRef_PassByValue_64B);
 // ============================================================================
 void BM_StdFunction_Copy_16B(benchmark::State& state)
 {
-    const std::function<std::uint64_t(std::uint64_t)> src
+    std::function<std::uint64_t(std::uint64_t)> const src
         = capture_16b { 9, 42 };
     for (auto _ : state) {
         auto copy = src;
@@ -357,7 +357,7 @@ BENCHMARK(BM_StdFunction_Copy_16B);
 
 void BM_GloxFunction_Copy_16B(benchmark::State& state)
 {
-    const glox::function<std::uint64_t(std::uint64_t)> src
+    glox::function<std::uint64_t(std::uint64_t)> const src
         = capture_16b { 9, 42 };
     for (auto _ : state) {
         auto copy = src;
@@ -369,7 +369,7 @@ BENCHMARK(BM_GloxFunction_Copy_16B);
 void BM_GloxFunctionRef_Copy_16B(benchmark::State& state)
 {
     capture_16b cb { 9, 42 };
-    const glox::function_ref<std::uint64_t(std::uint64_t)> src = cb;
+    glox::function_ref<std::uint64_t(std::uint64_t)> const src = cb;
     for (auto _ : state) {
         auto copy = src;
         benchmark::DoNotOptimize(copy);
@@ -382,7 +382,7 @@ BENCHMARK(BM_GloxFunctionRef_Copy_16B);
 // ============================================================================
 void BM_StdFunction_Copy_64B(benchmark::State& state)
 {
-    const std::function<std::uint64_t(std::uint64_t)> src
+    std::function<std::uint64_t(std::uint64_t)> const src
         = capture_64b { { 1, 2, 3, 4, 5, 6, 7, 8 } };
     for (auto _ : state) {
         auto copy = src;
@@ -393,7 +393,7 @@ BENCHMARK(BM_StdFunction_Copy_64B);
 
 void BM_GloxFunction_Copy_64B(benchmark::State& state)
 {
-    const glox::function<std::uint64_t(std::uint64_t)> src
+    glox::function<std::uint64_t(std::uint64_t)> const src
         = capture_64b { { 1, 2, 3, 4, 5, 6, 7, 8 } };
     for (auto _ : state) {
         auto copy = src;

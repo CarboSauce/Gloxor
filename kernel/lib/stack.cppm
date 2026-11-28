@@ -18,8 +18,8 @@ public:
         , savedSp(sp)
     {
     }
-    StackBox(const StackBox&) = delete;
-    StackBox& operator=(const StackBox&) = delete;
+    StackBox(StackBox const&) = delete;
+    StackBox& operator=(StackBox const&) = delete;
 
     StackBox(StackBox&& other)
         : stackBase(glox::exchange(other.stackBase, nullptr))

@@ -81,7 +81,7 @@ TEST_CASE("hash_map: at returns option")
     REQUIRE_FALSE(miss.has_val());
     REQUIRE(m.size() == 1); // at() never inserts
 
-    const auto& cm = m;
+    auto const& cm = m;
     REQUIRE(cm.at(1).has_val());
     REQUIRE_FALSE(cm.at(2).has_val());
 }
@@ -259,9 +259,9 @@ TEST_CASE("hash_map: iterate empty and mutate through iterator")
     REQUIRE(m.find(1).val() == 101);
     REQUIRE(m.find(2).val() == 102);
 
-    const auto& cm = m;
+    auto const& cm = m;
     int sum = 0;
-    for (const auto& kv : cm)
+    for (auto const& kv : cm)
         sum += kv.second;
     REQUIRE(sum == 203);
 }

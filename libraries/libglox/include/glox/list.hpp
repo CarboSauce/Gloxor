@@ -83,8 +83,8 @@ class list
         using iterator_concept = std::bidirectional_iterator_tag;
         using value_type = T;
         using difference_type = std::ptrdiff_t;
-        using pointer = std::conditional_t<IsConst, const T*, T*>;
-        using reference = std::conditional_t<IsConst, const T&, T&>;
+        using pointer = std::conditional_t<IsConst, T const*, T*>;
+        using reference = std::conditional_t<IsConst, T const&, T&>;
 
         constexpr iter_base() noexcept = default;
         constexpr explicit iter_base(inner_t it) noexcept
@@ -95,7 +95,7 @@ class list
         // Implicit conversion from iterator to const_iterator
         template <bool WasConst = IsConst>
             requires WasConst
-        constexpr iter_base(const iter_base<false>& other) noexcept
+        constexpr iter_base(iter_base<false> const& other) noexcept
             : it_(other.it_)
         {
         }
@@ -146,9 +146,9 @@ public:
     using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
     using reference = T&;
-    using const_reference = const T&;
+    using const_reference = T const&;
     using pointer = T*;
-    using const_pointer = const T*;
+    using const_pointer = T const*;
     using iterator = iter_base<false>;
     using const_iterator = iter_base<true>;
     using reverse_iterator = std::reverse_iterator<iterator>;
@@ -156,13 +156,13 @@ public:
 
     constexpr list() noexcept = default;
 
-    explicit list(const Allocator& alloc) noexcept
+    explicit list(Allocator const& alloc) noexcept
         : alloc_(alloc)
         , node_alloc_(rebind_node_alloc(alloc))
     {
     }
 
-    explicit list(size_type count, const Allocator& alloc = Allocator { })
+    explicit list(size_type count, Allocator const& alloc = Allocator { })
         : list(alloc)
     {
         for (size_type i = 0; i < count; ++i) {
@@ -172,8 +172,8 @@ public:
 
     list(
         size_type count,
-        const T& value,
-        const Allocator& alloc = Allocator { }
+        T const& value,
+        Allocator const& alloc = Allocator { }
     )
         : list(alloc)
     {
@@ -183,7 +183,7 @@ public:
     }
 
     template <std::input_iterator InputIt>
-    list(InputIt first, InputIt last, const Allocator& alloc = Allocator { })
+    list(InputIt first, InputIt last, Allocator const& alloc = Allocator { })
         : list(alloc)
     {
         for (; first != last; ++first) {
@@ -191,11 +191,11 @@ public:
         }
     }
 
-    list(const list& other)
+    list(list const& other)
         : alloc_(other.alloc_)
         , node_alloc_(other.node_alloc_)
     {
-        for (const auto& item : other) {
+        for (auto const& item : other) {
             push_back(item);
         }
     }
@@ -207,11 +207,11 @@ public:
         steal_from(other);
     }
 
-    list& operator=(const list& other)
+    list& operator=(list const& other)
     {
         if (this != &other) {
             clear();
-            for (const auto& item : other) {
+            for (auto const& item : other) {
                 push_back(item);
             }
         }
@@ -251,7 +251,7 @@ public:
         }
     }
 
-    void assign(size_type count, const T& value)
+    void assign(size_type count, T const& value)
     {
         auto cur = begin();
         auto end_it = end();
@@ -375,7 +375,7 @@ public:
         return n->value;
     }
 
-    void push_back(const T& value)
+    void push_back(T const& value)
     {
         emplace_back(value);
     }
@@ -393,7 +393,7 @@ public:
         return n->value;
     }
 
-    void push_front(const T& value)
+    void push_front(T const& value)
     {
         emplace_front(value);
     }
@@ -428,7 +428,7 @@ public:
         return iterator(backend_.insert(mutIt, n));
     }
 
-    iterator insert(const_iterator pos, const T& value)
+    iterator insert(const_iterator pos, T const& value)
     {
         return emplace(pos, value);
     }
@@ -438,7 +438,7 @@ public:
         return emplace(pos, RVALUE(value));
     }
 
-    iterator insert(const_iterator pos, size_type count, const T& value)
+    iterator insert(const_iterator pos, size_type count, T const& value)
     {
         if (count == 0) {
             return iterator(to_mutable_it(pos));
@@ -492,7 +492,7 @@ public:
         }
     }
 
-    void resize(size_type count, const T& value)
+    void resize(size_type count, T const& value)
     {
         while (size() > count) {
             pop_back();
@@ -542,9 +542,9 @@ public:
         backend_.insert(mutPos, n);
     }
 
-    size_type remove(const T& value)
+    size_type remove(T const& value)
     {
-        return remove_if([&](const T& item) { return item == value; });
+        return remove_if([&](T const& item) { return item == value; });
     }
 
     template <typename Pred>
@@ -564,7 +564,7 @@ public:
 
     size_type unique()
     {
-        return unique([](const T& a, const T& b) { return a == b; });
+        return unique([](T const& a, T const& b) { return a == b; });
     }
 
     template <typename BinaryPred>
@@ -607,7 +607,7 @@ public:
         }
     }
 
-    friend bool operator==(const list& lhs, const list& rhs)
+    friend bool operator==(list const& lhs, list const& rhs)
     {
         if (lhs.size() != rhs.size()) {
             return false;
@@ -625,7 +625,7 @@ public:
 private:
     typename backend_t::iterator to_mutable_it(const_iterator pos) noexcept
     {
-        const node_t* cnode = static_cast<const node_t*>(pos.it_);
+        node_t const* cnode = static_cast<node_t const*>(pos.it_);
         return typename backend_t::iterator(const_cast<node_t*>(cnode));
     }
 

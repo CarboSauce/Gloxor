@@ -20,7 +20,7 @@ struct list_node
 {
     list_node *next = this, *prev = this;
 
-    friend bool operator==(const list_node&, const list_node&) = default;
+    friend bool operator==(list_node const&, list_node const&) = default;
 
     list_node* remove() noexcept
     {
@@ -54,14 +54,14 @@ class intrusive_list
     template <bool IsConst>
     class iter_base
     {
-        using iter = std::conditional_t<IsConst, const list_node*, list_node*>;
+        using iter = std::conditional_t<IsConst, list_node const*, list_node*>;
         iter it = nullptr;
 
     public:
         using value_type = T;
         using difference_type = std::ptrdiff_t;
-        using pointer = std::conditional_t<IsConst, const T*, T*>;
-        using reference = std::conditional_t<IsConst, const T&, T&>;
+        using pointer = std::conditional_t<IsConst, T const*, T*>;
+        using reference = std::conditional_t<IsConst, T const&, T&>;
         using iterator_category = std::bidirectional_iterator_tag;
         using iterator_concept = std::bidirectional_iterator_tag;
 
@@ -77,9 +77,9 @@ class intrusive_list
             : it(&(p->*NodePtr))
         {
         }
-        constexpr iter_base(const iter_base&) noexcept = default;
+        constexpr iter_base(iter_base const&) noexcept = default;
         constexpr iter_base(iter_base&&) noexcept = default;
-        constexpr iter_base& operator=(const iter_base&) noexcept = default;
+        constexpr iter_base& operator=(iter_base const&) noexcept = default;
         constexpr iter_base& operator=(iter_base&&) noexcept = default;
 
         operator pointer() const noexcept
@@ -155,8 +155,8 @@ public:
     {
     }
 
-    intrusive_list(const intrusive_list&) = delete;
-    intrusive_list& operator=(const intrusive_list&) = delete;
+    intrusive_list(intrusive_list const&) = delete;
+    intrusive_list& operator=(intrusive_list const&) = delete;
 
     intrusive_list(intrusive_list&& other) noexcept
         : sentinel { }
@@ -211,13 +211,13 @@ public:
         return { &sentinel };
     }
 
-    const T& back() const noexcept
+    T const& back() const noexcept
     {
         GLOX_ASSERT(list_size > 0);
         return *ptr_from_node(sentinel.prev);
     }
 
-    const T& front() const noexcept
+    T const& front() const noexcept
     {
         GLOX_ASSERT(list_size > 0);
         return *ptr_from_node(sentinel.next);
@@ -281,7 +281,7 @@ public:
 
 private:
     GLOX_ALWAYS_INLINE
-    inline static const T* ptr_from_node(const list_node* const a) noexcept
+    inline static T const* ptr_from_node(list_node const* const a) noexcept
     {
         return container_of(a, NodePtr);
     }

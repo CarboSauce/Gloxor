@@ -13,46 +13,45 @@
 
 struct eggFramebuffer
 {
-	void* fb_start;
-	void* fb_end;
-	size_t pitch;
-	size_t height;
-	size_t width;
+    void* fb_start;
+    void* fb_end;
+    size_t pitch;
+    size_t height;
+    size_t width;
 };
 
 struct eggMemoryMapEntry
 {
-	uint64_t base;
-	uint64_t length;
-	uint32_t type;
-	uint32_t unused;
+    uint64_t base;
+    uint64_t length;
+    uint32_t type;
+    uint32_t unused;
 };
 
 struct eggMemoryMap
 {
-	struct eggMemoryMapEntry* base;
-	uint64_t size;
+    struct eggMemoryMapEntry* base;
+    uint64_t size;
 };
 
 struct eggKernelInfo
 {
-	void* start;
-	void* end;
+    void* start;
+    void* end;
 };
 
 struct eggHandle
 {
-	struct eggFramebuffer fb;
-	//struct eggMemoryMap memMap;
-	struct eggKernelInfo kInfo;
+    struct eggFramebuffer fb;
+    // struct eggMemoryMap memMap;
+    struct eggKernelInfo kInfo;
 };
 
-
-//#ifdef __cplusplus
-//extern "C"
+// #ifdef __cplusplus
+// extern "C"
 //{
-//#endif
+// #endif
 //	extern struct eggHandle eggFrame;
-//#ifdef __cplusplus
-//}
-//#endif
+// #ifdef __cplusplus
+// }
+// #endif

@@ -18,7 +18,7 @@ namespace detail {
     template <typename Key, typename Value>
     struct hash_map_node
     {
-        glox::pair<const Key, Value> kv;
+        glox::pair<Key const, Value> kv;
         glox::fwd_list_node<hash_map_node> fwd_list_node {
             nullptr
         }; // name required by intrusive_fwd_list
@@ -40,7 +40,7 @@ public:
     using key_type = Key;
     using value_type = Value;
     using node_type = detail::hash_map_node<Key, Value>;
-    using pair_type = glox::pair<const Key, Value>;
+    using pair_type = glox::pair<Key const, Value>;
 
 private:
     using bucket = intrusive_fwd_list<node_type>;
@@ -56,12 +56,12 @@ private:
     {
         return static_cast<size_t>(h) & (bucket_count - 1); // power of two
     }
-    size_t index_of_key(const Key& k, size_t bucket_count) const
+    size_t index_of_key(Key const& k, size_t bucket_count) const
     {
         return index_of(hash_(k), bucket_count);
     }
 
-    node_type* find_node(const Key& k) const
+    node_type* find_node(Key const& k) const
     {
         if (buckets_.size() == 0)
             return nullptr;
@@ -131,11 +131,11 @@ private:
         friend class hash_map;
         friend class iter_base<!IsConst>;
 
-        const vector<bucket>* buckets_ = nullptr;
+        vector<bucket> const* buckets_ = nullptr;
         size_t idx_ = 0;
         node_type* node_ = nullptr;
 
-        iter_base(const vector<bucket>* b, size_t idx, node_type* n)
+        iter_base(vector<bucket> const* b, size_t idx, node_type* n)
             : buckets_(b)
             , idx_(idx)
             , node_(n)
@@ -155,15 +155,15 @@ private:
         using value_type = pair_type;
         using difference_type = ptrdiff_t;
         using reference
-            = std::conditional_t<IsConst, const pair_type&, pair_type&>;
+            = std::conditional_t<IsConst, pair_type const&, pair_type&>;
         using pointer
-            = std::conditional_t<IsConst, const pair_type*, pair_type*>;
+            = std::conditional_t<IsConst, pair_type const*, pair_type*>;
 
         iter_base() = default;
 
         // iterator -> const_iterator
         template <bool C = IsConst, typename = std::enable_if_t<C>>
-        iter_base(const iter_base<false>& o)
+        iter_base(iter_base<false> const& o)
             : buckets_(o.buckets_)
             , idx_(o.idx_)
             , node_(o.node_)
@@ -192,7 +192,7 @@ private:
             return tmp;
         }
 
-        friend bool operator==(const iter_base& a, const iter_base& b)
+        friend bool operator==(iter_base const& a, iter_base const& b)
         {
             return a.node_ == b.node_;
         }
@@ -204,8 +204,8 @@ public:
         : alloc_(static_cast<Alloc&&>(a))
     {
     }
-    hash_map(const hash_map&) = delete;
-    hash_map& operator=(const hash_map&) = delete;
+    hash_map(hash_map const&) = delete;
+    hash_map& operator=(hash_map const&) = delete;
     hash_map(hash_map&& o)
         : buckets_(static_cast<vector<bucket>&&>(o.buckets_))
         , size_(o.size_)
@@ -279,7 +279,7 @@ public:
         return buckets_.size();
     }
 
-    glox::option<Value&> find(const Key& k)
+    glox::option<Value&> find(Key const& k)
     {
         node_type* n = find_node(k);
         if (n)
@@ -287,7 +287,7 @@ public:
         else
             return { };
     }
-    glox::option<const Value&> find(const Key& k) const
+    glox::option<Value const&> find(Key const& k) const
     {
         node_type* n = find_node(k);
         if (n)
@@ -295,7 +295,7 @@ public:
         else
             return { };
     }
-    bool contains(const Key& k) const
+    bool contains(Key const& k) const
     {
         return find_node(k) != nullptr;
     }
@@ -327,7 +327,7 @@ public:
         return { };
     }
 
-    Value& operator[](const Key& k)
+    Value& operator[](Key const& k)
     {
         if (node_type* n = find_node(k))
             return n->kv.second;
@@ -338,21 +338,21 @@ public:
         return n->kv.second;
     }
 
-    option<Value&> at(const Key& k)
+    option<Value&> at(Key const& k)
     {
         if (node_type* n = find_node(k))
             return option<Value&> { n->kv.second };
         return option<Value&> { };
     }
 
-    option<const Value&> at(const Key& k) const
+    option<Value const&> at(Key const& k) const
     {
         if (node_type* n = find_node(k))
-            return option<const Value&> { n->kv.second };
-        return option<const Value&> { };
+            return option<Value const&> { n->kv.second };
+        return option<Value const&> { };
     }
 
-    bool erase(const Key& k)
+    bool erase(Key const& k)
     {
         if (buckets_.size() == 0)
             return false;
@@ -374,14 +374,14 @@ public:
         return false;
     }
 
-    iterator find_it(const Key& k)
+    iterator find_it(Key const& k)
     {
         node_type* n = find_node(k);
         if (!n)
             return end();
         return { &buckets_, index_of_key(k, buckets_.size()), n };
     }
-    const_iterator find_it(const Key& k) const
+    const_iterator find_it(Key const& k) const
     {
         node_type* n = find_node(k);
         if (!n)

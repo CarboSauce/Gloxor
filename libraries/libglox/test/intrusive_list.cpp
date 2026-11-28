@@ -57,7 +57,7 @@ TEST_CASE("intrusive_list linking with custom member node pointer")
     REQUIRE(list.back().x == 3);
 
     int expected = 1;
-    for (const auto& item : list) {
+    for (auto const& item : list) {
         REQUIRE(item.x == expected++);
     }
     REQUIRE(expected == 4);
@@ -78,7 +78,7 @@ TEST_CASE("intrusive_list dual hooks and independent lifetimes")
     }
 
     int i = 1;
-    for (const auto& it : l1) {
+    for (auto const& it : l1) {
         REQUIRE(it.x == i++);
     }
 
@@ -188,7 +188,7 @@ TEST_CASE("intrusive_list move construction and move assignment")
     REQUIRE(dst.back().x == 40);
 
     int expected = 10;
-    for (const auto& item : dst) {
+    for (auto const& item : dst) {
         REQUIRE(item.x == expected);
         expected += 10;
     }
@@ -210,7 +210,7 @@ TEST_CASE("intrusive_list const iteration and reverse traversal")
         list.push_back(&item);
     }
 
-    const test1list& clist = list;
+    test1list const& clist = list;
     REQUIRE(clist.size() == 3);
     REQUIRE(clist.front().x == 100);
     REQUIRE(clist.back().x == 300);
