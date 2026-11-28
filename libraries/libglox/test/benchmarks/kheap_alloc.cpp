@@ -136,14 +136,13 @@ struct kheap_arena_state
 
 struct kheap_pfndb
 {
-    kheap_desc& operator[](std::uintptr_t pfn) noexcept
+    kheap_desc get_desc(std::uintptr_t pfn) const noexcept
     {
         return kheap_arena_state::db[pfn];
     }
-
-    const kheap_desc& operator[](std::uintptr_t pfn) const noexcept
+    void set_desc(std::uintptr_t pfn, kheap_desc desc) const noexcept
     {
-        return kheap_arena_state::db[pfn];
+        kheap_arena_state::db[pfn] = desc;
     }
 
     bool is_valid(std::uintptr_t pfn) const noexcept

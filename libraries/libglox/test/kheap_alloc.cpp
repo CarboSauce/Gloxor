@@ -70,9 +70,11 @@ template <unsigned Shift>
 struct radix_db
 {
     static constexpr std::size_t N = 4096; // 12 bits per level, 3 levels
+    using entry = std::atomic<std::uint64_t>;
+
     struct leaf
     {
-        test_desc e[N];
+        entry e[N];
     };
     struct mid
     {
@@ -94,7 +96,7 @@ struct radix_db
         return m;
     }
 
-    static test_desc* find(std::uintptr_t pfn) noexcept
+    static entry* find(std::uintptr_t pfn) noexcept
     {
         if ((pfn >> 24) >= N)
             return nullptr;
@@ -129,21 +131,17 @@ struct radix_db
 template <unsigned Shift>
 struct test_pfndb
 {
-    test_desc& operator[](std::uintptr_t pfn)
+    [[nodiscard]] test_desc get_desc(std::uintptr_t pfn) const noexcept
     {
         auto* p = radix_db<Shift>::find(pfn);
-        if (p)
-            return *p;
-        static thread_local test_desc dummy;
-        return dummy;
+        return test_desc::from_raw(p ? p->load(std::memory_order_relaxed) : 0);
     }
-    const test_desc& operator[](std::uintptr_t pfn) const
+
+    void set_desc(std::uintptr_t pfn, test_desc desc) noexcept
     {
         auto* p = radix_db<Shift>::find(pfn);
         if (p)
-            return *p;
-        static const test_desc zero { };
-        return zero;
+            p->store(desc.raw(), std::memory_order_relaxed);
     }
     bool is_valid(std::uintptr_t pfn) const
     {
@@ -205,7 +203,7 @@ struct page_fixture
         for (auto& [addr, b] : f.live) {
             for (std::size_t i = 0; i < b.cap_pages; ++i)
                 if (auto* d = radix_db<S>::find((addr >> S) + i))
-                    d->v = 0;
+                    d->store(0, std::memory_order_relaxed);
             std::free(reinterpret_cast<void*>(addr));
         }
         f.live.clear();
@@ -233,7 +231,8 @@ struct page_fixture
         const auto pfn = reinterpret_cast<std::uintptr_t>(p) >> S;
         radix_db<S>::ensure(pfn, cap);
         for (std::size_t i = 0; i < cap; ++i)
-            if (radix_db<S>::find(pfn + i)->v != 0)
+            if (radix_db<S>::find(pfn + i)->load(std::memory_order_relaxed)
+                != 0)
                 ++dirty;
         std::memset(p, 0xA5, n); // poison: nobody may assume zeroed pages
         live[reinterpret_cast<std::uintptr_t>(p)] = { n, cap };
@@ -255,7 +254,8 @@ struct page_fixture
             ++bad_size;
         const auto pfn = it->first >> S;
         for (std::size_t i = 0; i < it->second.cap_pages; ++i)
-            if (radix_db<S>::find(pfn + i)->v != 0)
+            if (radix_db<S>::find(pfn + i)->load(std::memory_order_relaxed)
+                != 0)
                 ++dirty; // heap forgot to reset a pfndb entry to TAG_BUDDY
         used_bytes -= it->second.bytes;
         live.erase(it);
@@ -296,7 +296,8 @@ struct page_fixture
             ++bad_size;
         const auto pfn = it->first >> S;
         for (std::size_t i = n >> S; i < (o >> S); ++i)
-            if (radix_db<S>::find(pfn + i)->v != 0)
+            if (radix_db<S>::find(pfn + i)->load(std::memory_order_relaxed)
+                != 0)
                 ++dirty; // tail descriptors must be reset before shrink
         used_bytes -= o - n;
         it->second.bytes = n;
@@ -454,7 +455,8 @@ struct basic_env
         std::size_t n = 0;
         for (auto& [addr, blk] : fx.live) {
             auto* d = radix_db<PS>::find(addr >> PS);
-            const bool is = d && (d->v & 31) == tag;
+            const bool is
+                = d && (d->load(std::memory_order_relaxed) & 31) == tag;
             if (is == equal)
                 ++n;
         }
@@ -472,7 +474,9 @@ struct basic_env
     // Raw descriptor word of the page containing p.
     std::uint64_t md_of(const void* p)
     {
-        return radix_db<PS>::find(reinterpret_cast<std::uintptr_t>(p) >> PS)->v;
+        auto* entry
+            = radix_db<PS>::find(reinterpret_cast<std::uintptr_t>(p) >> PS);
+        return entry ? entry->load(std::memory_order_relaxed) : 0;
     }
     // palloc block [base, base+bytes) holding p.
     page_fixture::block block_of(const void* p, std::uintptr_t* base = nullptr)
@@ -770,7 +774,9 @@ TEST_CASE("page_meta comes from raw palloc pages, never from the heap")
     {
         std::lock_guard g(e.fx.m);
         for (auto& [a, b] : e.fx.live)
-            if ((radix_db<12>::find(a >> 12)->v & 31) == env::heap_t::TAG_META)
+            if ((radix_db<12>::find(a >> 12)->load(std::memory_order_relaxed)
+                    & 31)
+                == env::heap_t::TAG_META)
                 CHECK_EQ(b.bytes, 4096u);
     }
     for (void* p : v)
@@ -1258,7 +1264,9 @@ TEST_CASE("foreign, meta and never-allocated pointers trap")
     {
         std::lock_guard g(e.fx.m);
         for (auto& [a, b] : e.fx.live)
-            if ((radix_db<12>::find(a >> 12)->v & 31) == env::heap_t::TAG_META)
+            if ((radix_db<12>::find(a >> 12)->load(std::memory_order_relaxed)
+                    & 31)
+                == env::heap_t::TAG_META)
                 meta = reinterpret_cast<void*>(a);
     }
     REQUIRE(meta != nullptr);

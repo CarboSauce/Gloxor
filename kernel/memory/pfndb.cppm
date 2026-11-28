@@ -87,7 +87,7 @@ class PfndbManager
 {
     // TODO: should be std::atomic, needs to change api of buddy allocator
     // or maybe should change PfndbEntry to atomic<u64> entry
-    PfnDesc* pfndbEntries;
+    std::atomic<PfnDesc>* pfndbEntries;
     usize entryCount;
 
     static constexpr std::size_t PAGE_SIZE = 4096;
@@ -96,18 +96,20 @@ class PfndbManager
         = 12 + std::countr_zero(PFNS_PER_PAGE);
 
 public:
-    [[nodiscard]] PfnDesc& operator[](std::uintptr_t pfn)
+    [[nodiscard]] PfnDesc get_desc(std::uintptr_t pfn) const
     {
         GLOX_ASSERT(pfn < entryCount);
 
-        return reinterpret_cast<PfnDesc*>(arch::PFN_DB_BASE)[pfn];
+        return reinterpret_cast<const std::atomic<PfnDesc>*>(
+            arch::PFN_DB_BASE
+        )[pfn]
+            .load();
     }
-
-    [[nodiscard]] const PfnDesc& operator[](std::uintptr_t pfn) const
+    void set_desc(std::uintptr_t pfn, PfnDesc desc)
     {
-        GLOX_ASSERT(pfn < entryCount);
-
-        return reinterpret_cast<const PfnDesc*>(arch::PFN_DB_BASE)[pfn];
+        auto* ptr
+            = reinterpret_cast<std::atomic<PfnDesc>*>(arch::PFN_DB_BASE) + pfn;
+        ptr->store(desc);
     }
     [[nodiscard]] void* pfn_to_virt(std::uintptr_t pfn) const
     {
@@ -132,14 +134,13 @@ constinit inline PfndbManager pfndbManager = { };
 
 struct PfndbAccessor
 {
-    [[nodiscard]] PfnDesc& operator[](std::uintptr_t pfn)
+    [[nodiscard]] PfnDesc get_desc(std::uintptr_t pfn) const
     {
-        return pfndbManager[pfn];
+        return pfndbManager.get_desc(pfn);
     }
-
-    [[nodiscard]] const PfnDesc& operator[](std::uintptr_t pfn) const
+    void set_desc(std::uintptr_t pfn, PfnDesc desc)
     {
-        return pfndbManager[pfn];
+        return pfndbManager.set_desc(pfn, desc);
     }
     [[nodiscard]] void* pfn_to_virt(std::uintptr_t pfn) const
     {
@@ -281,7 +282,7 @@ void init_pfndb()
     }
 
     // initialize available physical pages
-    pfndbManager.pfndbEntries = reinterpret_cast<PfnDesc*>(base);
+    pfndbManager.pfndbEntries = reinterpret_cast<std::atomic<PfnDesc>*>(base);
 
     for (const auto& region : gx::machineInfo.mmapEntries) {
         if (!isAvailable(region))
@@ -292,7 +293,7 @@ void init_pfndb()
         const usize last = (region.base + region.length) / pageSize;
 
         for (usize pfn = first; pfn < last; ++pfn)
-            pfndbManager[pfn].set_desc(PfnDesc::make_allocated(0));
+            pfndbManager.set_desc(pfn, PfnDesc::make_allocated(0));
     }
 
     backingMapRegions.clear([](auto* ptr) {

@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <type_traits>
 #endif
 
 namespace glox {
@@ -28,23 +29,27 @@ concept pfn_descriptor = requires(Desc d, const Desc cd, std::size_t order) {
 };
 
 template <typename Accessor>
-concept pfndb_accessor
-    = requires(Accessor& acc, const Accessor& cacc, std::uintptr_t pfn) {
-          requires pfn_descriptor<std::remove_cvref_t<decltype(acc[pfn])>>;
-          {
-              acc[pfn]
-          } -> std::same_as<std::remove_cvref_t<decltype(acc[pfn])>&>;
-          {
-              cacc[pfn]
-          } -> std::same_as<const std::remove_cvref_t<decltype(acc[pfn])>&>;
-          { cacc.is_valid(pfn) } -> std::convertible_to<bool>;
-          { cacc.pfn_to_virt(pfn) } -> std::convertible_to<void*>;
-          { Accessor::TAG_BUDDY } -> std::convertible_to<uintptr_t>;
-          { Accessor::TAG_META } -> std::convertible_to<uintptr_t>;
-          { Accessor::TAG_SLAB } -> std::convertible_to<uintptr_t>;
-          { Accessor::TAG_LARGE } -> std::convertible_to<uintptr_t>;
-          { Accessor::TAG_LARGE_TAIL } -> std::convertible_to<uintptr_t>;
-      };
+concept pfndb_accessor = requires(
+    Accessor& acc,
+    const Accessor& cacc,
+    std::uintptr_t pfn
+) {
+    requires pfn_descriptor<std::remove_cvref_t<decltype(acc.get_desc(pfn))>>;
+    {
+        acc.get_desc(pfn)
+    } -> std::same_as<std::remove_cvref_t<decltype(acc.get_desc(pfn))>>;
+    {
+        cacc.get_desc(pfn)
+    } -> std::same_as<std::remove_cvref_t<decltype(acc.get_desc(pfn))>>;
+    { acc.set_desc(pfn, acc.get_desc(pfn)) } -> std::same_as<void>;
+    { cacc.is_valid(pfn) } -> std::convertible_to<bool>;
+    { cacc.pfn_to_virt(pfn) } -> std::convertible_to<void*>;
+    { Accessor::TAG_BUDDY } -> std::convertible_to<std::uintptr_t>;
+    { Accessor::TAG_META } -> std::convertible_to<std::uintptr_t>;
+    { Accessor::TAG_SLAB } -> std::convertible_to<std::uintptr_t>;
+    { Accessor::TAG_LARGE } -> std::convertible_to<std::uintptr_t>;
+    { Accessor::TAG_LARGE_TAIL } -> std::convertible_to<std::uintptr_t>;
+};
 
 template <
     pfndb_accessor Accessor,
@@ -60,7 +65,8 @@ class buddy_allocator
 public:
     using accessor_type = Accessor;
     using descriptor_type
-        = std::remove_reference_t<decltype(std::declval<Accessor&>()[0])>;
+        = std::remove_cvref_t<decltype(std::declval<const Accessor&>()
+                .get_desc(0))>;
 
     static constexpr std::size_t PAGE_SIZE = std::size_t { 1 } << PageShift;
     static constexpr auto PAGE_SHIFT = PageShift;
@@ -96,7 +102,7 @@ private:
         }
 
         free_lists_[order] = pfn;
-        pfndb_[pfn] = descriptor_type::make_buddy_free(order);
+        pfndb_.set_desc(pfn, descriptor_type::make_buddy_free(order));
     }
 
     void list_remove(std::size_t order, std::uintptr_t pfn)
@@ -115,7 +121,7 @@ private:
             node_at(next)->prev_pfn = prev;
         }
 
-        pfndb_[pfn] = descriptor_type::make_reserved();
+        pfndb_.set_desc(pfn, descriptor_type::make_reserved());
     }
 
     [[nodiscard]] std::uintptr_t list_pop_front(std::size_t order)
@@ -137,7 +143,7 @@ private:
                 break;
             }
 
-            const descriptor_type buddy = pfndb_[buddyPfn];
+            const descriptor_type buddy = pfndb_.get_desc(buddyPfn);
             if (!buddy.is_buddy_free() || buddy.buddy_order() != order) {
                 break;
             }
@@ -262,7 +268,7 @@ public:
             list_push_front(currentOrder, buddyPfn);
         }
 
-        pfndb_[pfn] = descriptor_type::make_allocated(order);
+        pfndb_.set_desc(pfn, descriptor_type::make_allocated(order));
         free_pages_ -= (std::size_t { 1 } << order);
         return pfn << PageShift;
     }
@@ -321,7 +327,7 @@ public:
         }
 
         scoped_lock guard(lock_);
-        const descriptor_type desc = pfndb_[pfn];
+        const descriptor_type desc = pfndb_.get_desc(pfn);
         if (desc.is_buddy_free()) {
             return;
         }

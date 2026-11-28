@@ -102,8 +102,12 @@ namespace kheap_detail {
         std::uint64_t raw
     ) {
         { ca.virt_to_pfn(p) } -> std::convertible_to<std::uintptr_t>;
-        { ca[pfn].raw() } -> std::convertible_to<std::uint64_t>;
-        a[pfn] = std::remove_cvref_t<decltype(a[pfn])>::from_raw(raw);
+
+        { ca.get_desc(pfn).raw() } -> std::convertible_to<std::uint64_t>;
+
+        a.set_desc(
+            pfn, std::remove_cvref_t<decltype(ca.get_desc(pfn))>::from_raw(raw)
+        );
     };
 
     // Size-class math. Single source of truth for the class and the
@@ -282,9 +286,9 @@ private:
         "virt_to_pfn()"
     );
 
-    using desc_t = std::remove_cvref_t<
-        decltype(kheap_detail::declref<Accessor>()[std::uintptr_t(0)])
-    >;
+    using desc_t
+        = std::remove_cvref_t<decltype(kheap_detail::declref<const Accessor>()
+                .get_desc(std::uintptr_t(0)))>;
     using tcache_t = kthread_cache<num_buckets>;
     using sizes_t = kheap_detail::size_classes<MaxSmallSize, Granularity>;
 
@@ -449,7 +453,7 @@ private:
 
     void stamp(std::uintptr_t pfn, std::uint64_t md) noexcept
     {
-        pfndb[pfn] = desc_t::from_raw(md);
+        pfndb.set_desc(pfn, desc_t::from_raw(md));
     }
 
     void reset_range(std::uintptr_t pfn, std::size_t count) noexcept
@@ -710,7 +714,7 @@ private:
         while (p) {
             void* nx = *static_cast<void**>(p); // read first: p dies below
             const std::uintptr_t pfn = pfn_of(p);
-            const std::uint64_t md = pfndb[pfn].raw();
+            const std::uint64_t md = pfndb.get_desc(pfn).raw();
             if ((md & TAG_MASK) == TAG_LARGE)
                 free_large(p, pfn, md);
             p = nx;
@@ -846,7 +850,7 @@ private:
         const std::uintptr_t pfn = pfn_of(ptr);
         if (!pfndb.is_valid(pfn))
             return 0;
-        const std::uint64_t md = pfndb[pfn].raw();
+        const std::uint64_t md = pfndb.get_desc(pfn).raw();
         if ((md & TAG_MASK) != TAG_LARGE)
             return 0;
         const std::size_t old_pages = static_cast<std::size_t>(md >> TAG_BITS);
@@ -1019,7 +1023,7 @@ public:
             report();
             return 0;
         }
-        const std::uint64_t md = pfndb[pfn].raw();
+        const std::uint64_t md = pfndb.get_desc(pfn).raw();
         const std::size_t off
             = reinterpret_cast<std::uintptr_t>(ptr) & (PageSize - 1);
         switch (md & TAG_MASK) {
@@ -1030,7 +1034,7 @@ public:
                  - off;
         case TAG_LARGE_TAIL: {
             const std::uint64_t i = md >> TAG_BITS;
-            const std::uint64_t head = pfndb[pfn - i].raw();
+            const std::uint64_t head = pfndb.get_desc(pfn - i).raw();
             if ((head & TAG_MASK) != TAG_LARGE) {
                 report();
                 return 0;
@@ -1054,7 +1058,7 @@ public:
             report();
             return;
         }
-        const std::uint64_t md = pfndb[pfn].raw();
+        const std::uint64_t md = pfndb.get_desc(pfn).raw();
         switch (md & TAG_MASK) {
         case TAG_SLAB:
             dealloc_slab(ptr, decode_slab_md(md));
@@ -1146,7 +1150,7 @@ public:
             report();
             return;
         }
-        const std::uint64_t md = pfndb[pfn].raw();
+        const std::uint64_t md = pfndb.get_desc(pfn).raw();
         switch (md & TAG_MASK) {
         case TAG_SLAB: {
             kpage_meta* pg = decode_slab_md(md);
@@ -1270,7 +1274,7 @@ public:
         if (new_size >= cur)
             return { ptr, cur };
 
-        const std::uint64_t md = pfndb[pfn_of(ptr)].raw();
+        const std::uint64_t md = pfndb.get_desc(pfn_of(ptr)).raw();
         switch (md & TAG_MASK) {
         case TAG_LARGE:
             if (const std::size_t got = resize_large_inplace(ptr, new_size))

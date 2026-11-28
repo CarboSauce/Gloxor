@@ -1,10 +1,12 @@
 #ifndef USE_MODULES
 #include "glox/buddy_alloc.hpp"
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <mutex>
 #include <thread>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 #else
@@ -114,18 +116,32 @@ struct mock_pfndb
     static constexpr std::size_t SEGMENT_SHIFT
         = 12 + std::countr_zero(PFNS_PER_PAGE);
 
+    using raw_type = std::remove_cv_t<decltype(Desc { }.raw)>;
+    using entry_type = std::atomic<raw_type>;
+
     std::uintptr_t hhdm_offset = 0;
-    std::unordered_map<std::size_t, std::vector<Desc>> segments;
+    std::unordered_map<std::size_t, std::vector<entry_type>> segments;
 
     void map_range(std::uintptr_t phys_addr, std::size_t size)
     {
         if (size == 0) {
             return;
         }
+
         const std::size_t firstSeg = phys_addr >> SEGMENT_SHIFT;
         const std::size_t lastSeg = (phys_addr + size - 1) >> SEGMENT_SHIFT;
+
         for (std::size_t seg = firstSeg; seg <= lastSeg; ++seg) {
-            segments.try_emplace(seg, PFNS_PER_PAGE, Desc::make_reserved());
+            auto [it, inserted] = segments.try_emplace(seg, PFNS_PER_PAGE);
+            if (inserted) {
+                const auto reserved = Desc::make_reserved().raw;
+                for (auto& entry : it->second) {
+                    entry.store(
+                        static_cast<raw_type>(reserved),
+                        std::memory_order_relaxed
+                    );
+                }
+            }
         }
     }
 
@@ -134,18 +150,24 @@ struct mock_pfndb
         return segments.contains(pfn >> (SEGMENT_SHIFT - 12));
     }
 
-    [[nodiscard]] Desc& operator[](std::uintptr_t pfn) noexcept
+    [[nodiscard]] Desc get_desc(std::uintptr_t pfn) const noexcept
     {
-        return segments.at(
+        const auto& entry = segments.at(
             pfn >> (SEGMENT_SHIFT - 12)
         )[pfn & (PFNS_PER_PAGE - 1)];
+
+        Desc result { };
+        result.raw = entry.load(std::memory_order_relaxed);
+        return result;
     }
 
-    [[nodiscard]] const Desc& operator[](std::uintptr_t pfn) const noexcept
+    void set_desc(std::uintptr_t pfn, Desc desc) noexcept
     {
-        return segments.at(
+        auto& entry = segments.at(
             pfn >> (SEGMENT_SHIFT - 12)
         )[pfn & (PFNS_PER_PAGE - 1)];
+
+        entry.store(static_cast<raw_type>(desc.raw), std::memory_order_relaxed);
     }
 
     [[nodiscard]] void* pfn_to_virt(std::uintptr_t pfn) const noexcept
@@ -205,8 +227,11 @@ TEST_CASE("buddy_allocator basic alloc, orderless free, and coalescing")
     const std::uintptr_t p2 = alloc.alloc_order(0); // 1 page
     REQUIRE(p1 != 0);
     REQUIRE(p2 != 0);
-    REQUIRE(alloc.accessor()[p1 >> 12].kind() == test_pfn_desc::tag::allocated);
-    REQUIRE(alloc.accessor()[p1 >> 12].buddy_order() == 2);
+    REQUIRE(
+        alloc.accessor().get_desc(p1 >> 12).kind()
+        == test_pfn_desc::tag::allocated
+    );
+    REQUIRE(alloc.accessor().get_desc(p1 >> 12).buddy_order() == 2);
     REQUIRE(alloc.free_pages() == 59);
 
     std::memset(ram.phys_to_ptr(p1), 0xAB, 4 * 4096);
@@ -319,8 +344,42 @@ struct dual_seg_pfndb
     std::uintptr_t seg1_hhdm;
     std::uintptr_t seg2_pfn_start;
     std::uintptr_t seg2_hhdm;
-    test_pfn_desc seg1_meta[512] { };
-    test_pfn_desc seg2_meta[512] { };
+    std::atomic<std::uintptr_t> seg1_meta[512] { };
+    std::atomic<std::uintptr_t> seg2_meta[512] { };
+
+    dual_seg_pfndb(
+        std::uintptr_t seg1_start,
+        std::uintptr_t seg1_offset,
+        std::uintptr_t seg2_start,
+        std::uintptr_t seg2_offset
+    ) noexcept
+        : seg1_pfn_start(seg1_start)
+        , seg1_hhdm(seg1_offset)
+        , seg2_pfn_start(seg2_start)
+        , seg2_hhdm(seg2_offset)
+    {
+    }
+
+    dual_seg_pfndb(const dual_seg_pfndb&) = delete;
+    dual_seg_pfndb& operator=(const dual_seg_pfndb&) = delete;
+
+    dual_seg_pfndb(dual_seg_pfndb&& other) noexcept
+        : seg1_pfn_start(other.seg1_pfn_start)
+        , seg1_hhdm(other.seg1_hhdm)
+        , seg2_pfn_start(other.seg2_pfn_start)
+        , seg2_hhdm(other.seg2_hhdm)
+    {
+        for (std::size_t i = 0; i < 512; ++i) {
+            seg1_meta[i].store(
+                other.seg1_meta[i].load(std::memory_order_relaxed),
+                std::memory_order_relaxed
+            );
+            seg2_meta[i].store(
+                other.seg2_meta[i].load(std::memory_order_relaxed),
+                std::memory_order_relaxed
+            );
+        }
+    }
 
     [[nodiscard]] bool is_valid(std::uintptr_t pfn) const noexcept
     {
@@ -328,22 +387,23 @@ struct dual_seg_pfndb
             || (pfn >= seg2_pfn_start && pfn < seg2_pfn_start + 512);
     }
 
-    [[nodiscard]] test_pfn_desc& operator[](std::uintptr_t pfn) noexcept
+    [[nodiscard]] test_pfn_desc get_desc(std::uintptr_t pfn) const noexcept
     {
-        if (pfn >= seg1_pfn_start && pfn < seg1_pfn_start + 512) {
-            return seg1_meta[pfn - seg1_pfn_start];
-        }
-        return seg2_meta[pfn - seg2_pfn_start];
+        const auto& entry
+            = (pfn >= seg1_pfn_start && pfn < seg1_pfn_start + 512)
+                ? seg1_meta[pfn - seg1_pfn_start]
+                : seg2_meta[pfn - seg2_pfn_start];
+
+        return test_pfn_desc { entry.load(std::memory_order_relaxed) };
     }
 
-    [[nodiscard]] const test_pfn_desc& operator[](
-        std::uintptr_t pfn
-    ) const noexcept
+    void set_desc(std::uintptr_t pfn, test_pfn_desc desc) noexcept
     {
-        if (pfn >= seg1_pfn_start && pfn < seg1_pfn_start + 512) {
-            return seg1_meta[pfn - seg1_pfn_start];
-        }
-        return seg2_meta[pfn - seg2_pfn_start];
+        auto& entry = (pfn >= seg1_pfn_start && pfn < seg1_pfn_start + 512)
+                        ? seg1_meta[pfn - seg1_pfn_start]
+                        : seg2_meta[pfn - seg2_pfn_start];
+
+        entry.store(desc.raw, std::memory_order_relaxed);
     }
 
     [[nodiscard]] void* pfn_to_virt(std::uintptr_t pfn) const noexcept
